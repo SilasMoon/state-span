@@ -239,7 +239,19 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
     }
     
     // PRIORITY 4: Smart clearance routing (2 bends max)
-    // Calculate bounds of obstacles in the path
+    const midX = findOptimalMidpoint(startX, startY, endX, endY, obstacles);
+    
+    // First, try simple 3-segment H-V-H path
+    const simpleHVHPath = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
+    const hvhSeg1 = doesSegmentOverlap(startX, startY, midX, startY, obstacles);
+    const hvhSeg2 = doesSegmentOverlap(midX, startY, midX, endY, obstacles);
+    const hvhSeg3 = doesSegmentOverlap(midX, endY, endX, endY, obstacles);
+    
+    if (!hvhSeg1 && !hvhSeg2 && !hvhSeg3) {
+      return { path: simpleHVHPath, isVertical: false };
+    }
+    
+    // If simple path is blocked, calculate clearance routing
     const minX = Math.min(startX, endX);
     const maxX = Math.max(startX, endX);
     const minY = Math.min(startY, endY);
@@ -260,9 +272,8 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
     const routeAbove = startY < endY;
     const clearanceY = routeAbove ? maxObstacleY + clearance : minObstacleY - clearance;
     
-    // Use 3-segment path routing around obstacles
-    const midX = findOptimalMidpoint(startX, startY, endX, endY, obstacles);
-    const clearedPath = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${clearanceY} L ${midX} ${endY} L ${endX} ${endY}`;
+    // Use proper 3-segment clearance path (2 bends)
+    const clearedPath = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${clearanceY} L ${endX} ${clearanceY} L ${endX} ${endY}`;
     
     return { path: clearedPath, isVertical: false };
   };
