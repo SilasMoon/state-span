@@ -83,27 +83,105 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
   };
 
 
+  const getAllItemPositions = () => {
+    const positions: Array<{ x: number; y: number; width: number; height: number }> = [];
+    Object.entries(data.swimlanes).forEach(([swimlaneId, swimlane]) => {
+      const items = [...(swimlane.activities || []), ...(swimlane.states || [])];
+      items.forEach((item) => {
+        const pos = getItemPosition(swimlaneId, item.id);
+        if (pos) {
+          positions.push({
+            x: pos.x2,
+            y: pos.y2 - 20,
+            width: pos.x1 - pos.x2,
+            height: 40,
+          });
+        }
+      });
+    });
+    return positions;
+  };
+
+  const doesPathOverlap = (x1: number, y1: number, x2: number, y2: number, activities: Array<{ x: number; y: number; width: number; height: number }>) => {
+    const lineMinX = Math.min(x1, x2);
+    const lineMaxX = Math.max(x1, x2);
+    const lineMinY = Math.min(y1, y2);
+    const lineMaxY = Math.max(y1, y2);
+    
+    for (const act of activities) {
+      if (lineMaxX >= act.x && lineMinX <= act.x + act.width &&
+          lineMaxY >= act.y && lineMinY <= act.y + act.height) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const createRoutedPath = (from: { x1: number; y1: number; x2: number; y2: number }, 
-                            to: { x1: number; y1: number; x2: number; y2: number }) => {
-    // Vertical alignment - straight line (0 bends)
+                            to: { x1: number; y1: number; x2: number; y2: number }): { path: string; isVertical: boolean } => {
+    // Vertical alignment - straight line (0 bends) - arrow should be vertical
     if (Math.abs(from.x1 - to.x2) < 5) {
-      return `M ${from.x1} ${from.y1} L ${to.x2} ${to.y2}`;
+      return { path: `M ${from.x1} ${from.y1} L ${to.x2} ${to.y2}`, isVertical: true };
     }
     
-    // Horizontal alignment - straight line (0 bends)
+    // Horizontal alignment - straight line (0 bends) - arrow should be horizontal
     if (Math.abs(from.y1 - to.y2) < 5) {
-      return `M ${from.x1} ${from.y1} L ${to.x2} ${to.y2}`;
+      return { path: `M ${from.x1} ${from.y1} L ${to.x2} ${to.y2}`, isVertical: false };
     }
     
-    // For all other cases, use simple 2-segment path (1 bend)
-    // Choose the path that is most direct
-    if (from.x1 < to.x2) {
-      // Going right: horizontal then vertical
-      return `M ${from.x1} ${from.y1} L ${to.x2} ${from.y1} L ${to.x2} ${to.y2}`;
-    } else {
-      // Going left: vertical then horizontal
-      return `M ${from.x1} ${from.y1} L ${from.x1} ${to.y2} L ${to.x2} ${to.y2}`;
+    const allActivities = getAllItemPositions();
+    
+    // Try 2-segment paths (1 bend)
+    const twoSegmentPaths = [
+      // Horizontal then vertical - arrow ends vertical
+      { 
+        path: `M ${from.x1} ${from.y1} L ${to.x2} ${from.y1} L ${to.x2} ${to.y2}`, 
+        segments: [[from.x1, from.y1, to.x2, from.y1], [to.x2, from.y1, to.x2, to.y2]],
+        isVertical: true
+      },
+      // Vertical then horizontal - arrow ends horizontal
+      { 
+        path: `M ${from.x1} ${from.y1} L ${from.x1} ${to.y2} L ${to.x2} ${to.y2}`, 
+        segments: [[from.x1, from.y1, from.x1, to.y2], [from.x1, to.y2, to.x2, to.y2]],
+        isVertical: false
+      },
+    ];
+    
+    for (const { path, segments, isVertical } of twoSegmentPaths) {
+      let hasOverlap = false;
+      for (const [x1, y1, x2, y2] of segments) {
+        if (doesPathOverlap(x1, y1, x2, y2, allActivities)) {
+          hasOverlap = true;
+          break;
+        }
+      }
+      if (!hasOverlap) return { path, isVertical };
     }
+    
+    // Try 3-segment path with midpoint (2 bends) - arrow ends horizontal
+    const midX = (from.x1 + to.x2) / 2;
+    const threeSegmentPath = {
+      path: `M ${from.x1} ${from.y1} L ${midX} ${from.y1} L ${midX} ${to.y2} L ${to.x2} ${to.y2}`,
+      segments: [[from.x1, from.y1, midX, from.y1], [midX, from.y1, midX, to.y2], [midX, to.y2, to.x2, to.y2]],
+      isVertical: false
+    };
+    
+    let hasOverlap = false;
+    for (const [x1, y1, x2, y2] of threeSegmentPath.segments) {
+      if (doesPathOverlap(x1, y1, x2, y2, allActivities)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+    if (!hasOverlap) return { path: threeSegmentPath.path, isVertical: threeSegmentPath.isVertical };
+    
+    // Route around obstacles - arrow ends horizontal
+    const VERTICAL_OFFSET = 60;
+    const routeY = from.y1 > to.y2 ? Math.min(from.y1, to.y2) - VERTICAL_OFFSET : Math.max(from.y1, to.y2) + VERTICAL_OFFSET;
+    return { 
+      path: `M ${from.x1} ${from.y1} L ${from.x1 + 20} ${from.y1} L ${from.x1 + 20} ${routeY} L ${to.x2 - 20} ${routeY} L ${to.x2 - 20} ${to.y2} L ${to.x2} ${to.y2}`,
+      isVertical: true
+    };
   };
 
   const renderLink = (link: GanttLink) => {
@@ -115,12 +193,14 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
       return null;
     }
 
-    const path = createRoutedPath(from, to);
+    const { path, isVertical } = createRoutedPath(from, to);
 
-    console.log('Rendering link:', { link, from, to, path });
+    console.log('Rendering link:', { link, from, to, path, isVertical });
 
     const isSelected = selectedLink === link.id;
     const linkColor = link.color || "#00bcd4";
+    const markerId = isVertical ? `arrowhead-v-${link.id}` : `arrowhead-h-${link.id}`;
+    const selectedMarkerId = isVertical ? "arrowhead-selected-v" : "arrowhead-selected-h";
 
     return (
       <g key={link.id}>
@@ -134,7 +214,6 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
           style={{ pointerEvents: 'all' }}
           onClick={(e) => {
             e.stopPropagation();
-            // Toggle selection
             if (isSelected) {
               onLinkSelect("");
             } else {
@@ -148,19 +227,19 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
           stroke={isSelected ? "hsl(var(--destructive))" : linkColor}
           strokeWidth={isSelected ? "3" : "2"}
           fill="none"
-          markerEnd={isSelected ? "url(#arrowhead-selected)" : `url(#arrowhead-${link.id})`}
+          markerEnd={isSelected ? `url(#${selectedMarkerId})` : `url(#${markerId})`}
           opacity={isSelected ? "1" : "0.7"}
           className="pointer-events-none"
         />
         {/* Custom arrowhead with link color */}
         <defs>
           <marker
-            id={`arrowhead-${link.id}`}
+            id={markerId}
             markerWidth="10"
             markerHeight="10"
-            refX="9"
+            refX={isVertical ? "3" : "9"}
             refY="3"
-            orient="auto"
+            orient={isVertical ? "90" : "auto"}
           >
             <polygon
               points="0 0, 10 3, 0 6"
@@ -223,8 +302,9 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
       }}
     >
       <defs>
+        {/* Horizontal arrowheads */}
         <marker
-          id="arrowhead"
+          id="arrowhead-selected-h"
           markerWidth="10"
           markerHeight="10"
           refX="9"
@@ -233,16 +313,17 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
         >
           <polygon
             points="0 0, 10 3, 0 6"
-            fill="currentColor"
+            fill="hsl(var(--destructive))"
           />
         </marker>
+        {/* Vertical arrowheads */}
         <marker
-          id="arrowhead-selected"
+          id="arrowhead-selected-v"
           markerWidth="10"
           markerHeight="10"
-          refX="9"
+          refX="3"
           refY="3"
-          orient="auto"
+          orient="90"
         >
           <polygon
             points="0 0, 10 3, 0 6"
