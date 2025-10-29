@@ -170,7 +170,7 @@ export const GanttBar = ({
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDragging]);
+  }, [isDragging, tempStart, tempDuration, targetSwimlaneId]);
 
   return (
     <TooltipProvider>
