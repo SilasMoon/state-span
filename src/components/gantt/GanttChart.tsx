@@ -401,8 +401,8 @@ export const GanttChart = () => {
           columnWidth={zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80}
           selectedLink={selectedLink}
           onLinkSelect={(linkId) => {
-            setSelectedLink(linkId);
-            setSelected(null);
+            setSelectedLink(linkId === "" ? null : linkId);
+            if (linkId) setSelected(null);
           }}
         />
 
@@ -420,10 +420,18 @@ export const GanttChart = () => {
           const startY = rect.top + rect.height / 2 + scrollTop;
           const endX = linkDragCurrent.x + scrollLeft;
           const endY = linkDragCurrent.y + scrollTop;
-          const midX = (startX + endX) / 2;
           
-          // Create elbowed path
-          const path = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
+          let path: string;
+          
+          // Check if vertically aligned
+          if (Math.abs(startX - endX) < 20) {
+            // Vertical path
+            path = `M ${startX} ${startY} L ${startX} ${endY}`;
+          } else {
+            // Elbowed path
+            const midX = (startX + endX) / 2;
+            path = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
+          }
           
           return (
             <svg
@@ -450,9 +458,8 @@ export const GanttChart = () => {
                 stroke="hsl(var(--primary))"
                 strokeWidth="2"
                 fill="none"
-                strokeDasharray="5,5"
                 markerEnd="url(#arrowhead-temp)"
-                opacity="0.7"
+                opacity="0.9"
               />
             </svg>
           );

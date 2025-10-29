@@ -81,6 +81,81 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
     };
   };
 
+  const getAllItemPositions = () => {
+    const positions: Array<{ x: number; y: number; width: number; height: number }> = [];
+    Object.entries(data.swimlanes).forEach(([swimlaneId, swimlane]) => {
+      const items = [...(swimlane.activities || []), ...(swimlane.states || [])];
+      items.forEach((item) => {
+        const pos = getItemPosition(swimlaneId, item.id);
+        if (pos) {
+          positions.push({
+            x: pos.x2,
+            y: pos.y2 - 20,
+            width: pos.x1 - pos.x2,
+            height: 40,
+          });
+        }
+      });
+    });
+    return positions;
+  };
+
+  const doesPathOverlap = (x1: number, y1: number, x2: number, y2: number, activities: Array<{ x: number; y: number; width: number; height: number }>) => {
+    // Check if a straight line segment overlaps with any activity
+    for (const act of activities) {
+      // Simple bounding box intersection check
+      const lineMinX = Math.min(x1, x2);
+      const lineMaxX = Math.max(x1, x2);
+      const lineMinY = Math.min(y1, y2);
+      const lineMaxY = Math.max(y1, y2);
+      
+      if (lineMaxX >= act.x && lineMinX <= act.x + act.width &&
+          lineMaxY >= act.y && lineMinY <= act.y + act.height) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const createRoutedPath = (from: { x1: number; y1: number; x2: number; y2: number }, 
+                            to: { x1: number; y1: number; x2: number; y2: number }) => {
+    const allActivities = getAllItemPositions();
+    const VERTICAL_OFFSET = 60; // Offset to route above/below activities
+    
+    // Check if vertically aligned (same or close X position)
+    if (Math.abs(from.x1 - to.x2) < 20) {
+      // Vertical path - go straight down/up
+      return `M ${from.x1} ${from.y1} L ${from.x1} ${to.y2}`;
+    }
+    
+    // Try direct elbowed path first
+    const midX = (from.x1 + to.x2) / 2;
+    const directPath = [
+      { x: from.x1, y: from.y1 },
+      { x: midX, y: from.y1 },
+      { x: midX, y: to.y2 },
+      { x: to.x2, y: to.y2 }
+    ];
+    
+    // Check if direct path overlaps any activities
+    let hasOverlap = false;
+    for (let i = 0; i < directPath.length - 1; i++) {
+      if (doesPathOverlap(directPath[i].x, directPath[i].y, directPath[i + 1].x, directPath[i + 1].y, allActivities)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+    
+    if (!hasOverlap) {
+      return `M ${from.x1} ${from.y1} L ${midX} ${from.y1} L ${midX} ${to.y2} L ${to.x2} ${to.y2}`;
+    }
+    
+    // If overlap detected, route around by going up/down first
+    const routeY = from.y1 > to.y2 ? Math.min(from.y1, to.y2) - VERTICAL_OFFSET : Math.max(from.y1, to.y2) + VERTICAL_OFFSET;
+    
+    return `M ${from.x1} ${from.y1} L ${from.x1 + 20} ${from.y1} L ${from.x1 + 20} ${routeY} L ${to.x2 - 20} ${routeY} L ${to.x2 - 20} ${to.y2} L ${to.x2} ${to.y2}`;
+  };
+
   const renderLink = (link: GanttLink) => {
     const from = getItemPosition(link.fromSwimlaneId, link.fromId);
     const to = getItemPosition(link.toSwimlaneId, link.toId);
@@ -90,9 +165,7 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
       return null;
     }
 
-    // Create an elbowed path from end of first bar to start of second bar
-    const midX = (from.x1 + to.x2) / 2;
-    const path = `M ${from.x1} ${from.y1} L ${midX} ${from.y1} L ${midX} ${to.y2} L ${to.x2} ${to.y2}`;
+    const path = createRoutedPath(from, to);
 
     console.log('Rendering link:', { link, from, to, path });
 
@@ -110,7 +183,12 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
           style={{ pointerEvents: 'all' }}
           onClick={(e) => {
             e.stopPropagation();
-            onLinkSelect(link.id);
+            // Toggle selection
+            if (isSelected) {
+              onLinkSelect("");
+            } else {
+              onLinkSelect(link.id);
+            }
           }}
         />
         {/* Visible path */}
