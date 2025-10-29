@@ -8,6 +8,7 @@ interface GanttLinksProps {
 }
 
 export const GanttLinks = ({ data, zoom, columnWidth }: GanttLinksProps) => {
+  console.log('GanttLinks render:', { linksCount: data.links.length, links: data.links });
   const getItemPosition = (swimlaneId: string, itemId: string) => {
     const swimlane = data.swimlanes[swimlaneId];
     if (!swimlane) return null;
@@ -19,7 +20,7 @@ export const GanttLinks = ({ data, zoom, columnWidth }: GanttLinksProps) => {
     if (!item) return null;
 
     // Calculate swimlane vertical position
-    let yPos = 60; // Header height
+    let yPos = 48; // Header height (h-12 = 48px)
     const findYPosition = (id: string, currentY: number): number | null => {
       for (const rootId of data.rootIds) {
         const result = traverseSwimlane(rootId, id, currentY);
@@ -63,15 +64,16 @@ export const GanttLinks = ({ data, zoom, columnWidth }: GanttLinksProps) => {
       return height;
     };
 
-    const y = findYPosition(swimlaneId, 60);
+    const y = findYPosition(swimlaneId, 48);
     if (y === null) return null;
 
-    const x = (item.start / zoom) * columnWidth + 280; // 280 is swimlane label width
+    const swimlaneLabelWidth = 280;
+    const x = (item.start / zoom) * columnWidth + swimlaneLabelWidth;
     const width = (item.duration / zoom) * columnWidth;
 
     return {
       x1: x + width, // End of bar
-      y1: y + 24, // Middle of row
+      y1: y + 24, // Middle of row (row height is 48, so 24 is middle)
       x2: x, // Start of bar
       y2: y + 24,
     };
@@ -81,29 +83,60 @@ export const GanttLinks = ({ data, zoom, columnWidth }: GanttLinksProps) => {
     const from = getItemPosition(link.fromSwimlaneId, link.fromId);
     const to = getItemPosition(link.toSwimlaneId, link.toId);
 
-    if (!from || !to) return null;
+    if (!from || !to) {
+      console.warn('Link positions not found:', { link, from, to });
+      return null;
+    }
 
     // Create a curved path from end of first bar to start of second bar
     const midX = (from.x1 + to.x2) / 2;
     const path = `M ${from.x1} ${from.y1} C ${midX} ${from.y1}, ${midX} ${to.y2}, ${to.x2} ${to.y2}`;
 
+    console.log('Rendering link:', { link, from, to, path });
+
     return (
       <g key={link.id}>
         <path
           d={path}
-          stroke="var(--gantt-link)"
+          stroke="hsl(var(--primary))"
           strokeWidth="2"
           fill="none"
           markerEnd="url(#arrowhead)"
+          opacity="0.7"
         />
       </g>
     );
   };
 
+  const calculateTotalHeight = () => {
+    let height = 48; // Header height
+    const countVisibleRows = (ids: string[]): number => {
+      let count = 0;
+      ids.forEach(id => {
+        const swimlane = data.swimlanes[id];
+        if (swimlane) {
+          count += 48; // Row height
+          if (swimlane.expanded && swimlane.children.length > 0) {
+            count += countVisibleRows(swimlane.children);
+          }
+        }
+      });
+      return count;
+    };
+    return height + countVisibleRows(data.rootIds);
+  };
+
   return (
     <svg
-      className="absolute inset-0 pointer-events-none"
-      style={{ zIndex: 60 }}
+      className="absolute pointer-events-none"
+      style={{ 
+        zIndex: 60,
+        left: 0,
+        top: 0,
+        width: '100%',
+        height: `${calculateTotalHeight()}px`,
+        overflow: 'visible'
+      }}
     >
       <defs>
         <marker
@@ -116,7 +149,7 @@ export const GanttLinks = ({ data, zoom, columnWidth }: GanttLinksProps) => {
         >
           <polygon
             points="0 0, 10 3, 0 6"
-            fill="var(--gantt-link)"
+            fill="hsl(var(--primary))"
           />
         </marker>
       </defs>

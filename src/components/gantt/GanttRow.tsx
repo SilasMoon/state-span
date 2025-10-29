@@ -84,7 +84,7 @@ export const GanttRow = ({
 
   return (
     <div
-      className={`flex group hover:bg-gantt-row-hover/50 transition-colors border-b border-gantt-grid`}
+      className={`flex group transition-colors border-b border-gantt-grid`}
       data-swimlane-id={swimlane.id}
     >
       <div
