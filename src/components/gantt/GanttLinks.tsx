@@ -209,34 +209,27 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
     
     if (isVerticalLink) {
       const goingDown = to.y2 > from.y1;
-      const offset = 8; // Distance from corner
+      const horizontalOffset = 10; // Distance from center horizontally
+      const verticalOffset = 12; // Half of bar height (24px / 2)
       
-      // Adjust x-coordinates to corners
-      // From position: use right corner if going right in general, left if going left
-      if (from.x1 > to.x2) {
-        // Going left, use left corner
-        adjustedFrom.x1 = from.x1 - offset;
-      } else {
-        // Going right or same, use right corner  
-        adjustedFrom.x1 = from.x1 + offset;
-      }
+      // For vertical links, we want opposite corners
+      // Top bar connects from bottom-right or bottom-left
+      // Bottom bar connects to top-left or top-right
       
-      // To position: use opposite corner
-      if (to.x2 > from.x1) {
-        // Coming from left, use left corner
-        adjustedTo.x2 = to.x2 - offset;
-      } else {
-        // Coming from right or same, use right corner
-        adjustedTo.x2 = to.x2 + offset;
-      }
-      
-      // Adjust y-coordinates to top or bottom based on direction
       if (goingDown) {
-        adjustedFrom.y1 = from.y1 - 12; // Top of bar
-        adjustedTo.y2 = to.y2 - 12; // Top of bar
+        // From is above, To is below
+        adjustedFrom.x1 = from.x1 + horizontalOffset; // Right side of top bar
+        adjustedFrom.y1 = from.y1 + verticalOffset;   // Bottom of top bar
+        
+        adjustedTo.x2 = to.x2 - horizontalOffset;     // Left side of bottom bar
+        adjustedTo.y2 = to.y2 - verticalOffset;       // Top of bottom bar
       } else {
-        adjustedFrom.y1 = from.y1 + 12; // Bottom of bar
-        adjustedTo.y2 = to.y2 + 12; // Bottom of bar
+        // From is below, To is above
+        adjustedFrom.x1 = from.x1 + horizontalOffset; // Right side of bottom bar
+        adjustedFrom.y1 = from.y1 - verticalOffset;   // Top of bottom bar
+        
+        adjustedTo.x2 = to.x2 - horizontalOffset;     // Left side of top bar
+        adjustedTo.y2 = to.y2 + verticalOffset;       // Bottom of top bar
       }
     }
 
