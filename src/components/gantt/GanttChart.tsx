@@ -46,6 +46,16 @@ export const GanttChart = () => {
     itemId?: string;
   } | null>(null);
 
+  const [linkDragStart, setLinkDragStart] = useState<{
+    swimlaneId: string;
+    itemId: string;
+  } | null>(null);
+
+  const [linkDragCurrent, setLinkDragCurrent] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
   // Calculate total hours dynamically based on content
   const calculateTotalHours = () => {
     let maxHour = 240; // Default 10 days
@@ -190,6 +200,51 @@ export const GanttChart = () => {
     }) || false;
   };
 
+  const startLinkDrag = (swimlaneId: string, itemId: string, e: MouseEvent) => {
+    e.stopPropagation();
+    setLinkDragStart({ swimlaneId, itemId });
+    setLinkDragCurrent({ x: e.clientX, y: e.clientY });
+  };
+
+  // Link creation event listeners
+  React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (linkDragStart) {
+        setLinkDragCurrent({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      if (linkDragStart) {
+        const target = document.elementFromPoint(e.clientX, e.clientY);
+        const barElement = target?.closest('[data-item-id]');
+        
+        if (barElement) {
+          const toSwimlaneId = barElement.getAttribute('data-swimlane-id');
+          const toItemId = barElement.getAttribute('data-item-id');
+          
+          if (toSwimlaneId && toItemId && 
+              (linkDragStart.swimlaneId !== toSwimlaneId || linkDragStart.itemId !== toItemId)) {
+            addLink(linkDragStart.swimlaneId, linkDragStart.itemId, toSwimlaneId, toItemId);
+            toast.success("Link created");
+          }
+        }
+        
+        setLinkDragStart(null);
+        setLinkDragCurrent(null);
+      }
+    };
+
+    if (linkDragStart) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [linkDragStart, addLink]);
+
   const handleActivityResize = (swimlaneId: string, activityId: string, newStart: number, newDuration: number) => {
     updateActivity(swimlaneId, activityId, { start: newStart, duration: newDuration });
   };
@@ -313,7 +368,26 @@ export const GanttChart = () => {
           data={data}
           zoom={zoom}
           columnWidth={zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80}
+          onStartLinkDrag={startLinkDrag}
         />
+
+        {/* Link creation visual feedback */}
+        {linkDragStart && linkDragCurrent && (
+          <svg
+            className="absolute inset-0 pointer-events-none"
+            style={{ zIndex: 100 }}
+          >
+            <line
+              x1={linkDragCurrent.x}
+              y1={linkDragCurrent.y}
+              x2={linkDragCurrent.x}
+              y2={linkDragCurrent.y}
+              stroke="hsl(var(--primary))"
+              strokeWidth="2"
+              strokeDasharray="5,5"
+            />
+          </svg>
+        )}
       </div>
 
       {editDialog && (

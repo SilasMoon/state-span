@@ -28,7 +28,7 @@ export const GanttBar = ({
   checkOverlap,
 }: GanttBarProps) => {
   const [isDragging, setIsDragging] = useState<'start' | 'end' | 'move' | null>(null);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialSwimlaneId: swimlaneId });
   const [tempStart, setTempStart] = useState(item.start);
   const [tempDuration, setTempDuration] = useState(item.duration);
   const [targetSwimlaneId, setTargetSwimlaneId] = useState(swimlaneId);
@@ -43,7 +43,7 @@ export const GanttBar = ({
   const handleResizeStart = (e: React.MouseEvent, handle: 'start' | 'end') => {
     e.stopPropagation();
     setIsDragging(handle);
-    setDragStart({ x: e.clientX, y: e.clientY });
+    setDragStart({ x: e.clientX, y: e.clientY, initialSwimlaneId: swimlaneId });
     setTempStart(item.start);
     setTempDuration(item.duration);
     setTargetSwimlaneId(swimlaneId);
@@ -54,7 +54,7 @@ export const GanttBar = ({
     e.stopPropagation();
     onSelect();
     setIsDragging('move');
-    setDragStart({ x: e.clientX, y: e.clientY });
+    setDragStart({ x: e.clientX, y: e.clientY, initialSwimlaneId: swimlaneId });
     setTempStart(item.start);
     setTempDuration(item.duration);
     setTargetSwimlaneId(swimlaneId);
@@ -65,22 +65,17 @@ export const GanttBar = ({
     
     if (isDragging === 'move') {
       const deltaX = e.clientX - dragStart.x;
-      const deltaY = e.clientY - dragStart.y;
       const hoursDelta = Math.round((deltaX / columnWidth) * zoom);
       const newStart = snapToGrid(Math.max(0, item.start + hoursDelta));
       setTempStart(newStart);
       
-      // Detect swimlane change
-      const rowHeight = 48;
-      const rowsDelta = Math.round(deltaY / rowHeight);
-      if (rowsDelta !== 0) {
-        const swimlaneElement = document.elementFromPoint(e.clientX, e.clientY);
-        const rowElement = swimlaneElement?.closest('[data-swimlane-id]');
-        if (rowElement) {
-          const newSwimlaneId = rowElement.getAttribute('data-swimlane-id');
-          if (newSwimlaneId) {
-            setTargetSwimlaneId(newSwimlaneId);
-          }
+      // Detect swimlane change by finding element under cursor
+      const swimlaneElement = document.elementFromPoint(e.clientX, e.clientY);
+      const rowElement = swimlaneElement?.closest('[data-swimlane-id]');
+      if (rowElement) {
+        const newSwimlaneId = rowElement.getAttribute('data-swimlane-id');
+        if (newSwimlaneId && newSwimlaneId !== targetSwimlaneId) {
+          setTargetSwimlaneId(newSwimlaneId);
         }
       }
     } else if (isDragging === 'start') {
@@ -136,12 +131,14 @@ export const GanttBar = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <div
-            className={`absolute top-1 h-6 rounded cursor-move group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
+            className={`absolute h-6 rounded cursor-move group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
               isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
             }`}
             style={{
               left: `${left}px`,
               width: `${width}px`,
+              top: '50%',
+              transform: 'translateY(-50%)',
               backgroundColor: item.color,
               color: "#fff",
             }}
@@ -154,6 +151,8 @@ export const GanttBar = ({
               e.stopPropagation();
               onSelect();
             }}
+            data-swimlane-id={swimlaneId}
+            data-item-id={item.id}
           >
             {/* Resize handle - left */}
             <div
@@ -165,6 +164,19 @@ export const GanttBar = ({
             <div
               className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity z-10"
               onMouseDown={(e) => handleResizeStart(e, 'end')}
+            />
+
+            {/* Link creation handle */}
+            <div
+              className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-primary border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-20"
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                const event = e.nativeEvent;
+                window.dispatchEvent(new CustomEvent('startLinkDrag', {
+                  detail: { swimlaneId, itemId: item.id, x: event.clientX, y: event.clientY }
+                }));
+              }}
+              title="Drag to create link"
             />
           </div>
         </TooltipTrigger>
