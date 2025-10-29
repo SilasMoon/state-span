@@ -36,6 +36,11 @@ export const GanttBar = ({
   // Sync local state with props when item changes (but not during drag)
   React.useEffect(() => {
     if (!isDragging) {
+      console.log('=== SYNCING STATE ===');
+      console.log('item.id:', item.id);
+      console.log('item.start:', item.start);
+      console.log('item.duration:', item.duration);
+      console.log('Setting tempStart to:', item.start);
       setTempStart(item.start);
       setTempDuration(item.duration);
     }
@@ -120,10 +125,23 @@ export const GanttBar = ({
 
   const handleMouseUp = () => {
     if (isDragging) {
+      console.log('=== MOUSE UP ===');
+      console.log('isDragging:', isDragging);
+      console.log('targetSwimlaneId:', targetSwimlaneId);
+      console.log('tempStart:', tempStart);
+      console.log('tempDuration:', tempDuration);
+      console.log('item.id:', item.id);
+      
       document.body.style.cursor = '';
       if (isDragging === 'move') {
-        if (!checkOverlap(targetSwimlaneId, item.id, tempStart, tempDuration)) {
+        const hasOverlap = checkOverlap(targetSwimlaneId, item.id, tempStart, tempDuration);
+        console.log('checkOverlap result:', hasOverlap);
+        
+        if (!hasOverlap) {
+          console.log('Calling onMove with:', targetSwimlaneId, tempStart);
           onMove(targetSwimlaneId, tempStart);
+        } else {
+          console.log('Move blocked by overlap');
         }
       } else {
         if (!checkOverlap(swimlaneId, item.id, tempStart, tempDuration)) {

@@ -326,16 +326,34 @@ export const useGanttData = () => {
   };
 
   const moveActivity = (fromSwimlaneId: string, toSwimlaneId: string, activityId: string, newStart: number) => {
+    console.log('=== MOVE ACTIVITY CALLED ===');
+    console.log('fromSwimlaneId:', fromSwimlaneId);
+    console.log('toSwimlaneId:', toSwimlaneId);
+    console.log('activityId:', activityId);
+    console.log('newStart:', newStart);
+    
     setData((prev) => {
       const fromSwimlane = prev.swimlanes[fromSwimlaneId];
       const toSwimlane = prev.swimlanes[toSwimlaneId];
       
-      if (!fromSwimlane || !toSwimlane || toSwimlane.type !== "activity") return prev;
+      console.log('fromSwimlane:', fromSwimlane);
+      console.log('toSwimlane:', toSwimlane);
+      
+      if (!fromSwimlane || !toSwimlane || toSwimlane.type !== "activity") {
+        console.log('Validation failed - returning prev');
+        return prev;
+      }
       
       const activity = fromSwimlane.activities?.find((a) => a.id === activityId);
-      if (!activity) return prev;
+      console.log('Found activity:', activity);
+      
+      if (!activity) {
+        console.log('Activity not found - returning prev');
+        return prev;
+      }
       
       const movedActivity = { ...activity, start: newStart };
+      console.log('movedActivity:', movedActivity);
       
       if (fromSwimlaneId === toSwimlaneId) {
         return {
