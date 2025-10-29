@@ -52,7 +52,9 @@ export const GanttBar = ({
   };
 
   const handleMoveStart = (e: React.MouseEvent) => {
-    if (e.target !== e.currentTarget) return;
+    // Only prevent drag if clicking on resize or link handles
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-handle-type]') || target.classList.contains('cursor-ew-resize')) return;
     e.stopPropagation();
     e.preventDefault();
     document.body.style.cursor = 'grabbing';
@@ -134,7 +136,8 @@ export const GanttBar = ({
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, dragStart, tempStart, tempDuration]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDragging]);
 
   return (
     <TooltipProvider>
