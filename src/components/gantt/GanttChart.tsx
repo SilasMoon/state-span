@@ -3,9 +3,10 @@ import { GanttToolbar } from "./GanttToolbar";
 import { GanttTimeline } from "./GanttTimeline";
 import { GanttRow } from "./GanttRow";
 import { EditDialog } from "./EditDialog";
+import { LinkEditDialog } from "./LinkEditDialog";
 import { GanttLinks } from "./GanttLinks";
 import { useGanttData } from "@/hooks/useGanttData";
-import { ZoomLevel } from "@/types/gantt";
+import { LinkType, ZoomLevel } from "@/types/gantt";
 import { toast } from "sonner";
 
 export const GanttChart = () => {
@@ -51,6 +52,7 @@ export const GanttChart = () => {
   const [linkDragStart, setLinkDragStart] = useState<{
     swimlaneId: string;
     itemId: string;
+    handleType: 'start' | 'finish';
   } | null>(null);
 
   const [linkDragCurrent, setLinkDragCurrent] = useState<{
@@ -204,18 +206,16 @@ export const GanttChart = () => {
     }) || false;
   };
 
-  const startLinkDrag = (swimlaneId: string, itemId: string, e: MouseEvent) => {
-    e.stopPropagation();
-    setLinkDragStart({ swimlaneId, itemId });
-    setLinkDragCurrent({ x: e.clientX, y: e.clientY });
-  };
+  const [linkEditDialog, setLinkEditDialog] = useState<{
+    linkId: string;
+  } | null>(null);
 
   // Link creation event listeners
   React.useEffect(() => {
     const handleStartLink = (e: Event) => {
       const customEvent = e as CustomEvent;
-      const { swimlaneId, itemId, x, y } = customEvent.detail;
-      setLinkDragStart({ swimlaneId, itemId });
+      const { swimlaneId, itemId, handleType, x, y } = customEvent.detail;
+      setLinkDragStart({ swimlaneId, itemId, handleType });
       setLinkDragCurrent({ x, y });
     };
 
@@ -238,8 +238,27 @@ export const GanttChart = () => {
           
           if (toSwimlaneId && toItemId && 
               (linkDragStart.swimlaneId !== toSwimlaneId || linkDragStart.itemId !== toItemId)) {
-            addLink(linkDragStart.swimlaneId, linkDragStart.itemId, toSwimlaneId, toItemId);
-            toast.success("Link created");
+            // Determine link type based on which handle was dragged from and to
+            const toHandleElement = target?.closest('[data-handle-type]');
+            const toHandleType = toHandleElement?.getAttribute('data-handle-type') as 'start' | 'finish' | null;
+            
+            // Default to 'finish' if we didn't drop on a specific handle
+            const finalToHandleType = toHandleType || 'start';
+            
+            // Determine link type
+            let linkType: "FS" | "SS" | "FF" | "SF" = "FS";
+            if (linkDragStart.handleType === 'finish' && finalToHandleType === 'start') {
+              linkType = "FS";
+            } else if (linkDragStart.handleType === 'start' && finalToHandleType === 'start') {
+              linkType = "SS";
+            } else if (linkDragStart.handleType === 'finish' && finalToHandleType === 'finish') {
+              linkType = "FF";
+            } else if (linkDragStart.handleType === 'start' && finalToHandleType === 'finish') {
+              linkType = "SF";
+            }
+            
+            addLink(linkDragStart.swimlaneId, linkDragStart.itemId, toSwimlaneId, toItemId, linkType);
+            toast.success(`${linkType} link created`);
           }
         }
         
@@ -407,9 +426,11 @@ export const GanttChart = () => {
             setSelectedLink(linkId === "" ? null : linkId);
             if (linkId) setSelected(null);
           }}
-          onLinkColorChange={(linkId, color) => {
-            updateLink(linkId, { color });
-            toast.success("Link color updated");
+          onLinkDoubleClick={(linkId) => {
+            const link = data.links.find(l => l.id === linkId);
+            if (link) {
+              setLinkEditDialog({ linkId });
+            }
           }}
         />
 
@@ -499,6 +520,33 @@ export const GanttChart = () => {
           onSave={handleEditSave}
         />
       )}
+
+      {linkEditDialog && (() => {
+        const link = data.links.find(l => l.id === linkEditDialog.linkId);
+        if (!link) return null;
+        
+        return (
+          <LinkEditDialog
+            open={true}
+            onClose={() => setLinkEditDialog(null)}
+            initialType={link.type}
+            initialLabel={link.label || ""}
+            initialLag={link.lag || 0}
+            initialColor={link.color || "#00bcd4"}
+            onSave={(type: LinkType, label: string, lag: number, color: string) => {
+              updateLink(linkEditDialog.linkId, { type, label, lag, color });
+              toast.success("Link updated");
+              setLinkEditDialog(null);
+            }}
+            onDelete={() => {
+              deleteLink(linkEditDialog.linkId);
+              toast.success("Link deleted");
+              setLinkEditDialog(null);
+              setSelectedLink(null);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 };

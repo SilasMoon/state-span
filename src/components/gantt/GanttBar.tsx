@@ -169,17 +169,37 @@ export const GanttBar = ({
               onMouseDown={(e) => handleResizeStart(e, 'end')}
             />
 
-            {/* Link creation handle */}
+            {/* Link creation handles */}
+            {/* Left handle (start) */}
             <div
-              className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-primary border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-20"
+              className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-blue-500 border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-20 hover:scale-125"
+              data-handle-type="start"
+              data-swimlane-id={swimlaneId}
+              data-item-id={item.id}
               onMouseDown={(e) => {
                 e.stopPropagation();
                 const event = e.nativeEvent;
                 window.dispatchEvent(new CustomEvent('startLinkDrag', {
-                  detail: { swimlaneId, itemId: item.id, x: event.clientX, y: event.clientY }
+                  detail: { swimlaneId, itemId: item.id, handleType: 'start', x: event.clientX, y: event.clientY }
                 }));
               }}
-              title="Drag to create link"
+              title="Drag from start"
+            />
+            
+            {/* Right handle (finish) */}
+            <div
+              className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-green-500 border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-20 hover:scale-125"
+              data-handle-type="finish"
+              data-swimlane-id={swimlaneId}
+              data-item-id={item.id}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                const event = e.nativeEvent;
+                window.dispatchEvent(new CustomEvent('startLinkDrag', {
+                  detail: { swimlaneId, itemId: item.id, handleType: 'finish', x: event.clientX, y: event.clientY }
+                }));
+              }}
+              title="Drag from finish"
             />
           </div>
         </TooltipTrigger>

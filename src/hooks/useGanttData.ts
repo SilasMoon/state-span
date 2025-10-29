@@ -275,7 +275,7 @@ export const useGanttData = () => {
     });
   };
 
-  const addLink = (fromSwimlaneId: string, fromId: string, toSwimlaneId: string, toId: string) => {
+  const addLink = (fromSwimlaneId: string, fromId: string, toSwimlaneId: string, toId: string, type: "FS" | "SS" | "FF" | "SF" = "FS") => {
     const id = generateId();
     
     // Get source activity/state color
@@ -295,7 +295,10 @@ export const useGanttData = () => {
       toId,
       fromSwimlaneId,
       toSwimlaneId,
+      type,
       color,
+      label: "",
+      lag: 0,
     };
 
     setData((prev) => ({

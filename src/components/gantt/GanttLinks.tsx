@@ -7,12 +7,11 @@ interface GanttLinksProps {
   columnWidth: number;
   selectedLink: string | null;
   onLinkSelect: (linkId: string) => void;
-  onLinkColorChange: (linkId: string, color: string) => void;
+  onLinkDoubleClick: (linkId: string) => void;
 }
 
-export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect, onLinkColorChange }: GanttLinksProps) => {
-  console.log('GanttLinks render:', { linksCount: data.links.length, links: data.links });
-  const getItemPosition = (swimlaneId: string, itemId: string) => {
+export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect, onLinkDoubleClick }: GanttLinksProps) => {
+  const getItemPosition = (swimlaneId: string, itemId: string, link?: { type: string; fromId: string; toId: string }) => {
     const swimlane = data.swimlanes[swimlaneId];
     if (!swimlane) return null;
 
@@ -74,119 +73,75 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
     const x = (item.start / zoom) * columnWidth + swimlaneLabelWidth;
     const width = (item.duration / zoom) * columnWidth;
 
+    // Determine which end to use based on link type
+    let x1 = x + width; // Default: finish (right side)
+    let x2 = x; // Default: start (left side)
+    
+    if (link) {
+      // For 'from' position
+      if (itemId === link.fromId) {
+        if (link.type === 'SS' || link.type === 'SF') {
+          x1 = x; // Start position
+        } else {
+          x1 = x + width; // Finish position
+        }
+      }
+      // For 'to' position
+      if (itemId === link.toId) {
+        if (link.type === 'FS' || link.type === 'SS') {
+          x2 = x; // Start position
+        } else {
+          x2 = x + width; // Finish position
+        }
+      }
+    }
+
     return {
-      x1: x + width, // End of bar
+      x1,
       y1: y + 24, // Middle of row (row height is 48, so 24 is middle)
-      x2: x, // Start of bar
+      x2,
       y2: y + 24,
     };
   };
 
 
-  const getAllItemPositions = () => {
-    const positions: Array<{ x: number; y: number; width: number; height: number }> = [];
-    Object.entries(data.swimlanes).forEach(([swimlaneId, swimlane]) => {
-      const items = [...(swimlane.activities || []), ...(swimlane.states || [])];
-      items.forEach((item) => {
-        const pos = getItemPosition(swimlaneId, item.id);
-        if (pos) {
-          positions.push({
-            x: pos.x2,
-            y: pos.y2 - 20,
-            width: pos.x1 - pos.x2,
-            height: 40,
-          });
-        }
-      });
-    });
-    return positions;
-  };
-
-  const doesPathOverlap = (x1: number, y1: number, x2: number, y2: number, activities: Array<{ x: number; y: number; width: number; height: number }>) => {
-    const lineMinX = Math.min(x1, x2);
-    const lineMaxX = Math.max(x1, x2);
-    const lineMinY = Math.min(y1, y2);
-    const lineMaxY = Math.max(y1, y2);
+  const createRoutedPath = (from: { x1: number; y1: number }, 
+                            to: { x2: number; y2: number }): { path: string; isVertical: boolean } => {
+    const startX = from.x1;
+    const startY = from.y1;
+    const endX = to.x2;
+    const endY = to.y2;
     
-    for (const act of activities) {
-      if (lineMaxX >= act.x && lineMinX <= act.x + act.width &&
-          lineMaxY >= act.y && lineMinY <= act.y + act.height) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const createRoutedPath = (from: { x1: number; y1: number; x2: number; y2: number }, 
-                            to: { x1: number; y1: number; x2: number; y2: number }): { path: string; isVertical: boolean } => {
-    // Vertical alignment - straight line (0 bends) - arrow should be vertical
-    if (Math.abs(from.x1 - to.x2) < 5) {
-      return { path: `M ${from.x1} ${from.y1} L ${to.x2} ${to.y2}`, isVertical: true };
+    // Vertical alignment - straight line
+    if (Math.abs(startX - endX) < 5) {
+      return { path: `M ${startX} ${startY} L ${endX} ${endY}`, isVertical: true };
     }
     
-    // Horizontal alignment - straight line (0 bends) - arrow should be horizontal
-    if (Math.abs(from.y1 - to.y2) < 5) {
-      return { path: `M ${from.x1} ${from.y1} L ${to.x2} ${to.y2}`, isVertical: false };
+    // Horizontal alignment - straight line
+    if (Math.abs(startY - endY) < 5) {
+      return { path: `M ${startX} ${startY} L ${endX} ${endY}`, isVertical: false };
     }
     
-    const allActivities = getAllItemPositions();
-    
-    // Try 2-segment paths (1 bend)
-    const twoSegmentPaths = [
-      // Horizontal then vertical - arrow ends vertical
-      { 
-        path: `M ${from.x1} ${from.y1} L ${to.x2} ${from.y1} L ${to.x2} ${to.y2}`, 
-        segments: [[from.x1, from.y1, to.x2, from.y1], [to.x2, from.y1, to.x2, to.y2]],
-        isVertical: true
-      },
-      // Vertical then horizontal - arrow ends horizontal
-      { 
-        path: `M ${from.x1} ${from.y1} L ${from.x1} ${to.y2} L ${to.x2} ${to.y2}`, 
-        segments: [[from.x1, from.y1, from.x1, to.y2], [from.x1, to.y2, to.x2, to.y2]],
-        isVertical: false
-      },
-    ];
-    
-    for (const { path, segments, isVertical } of twoSegmentPaths) {
-      let hasOverlap = false;
-      for (const [x1, y1, x2, y2] of segments) {
-        if (doesPathOverlap(x1, y1, x2, y2, allActivities)) {
-          hasOverlap = true;
-          break;
-        }
-      }
-      if (!hasOverlap) return { path, isVertical };
+    // Right-angle path: horizontal then vertical (arrow ends vertical)
+    if (startX < endX) {
+      return { 
+        path: `M ${startX} ${startY} L ${endX} ${startY} L ${endX} ${endY}`, 
+        isVertical: true 
+      };
     }
     
-    // Try 3-segment path with midpoint (2 bends) - arrow ends horizontal
-    const midX = (from.x1 + to.x2) / 2;
-    const threeSegmentPath = {
-      path: `M ${from.x1} ${from.y1} L ${midX} ${from.y1} L ${midX} ${to.y2} L ${to.x2} ${to.y2}`,
-      segments: [[from.x1, from.y1, midX, from.y1], [midX, from.y1, midX, to.y2], [midX, to.y2, to.x2, to.y2]],
-      isVertical: false
-    };
-    
-    let hasOverlap = false;
-    for (const [x1, y1, x2, y2] of threeSegmentPath.segments) {
-      if (doesPathOverlap(x1, y1, x2, y2, allActivities)) {
-        hasOverlap = true;
-        break;
-      }
-    }
-    if (!hasOverlap) return { path: threeSegmentPath.path, isVertical: threeSegmentPath.isVertical };
-    
-    // Route around obstacles - arrow ends horizontal
-    const VERTICAL_OFFSET = 60;
-    const routeY = from.y1 > to.y2 ? Math.min(from.y1, to.y2) - VERTICAL_OFFSET : Math.max(from.y1, to.y2) + VERTICAL_OFFSET;
+    // Going backward: go up/down first, then horizontal (arrow ends horizontal)
+    const midX = startX + 20;
+    const clearanceY = startY < endY ? Math.max(startY, endY) + 40 : Math.min(startY, endY) - 40;
     return { 
-      path: `M ${from.x1} ${from.y1} L ${from.x1 + 20} ${from.y1} L ${from.x1 + 20} ${routeY} L ${to.x2 - 20} ${routeY} L ${to.x2 - 20} ${to.y2} L ${to.x2} ${to.y2}`,
+      path: `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${clearanceY} L ${endX - 20} ${clearanceY} L ${endX - 20} ${endY} L ${endX} ${endY}`,
       isVertical: true
     };
   };
 
   const renderLink = (link: GanttLink) => {
-    const from = getItemPosition(link.fromSwimlaneId, link.fromId);
-    const to = getItemPosition(link.toSwimlaneId, link.toId);
+    const from = getItemPosition(link.fromSwimlaneId, link.fromId, link);
+    const to = getItemPosition(link.toSwimlaneId, link.toId, link);
 
     if (!from || !to) {
       console.warn('Link positions not found:', { link, from, to });
@@ -195,12 +150,14 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
 
     const { path, isVertical } = createRoutedPath(from, to);
 
-    console.log('Rendering link:', { link, from, to, path, isVertical });
-
     const isSelected = selectedLink === link.id;
     const linkColor = link.color || "#00bcd4";
     const markerId = isVertical ? `arrowhead-v-${link.id}` : `arrowhead-h-${link.id}`;
     const selectedMarkerId = isVertical ? "arrowhead-selected-v" : "arrowhead-selected-h";
+
+    // Calculate label position (midpoint of path)
+    const labelX = (from.x1 + to.x2) / 2;
+    const labelY = (from.y1 + to.y2) / 2;
 
     return (
       <g key={link.id}>
@@ -219,6 +176,10 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
             } else {
               onLinkSelect(link.id);
             }
+          }}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            onLinkDoubleClick(link.id);
           }}
         />
         {/* Visible path */}
@@ -247,26 +208,36 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
             />
           </marker>
         </defs>
-        {/* Color picker when selected */}
-        {isSelected && (
+        {/* Link label */}
+        {link.label && (
           <foreignObject
-            x={from.x1 + (to.x2 - from.x1) / 2 - 20}
-            y={Math.min(from.y1, to.y2) - 35}
-            width="40"
-            height="30"
+            x={labelX - 40}
+            y={labelY - 12}
+            width="80"
+            height="24"
+            className="pointer-events-none"
           >
-            <input
-              type="color"
-              value={linkColor}
-              onChange={(e) => {
-                e.stopPropagation();
-                onLinkColorChange(link.id, e.target.value);
-              }}
-              className="w-full h-full cursor-pointer border-2 border-background rounded"
-              style={{ pointerEvents: 'all' }}
-            />
+            <div className="flex items-center justify-center">
+              <span className="text-xs font-medium px-2 py-1 bg-background border border-border rounded shadow-sm">
+                {link.label}
+              </span>
+            </div>
           </foreignObject>
         )}
+        {/* Link type badge */}
+        <foreignObject
+          x={labelX - 15}
+          y={labelY + (link.label ? 12 : -12)}
+          width="30"
+          height="20"
+          className="pointer-events-none"
+        >
+          <div className="flex items-center justify-center">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 bg-primary text-primary-foreground rounded">
+              {link.type}
+            </span>
+          </div>
+        </foreignObject>
       </g>
     );
   };
