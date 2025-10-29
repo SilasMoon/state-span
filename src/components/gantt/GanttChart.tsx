@@ -25,6 +25,7 @@ export const GanttChart = () => {
     moveActivity,
     moveState,
     addLink,
+    deleteLink,
     updateSwimlane,
     clearAll,
     exportData,
@@ -55,6 +56,8 @@ export const GanttChart = () => {
     x: number;
     y: number;
   } | null>(null);
+
+  const [selectedLink, setSelectedLink] = useState<string | null>(null);
 
   // Calculate total hours dynamically based on content
   const calculateTotalHours = () => {
@@ -286,26 +289,32 @@ export const GanttChart = () => {
   // Delete key handler
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Delete' && selected) {
-        if (selected.type === 'swimlane') {
-          deleteSwimlane(selected.swimlaneId);
-          setSelected(null);
-          toast.success("Swimlane deleted");
-        } else if (selected.type === 'activity' && selected.itemId) {
-          deleteActivity(selected.swimlaneId, selected.itemId);
-          setSelected(null);
-          toast.success("Activity deleted");
-        } else if (selected.type === 'state' && selected.itemId) {
-          deleteState(selected.swimlaneId, selected.itemId);
-          setSelected(null);
-          toast.success("State deleted");
+      if (e.key === 'Delete') {
+        if (selectedLink) {
+          deleteLink(selectedLink);
+          setSelectedLink(null);
+          toast.success("Link deleted");
+        } else if (selected) {
+          if (selected.type === 'swimlane') {
+            deleteSwimlane(selected.swimlaneId);
+            setSelected(null);
+            toast.success("Swimlane deleted");
+          } else if (selected.type === 'activity' && selected.itemId) {
+            deleteActivity(selected.swimlaneId, selected.itemId);
+            setSelected(null);
+            toast.success("Activity deleted");
+          } else if (selected.type === 'state' && selected.itemId) {
+            deleteState(selected.swimlaneId, selected.itemId);
+            setSelected(null);
+            toast.success("State deleted");
+          }
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selected, deleteSwimlane, deleteActivity, deleteState]);
+  }, [selected, selectedLink, deleteSwimlane, deleteActivity, deleteState, deleteLink]);
 
   const renderSwimlanes = (ids: string[], level: number = 0): JSX.Element[] => {
     const elements: JSX.Element[] = [];
@@ -390,6 +399,11 @@ export const GanttChart = () => {
           data={data}
           zoom={zoom}
           columnWidth={zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80}
+          selectedLink={selectedLink}
+          onLinkSelect={(linkId) => {
+            setSelectedLink(linkId);
+            setSelected(null);
+          }}
         />
 
         {/* Link creation visual feedback */}
@@ -404,20 +418,41 @@ export const GanttChart = () => {
           
           const startX = rect.right + scrollLeft;
           const startY = rect.top + rect.height / 2 + scrollTop;
+          const endX = linkDragCurrent.x + scrollLeft;
+          const endY = linkDragCurrent.y + scrollTop;
+          const midX = (startX + endX) / 2;
+          
+          // Create elbowed path
+          const path = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
           
           return (
             <svg
               className="absolute inset-0 pointer-events-none"
               style={{ zIndex: 100 }}
             >
-              <line
-                x1={startX}
-                y1={startY}
-                x2={linkDragCurrent.x + scrollLeft}
-                y2={linkDragCurrent.y + scrollTop}
+              <defs>
+                <marker
+                  id="arrowhead-temp"
+                  markerWidth="10"
+                  markerHeight="10"
+                  refX="9"
+                  refY="3"
+                  orient="auto"
+                >
+                  <polygon
+                    points="0 0, 10 3, 0 6"
+                    fill="hsl(var(--primary))"
+                  />
+                </marker>
+              </defs>
+              <path
+                d={path}
                 stroke="hsl(var(--primary))"
                 strokeWidth="2"
+                fill="none"
                 strokeDasharray="5,5"
+                markerEnd="url(#arrowhead-temp)"
+                opacity="0.7"
               />
             </svg>
           );

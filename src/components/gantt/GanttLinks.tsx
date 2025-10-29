@@ -5,9 +5,11 @@ interface GanttLinksProps {
   data: GanttData;
   zoom: ZoomLevel;
   columnWidth: number;
+  selectedLink: string | null;
+  onLinkSelect: (linkId: string) => void;
 }
 
-export const GanttLinks = ({ data, zoom, columnWidth }: GanttLinksProps) => {
+export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect }: GanttLinksProps) => {
   console.log('GanttLinks render:', { linksCount: data.links.length, links: data.links });
   const getItemPosition = (swimlaneId: string, itemId: string) => {
     const swimlane = data.swimlanes[swimlaneId];
@@ -88,21 +90,38 @@ export const GanttLinks = ({ data, zoom, columnWidth }: GanttLinksProps) => {
       return null;
     }
 
-    // Create a curved path from end of first bar to start of second bar
+    // Create an elbowed path from end of first bar to start of second bar
     const midX = (from.x1 + to.x2) / 2;
-    const path = `M ${from.x1} ${from.y1} C ${midX} ${from.y1}, ${midX} ${to.y2}, ${to.x2} ${to.y2}`;
+    const path = `M ${from.x1} ${from.y1} L ${midX} ${from.y1} L ${midX} ${to.y2} L ${to.x2} ${to.y2}`;
 
     console.log('Rendering link:', { link, from, to, path });
 
+    const isSelected = selectedLink === link.id;
+
     return (
       <g key={link.id}>
+        {/* Invisible wider path for easier clicking */}
         <path
           d={path}
-          stroke="hsl(var(--primary))"
-          strokeWidth="2"
+          stroke="transparent"
+          strokeWidth="12"
+          fill="none"
+          className="cursor-pointer"
+          style={{ pointerEvents: 'all' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onLinkSelect(link.id);
+          }}
+        />
+        {/* Visible path */}
+        <path
+          d={path}
+          stroke={isSelected ? "hsl(var(--destructive))" : "hsl(var(--primary))"}
+          strokeWidth={isSelected ? "3" : "2"}
           fill="none"
           markerEnd="url(#arrowhead)"
-          opacity="0.7"
+          opacity={isSelected ? "1" : "0.7"}
+          className="pointer-events-none"
         />
       </g>
     );
