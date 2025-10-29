@@ -84,11 +84,11 @@ export const GanttRow = ({
 
   return (
     <div
-      className={`flex group transition-colors border-b border-gantt-grid`}
+      className={`flex transition-colors border-b border-gantt-grid`}
       data-swimlane-id={swimlane.id}
     >
       <div
-        className={`sticky left-0 z-10 bg-card border-r border-border flex items-center gap-2 px-3 py-2 ${
+        className={`sticky left-0 z-10 bg-card border-r border-border flex items-center gap-2 px-3 py-2 group ${
           isRowSelected ? 'bg-primary/10 ring-2 ring-primary ring-inset' : ''
         }`}
         style={{ width: "280px", minWidth: "280px", paddingLeft: `${level * 20 + 12}px` }}
