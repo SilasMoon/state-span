@@ -67,15 +67,18 @@ export const GanttBar = ({
       const deltaX = e.clientX - dragStart.x;
       const hoursDelta = Math.round((deltaX / columnWidth) * zoom);
       const newStart = snapToGrid(Math.max(0, item.start + hoursDelta));
-      setTempStart(newStart);
       
       // Detect swimlane change by finding element under cursor
       const swimlaneElement = document.elementFromPoint(e.clientX, e.clientY);
       const rowElement = swimlaneElement?.closest('[data-swimlane-id]');
       if (rowElement) {
         const newSwimlaneId = rowElement.getAttribute('data-swimlane-id');
-        if (newSwimlaneId && newSwimlaneId !== targetSwimlaneId) {
+        if (newSwimlaneId) {
           setTargetSwimlaneId(newSwimlaneId);
+          // Check overlap in target swimlane
+          if (!checkOverlap(newSwimlaneId, item.id, newStart, tempDuration)) {
+            setTempStart(newStart);
+          }
         }
       }
     } else if (isDragging === 'start') {
@@ -93,7 +96,7 @@ export const GanttBar = ({
       const hoursDelta = Math.round((delta / columnWidth) * zoom);
       const newDuration = snapToGrid(Math.max(zoom, item.duration + hoursDelta));
       
-      if (!checkOverlap(swimlaneId, item.id, item.start, newDuration)) {
+      if (!checkOverlap(swimlaneId, item.id, tempStart, newDuration)) {
         setTempDuration(newDuration);
       }
     }

@@ -208,6 +208,13 @@ export const GanttChart = () => {
 
   // Link creation event listeners
   React.useEffect(() => {
+    const handleStartLink = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { swimlaneId, itemId, x, y } = customEvent.detail;
+      setLinkDragStart({ swimlaneId, itemId });
+      setLinkDragCurrent({ x, y });
+    };
+
     const handleMouseMove = (e: MouseEvent) => {
       if (linkDragStart) {
         setLinkDragCurrent({ x: e.clientX, y: e.clientY });
@@ -235,14 +242,19 @@ export const GanttChart = () => {
       }
     };
 
+    window.addEventListener('startLinkDrag', handleStartLink);
+    
     if (linkDragStart) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       return () => {
+        window.removeEventListener('startLinkDrag', handleStartLink);
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
+    
+    return () => window.removeEventListener('startLinkDrag', handleStartLink);
   }, [linkDragStart, addLink]);
 
   const handleActivityResize = (swimlaneId: string, activityId: string, newStart: number, newDuration: number) => {
@@ -254,10 +266,20 @@ export const GanttChart = () => {
   };
 
   const handleActivityMove = (fromSwimlaneId: string, activityId: string, toSwimlaneId: string, newStart: number) => {
+    const toSwimlane = data.swimlanes[toSwimlaneId];
+    if (toSwimlane?.type !== 'activity') {
+      toast.error("Activities can only be moved to activity swimlanes");
+      return;
+    }
     moveActivity(fromSwimlaneId, toSwimlaneId, activityId, newStart);
   };
 
   const handleStateMove = (fromSwimlaneId: string, stateId: string, toSwimlaneId: string, newStart: number) => {
+    const toSwimlane = data.swimlanes[toSwimlaneId];
+    if (toSwimlane?.type !== 'state') {
+      toast.error("States can only be moved to state swimlanes");
+      return;
+    }
     moveState(fromSwimlaneId, toSwimlaneId, stateId, newStart);
   };
 
@@ -368,26 +390,38 @@ export const GanttChart = () => {
           data={data}
           zoom={zoom}
           columnWidth={zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80}
-          onStartLinkDrag={startLinkDrag}
         />
 
         {/* Link creation visual feedback */}
-        {linkDragStart && linkDragCurrent && (
-          <svg
-            className="absolute inset-0 pointer-events-none"
-            style={{ zIndex: 100 }}
-          >
-            <line
-              x1={linkDragCurrent.x}
-              y1={linkDragCurrent.y}
-              x2={linkDragCurrent.x}
-              y2={linkDragCurrent.y}
-              stroke="hsl(var(--primary))"
-              strokeWidth="2"
-              strokeDasharray="5,5"
-            />
-          </svg>
-        )}
+        {linkDragStart && linkDragCurrent && (() => {
+          const startElement = document.querySelector(`[data-item-id="${linkDragStart.itemId}"][data-swimlane-id="${linkDragStart.swimlaneId}"]`);
+          if (!startElement) return null;
+          
+          const rect = startElement.getBoundingClientRect();
+          const scrollContainer = document.querySelector('.overflow-auto');
+          const scrollLeft = scrollContainer?.scrollLeft || 0;
+          const scrollTop = scrollContainer?.scrollTop || 0;
+          
+          const startX = rect.right + scrollLeft;
+          const startY = rect.top + rect.height / 2 + scrollTop;
+          
+          return (
+            <svg
+              className="absolute inset-0 pointer-events-none"
+              style={{ zIndex: 100 }}
+            >
+              <line
+                x1={startX}
+                y1={startY}
+                x2={linkDragCurrent.x + scrollLeft}
+                y2={linkDragCurrent.y + scrollTop}
+                stroke="hsl(var(--primary))"
+                strokeWidth="2"
+                strokeDasharray="5,5"
+              />
+            </svg>
+          );
+        })()}
       </div>
 
       {editDialog && (

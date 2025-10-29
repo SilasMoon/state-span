@@ -5,22 +5,9 @@ interface GanttLinksProps {
   data: GanttData;
   zoom: ZoomLevel;
   columnWidth: number;
-  onStartLinkDrag: (swimlaneId: string, itemId: string, e: MouseEvent) => void;
 }
 
-export const GanttLinks = ({ data, zoom, columnWidth, onStartLinkDrag }: GanttLinksProps) => {
-  // Listen for link drag start events
-  React.useEffect(() => {
-    const handleStartLinkDrag = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      const { swimlaneId, itemId, x, y } = customEvent.detail;
-      const mouseEvent = new MouseEvent('mousedown', { clientX: x, clientY: y });
-      onStartLinkDrag(swimlaneId, itemId, mouseEvent);
-    };
-
-    window.addEventListener('startLinkDrag', handleStartLinkDrag);
-    return () => window.removeEventListener('startLinkDrag', handleStartLinkDrag);
-  }, [onStartLinkDrag]);
+export const GanttLinks = ({ data, zoom, columnWidth }: GanttLinksProps) => {
   const getItemPosition = (swimlaneId: string, itemId: string) => {
     const swimlane = data.swimlanes[swimlaneId];
     if (!swimlane) return null;

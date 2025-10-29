@@ -84,15 +84,14 @@ export const GanttRow = ({
 
   return (
     <div
-      className={`flex group hover:bg-gantt-row-hover/50 transition-colors border-b border-gantt-grid ${
-        isRowSelected ? 'bg-primary/10' : ''
-      }`}
+      className={`flex group hover:bg-gantt-row-hover/50 transition-colors border-b border-gantt-grid`}
       data-swimlane-id={swimlane.id}
     >
       <div
-        className="sticky left-0 z-10 bg-card border-r border-border flex items-center gap-2 px-3 py-2 cursor-pointer"
+        className={`sticky left-0 z-10 bg-card border-r border-border flex items-center gap-2 px-3 py-2 ${
+          isRowSelected ? 'bg-primary/10 ring-2 ring-primary ring-inset' : ''
+        }`}
         style={{ width: "280px", minWidth: "280px", paddingLeft: `${level * 20 + 12}px` }}
-        onClick={() => onSelect('swimlane', swimlane.id)}
       >
         {hasChildren && (
           <Button
@@ -114,7 +113,8 @@ export const GanttRow = ({
           type="text"
           value={swimlane.name}
           onChange={(e) => onSwimlaneNameChange(swimlane.id, e.target.value)}
-          className="flex-1 bg-transparent border-none outline-none text-sm text-foreground"
+          className="flex-1 bg-transparent border-none outline-none text-sm text-foreground cursor-pointer"
+          onClick={() => onSelect('swimlane', swimlane.id)}
         />
         
         <span
