@@ -105,71 +105,34 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
   };
 
 
-  const getAllItemPositions = (excludeFromId?: string, excludeToId?: string) => {
-    const positions: Array<{ x: number; y: number; width: number; height: number; itemId: string }> = [];
-    const padding = 5; // Add padding around obstacles
+  // Get Y-ranges of all activities (excluding source/target)
+  const getActivityYRanges = (excludeFromId?: string, excludeToId?: string) => {
+    const ranges: Array<{ minY: number; maxY: number; activityId: string }> = [];
+    const margin = 15; // Vertical margin around activities
     
     Object.entries(data.swimlanes).forEach(([swimlaneId, swimlane]) => {
       const items = [...(swimlane.activities || []), ...(swimlane.states || [])];
       items.forEach((item) => {
-        // Exclude source and destination activities from obstacles
         if (item.id === excludeFromId || item.id === excludeToId) {
           return;
         }
         
         const pos = getItemPosition(swimlaneId, item.id);
         if (pos) {
-          const minX = Math.min(pos.x1, pos.x2);
-          const maxX = Math.max(pos.x1, pos.x2);
-          positions.push({
-            x: minX - padding,
-            y: pos.y2 - 15 - padding,
-            width: (maxX - minX) + (padding * 2),
-            height: 30 + (padding * 2),
-            itemId: item.id,
+          ranges.push({
+            minY: pos.y1 - margin,
+            maxY: pos.y1 + margin,
+            activityId: item.id,
           });
         }
       });
     });
-    return positions;
+    return ranges;
   };
 
-  const doesSegmentOverlap = (x1: number, y1: number, x2: number, y2: number, obstacles: Array<{ x: number; y: number; width: number; height: number }>) => {
-    const lineMinX = Math.min(x1, x2);
-    const lineMaxX = Math.max(x1, x2);
-    const lineMinY = Math.min(y1, y2);
-    const lineMaxY = Math.max(y1, y2);
-    
-    for (const obs of obstacles) {
-      if (lineMaxX >= obs.x && lineMinX <= obs.x + obs.width &&
-          lineMaxY >= obs.y && lineMinY <= obs.y + obs.height) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const findOptimalMidpoint = (startX: number, startY: number, endX: number, endY: number, obstacles: Array<{ x: number; y: number; width: number; height: number }>) => {
-    const isForward = startX < endX;
-    const minX = Math.min(startX, endX);
-    const maxX = Math.max(startX, endX);
-    
-    if (isForward) {
-      // For forward links, find the first gap after the start
-      for (let testX = startX + 20; testX < endX; testX += 10) {
-        const hasObstacle = obstacles.some(obs => 
-          testX >= obs.x && testX <= obs.x + obs.width &&
-          ((startY >= obs.y && startY <= obs.y + obs.height) || 
-           (endY >= obs.y && endY <= obs.y + obs.height))
-        );
-        if (!hasObstacle) {
-          return testX;
-        }
-      }
-    }
-    
-    // Default to midpoint
-    return (startX + endX) / 2;
+  // Check if a horizontal line at given Y crosses any activity's Y-range
+  const doesHorizontalLineCrossActivity = (y: number, ranges: Array<{ minY: number; maxY: number }>) => {
+    return ranges.some(range => y >= range.minY && y <= range.maxY);
   };
 
   const createRoutedPath = (from: { x1: number; y1: number }, 
@@ -181,101 +144,53 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
     const endX = to.x2;
     const endY = to.y2;
     
-    const obstacles = getAllItemPositions(fromId, toId);
+    const activityRanges = getActivityYRanges(fromId, toId);
     
-    // PRIORITY 0: Pure vertical line - only case where arrow is vertical
+    // RULE 1: Pure vertical link (only case for vertical arrow)
     if (Math.abs(startX - endX) < 5) {
       return { path: `M ${startX} ${startY} L ${endX} ${endY}`, isVertical: true };
     }
     
-    // PRIORITY 1: Direct horizontal line (0 bends)
+    // RULE 2: Direct horizontal link
     if (Math.abs(startY - endY) < 5) {
-      const hasOverlap = doesSegmentOverlap(startX, startY, endX, endY, obstacles);
-      if (!hasOverlap) {
+      if (!doesHorizontalLineCrossActivity(startY, activityRanges)) {
         return { path: `M ${startX} ${startY} L ${endX} ${endY}`, isVertical: false };
       }
     }
     
-    // PRIORITY 2: Simple 2-segment paths (1 bend) - direction agnostic
-    // Try H-V (horizontal then vertical)
+    // RULE 3: Two-segment H-V pattern
     const hvPath = `M ${startX} ${startY} L ${endX} ${startY} L ${endX} ${endY}`;
-    const hvSeg1 = doesSegmentOverlap(startX, startY, endX, startY, obstacles);
-    const hvSeg2 = doesSegmentOverlap(endX, startY, endX, endY, obstacles);
-    if (!hvSeg1 && !hvSeg2) {
+    if (!doesHorizontalLineCrossActivity(startY, activityRanges)) {
       return { path: hvPath, isVertical: false };
     }
     
-    // Try V-H (vertical then horizontal)
+    // RULE 4: Two-segment V-H pattern
     const vhPath = `M ${startX} ${startY} L ${startX} ${endY} L ${endX} ${endY}`;
-    const vhSeg1 = doesSegmentOverlap(startX, startY, startX, endY, obstacles);
-    const vhSeg2 = doesSegmentOverlap(startX, endY, endX, endY, obstacles);
-    if (!vhSeg1 && !vhSeg2) {
+    if (!doesHorizontalLineCrossActivity(endY, activityRanges)) {
       return { path: vhPath, isVertical: false };
     }
     
-    // PRIORITY 3: 3-segment paths with optimal midpoint (2 bends)
-    const sameRow = Math.abs(startY - endY) < 5;
+    // RULE 5: Three-segment routing with safe Y coordinate
+    // Find a Y coordinate that doesn't cross any activities
+    let safeY: number;
     
-    if (sameRow || Math.abs(startY - endY) < 100) {
-      // Try H-V-H pattern with optimal midpoint
-      const midX = findOptimalMidpoint(startX, startY, endX, endY, obstacles);
-      const hvhPath = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
-      const hvhSeg1 = doesSegmentOverlap(startX, startY, midX, startY, obstacles);
-      const hvhSeg2 = doesSegmentOverlap(midX, startY, midX, endY, obstacles);
-      const hvhSeg3 = doesSegmentOverlap(midX, endY, endX, endY, obstacles);
-      if (!hvhSeg1 && !hvhSeg2 && !hvhSeg3) {
-        return { path: hvhPath, isVertical: false };
-      }
-    } else {
-      // Try V-H-V pattern for different rows
-      const midY = (startY + endY) / 2;
-      const vhvPath = `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`;
-      const vhvSeg1 = doesSegmentOverlap(startX, startY, startX, midY, obstacles);
-      const vhvSeg2 = doesSegmentOverlap(startX, midY, endX, midY, obstacles);
-      const vhvSeg3 = doesSegmentOverlap(endX, midY, endX, endY, obstacles);
-      if (!vhvSeg1 && !vhvSeg2 && !vhvSeg3) {
-        return { path: vhvPath, isVertical: false };
-      }
-    }
+    // Collect all activity Y positions
+    const activityYs = activityRanges.map(r => (r.minY + r.maxY) / 2);
+    const minActivityY = activityRanges.length > 0 ? Math.min(...activityRanges.map(r => r.minY)) : startY;
+    const maxActivityY = activityRanges.length > 0 ? Math.max(...activityRanges.map(r => r.maxY)) : startY;
     
-    // PRIORITY 4: Smart clearance routing (2 bends max)
-    const midX = findOptimalMidpoint(startX, startY, endX, endY, obstacles);
+    // Try different safe Y options
+    const safeYOptions = [
+      maxActivityY + 30, // Above all activities
+      minActivityY - 30, // Below all activities
+      (startY + endY) / 2, // Midpoint
+    ];
     
-    // First, try simple 3-segment H-V-H path
-    const simpleHVHPath = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
-    const hvhSeg1 = doesSegmentOverlap(startX, startY, midX, startY, obstacles);
-    const hvhSeg2 = doesSegmentOverlap(midX, startY, midX, endY, obstacles);
-    const hvhSeg3 = doesSegmentOverlap(midX, endY, endX, endY, obstacles);
+    // Pick the first safe Y that doesn't cross activities
+    safeY = safeYOptions.find(y => !doesHorizontalLineCrossActivity(y, activityRanges)) || safeYOptions[0];
     
-    if (!hvhSeg1 && !hvhSeg2 && !hvhSeg3) {
-      return { path: simpleHVHPath, isVertical: false };
-    }
-    
-    // If simple path is blocked, calculate clearance routing
-    const minX = Math.min(startX, endX);
-    const maxX = Math.max(startX, endX);
-    const minY = Math.min(startY, endY);
-    const maxY = Math.max(startY, endY);
-    
-    let maxObstacleY = minY;
-    let minObstacleY = maxY;
-    
-    obstacles.forEach(obs => {
-      if (obs.x < maxX && obs.x + obs.width > minX) {
-        maxObstacleY = Math.max(maxObstacleY, obs.y + obs.height);
-        minObstacleY = Math.min(minObstacleY, obs.y);
-      }
-    });
-    
-    // Route above or below based on available space
-    const clearance = 15;
-    const routeAbove = startY < endY;
-    const clearanceY = routeAbove ? maxObstacleY + clearance : minObstacleY - clearance;
-    
-    // Use proper 3-segment clearance path (2 bends)
-    const clearedPath = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${clearanceY} L ${endX} ${clearanceY} L ${endX} ${endY}`;
-    
-    return { path: clearedPath, isVertical: false };
+    const threePath = `M ${startX} ${startY} L ${startX} ${safeY} L ${endX} ${safeY} L ${endX} ${endY}`;
+    return { path: threePath, isVertical: false };
   };
 
   const renderLink = (link: GanttLink) => {
@@ -291,8 +206,8 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
 
     const isSelected = selectedLink === link.id;
     const linkColor = link.color || "#00bcd4";
-    const markerId = isVertical ? `arrowhead-v-${link.id}` : `arrowhead-h-${link.id}`;
-    const selectedMarkerId = isVertical ? "arrowhead-selected-v" : "arrowhead-selected-h";
+    const markerId = `arrowhead-${link.id}`;
+    const selectedMarkerId = "arrowhead-selected";
 
     // Calculate label position (midpoint of path)
     const labelX = (from.x1 + to.x2) / 2;
@@ -337,9 +252,9 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
             id={markerId}
             markerWidth="10"
             markerHeight="10"
-            refX={isVertical ? "3" : "9"}
+            refX="9"
             refY="3"
-            orient={isVertical ? "90" : "auto"}
+            orient="auto"
           >
             <polygon
               points="0 0, 10 3, 0 6"
@@ -363,20 +278,22 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
             </div>
           </foreignObject>
         )}
-        {/* Link type badge */}
-        <foreignObject
-          x={labelX - 15}
-          y={labelY + (link.label ? 12 : -12)}
-          width="30"
-          height="20"
-          className="pointer-events-none"
-        >
-          <div className="flex items-center justify-center">
-            <span className="text-[10px] font-bold px-1.5 py-0.5 bg-primary text-primary-foreground rounded">
-              {link.type}
-            </span>
-          </div>
-        </foreignObject>
+        {/* Link type badge (hide FS and SF) */}
+        {link.type !== 'FS' && link.type !== 'SF' && (
+          <foreignObject
+            x={labelX - 15}
+            y={labelY + (link.label ? 12 : -12)}
+            width="30"
+            height="20"
+            className="pointer-events-none"
+          >
+            <div className="flex items-center justify-center">
+              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-primary text-primary-foreground rounded">
+                {link.type}
+              </span>
+            </div>
+          </foreignObject>
+        )}
       </g>
     );
   };
@@ -412,28 +329,14 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
       }}
     >
       <defs>
-        {/* Horizontal arrowheads */}
+        {/* Selected arrowhead */}
         <marker
-          id="arrowhead-selected-h"
+          id="arrowhead-selected"
           markerWidth="10"
           markerHeight="10"
           refX="9"
           refY="3"
           orient="auto"
-        >
-          <polygon
-            points="0 0, 10 3, 0 6"
-            fill="hsl(var(--destructive))"
-          />
-        </marker>
-        {/* Vertical arrowheads */}
-        <marker
-          id="arrowhead-selected-v"
-          markerWidth="10"
-          markerHeight="10"
-          refX="3"
-          refY="3"
-          orient="90"
         >
           <polygon
             points="0 0, 10 3, 0 6"
