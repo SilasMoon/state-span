@@ -33,6 +33,14 @@ export const GanttBar = ({
   const [tempDuration, setTempDuration] = useState(item.duration);
   const [targetSwimlaneId, setTargetSwimlaneId] = useState(swimlaneId);
 
+  // Sync local state with props when item changes (but not during drag)
+  React.useEffect(() => {
+    if (!isDragging) {
+      setTempStart(item.start);
+      setTempDuration(item.duration);
+    }
+  }, [item.start, item.duration, isDragging]);
+
   const left = (tempStart / zoom) * columnWidth;
   const width = (tempDuration / zoom) * columnWidth;
 
