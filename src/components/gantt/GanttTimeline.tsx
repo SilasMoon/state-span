@@ -11,10 +11,15 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
 
   const renderTimeLabels = () => {
     const labels = [];
+    let lastDay = -1;
+    
     for (let i = 0; i < columns; i++) {
       const hour = i * zoom;
       const day = Math.floor(hour / 24);
       const hourInDay = hour % 24;
+
+      const showDay = day !== lastDay;
+      lastDay = day;
 
       labels.push(
         <div
@@ -22,7 +27,8 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
           className="flex flex-col items-center justify-center border-r border-gantt-grid text-xs"
           style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
         >
-          <div className="text-gantt-text font-semibold">D{day}</div>
+          {showDay && <div className="text-gantt-text font-semibold">D{day}</div>}
+          {!showDay && <div className="h-[14px]" />}
           <div className="text-gantt-text-muted">{hourInDay}h</div>
         </div>
       );

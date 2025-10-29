@@ -25,6 +25,8 @@ interface GanttRowProps {
   onActivityDelete: (swimlaneId: string, activityId: string) => void;
   onStateDelete: (swimlaneId: string, stateId: string) => void;
   onSwimlaneNameChange: (id: string, name: string) => void;
+  onActivityResize: (swimlaneId: string, activityId: string, newStart: number, newDuration: number) => void;
+  onStateResize: (swimlaneId: string, stateId: string, newStart: number, newDuration: number) => void;
 }
 
 export const GanttRow = ({
@@ -43,6 +45,8 @@ export const GanttRow = ({
   onActivityDelete,
   onStateDelete,
   onSwimlaneNameChange,
+  onActivityResize,
+  onStateResize,
 }: GanttRowProps) => {
   const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
   const columns = Math.ceil(totalHours / zoom);
@@ -153,6 +157,7 @@ export const GanttRow = ({
                 onDoubleClick={() => onActivityDoubleClick(swimlane.id, activity.id)}
                 onStartLinking={() => onStartLinking(swimlane.id, activity.id)}
                 onDelete={() => onActivityDelete(swimlane.id, activity.id)}
+                onResize={(newStart, newDuration) => onActivityResize(swimlane.id, activity.id, newStart, newDuration)}
               />
             ))}
           {swimlane.type === "state" &&
@@ -166,6 +171,7 @@ export const GanttRow = ({
                 onDoubleClick={() => onStateDoubleClick(swimlane.id, state.id)}
                 onStartLinking={() => onStartLinking(swimlane.id, state.id)}
                 onDelete={() => onStateDelete(swimlane.id, state.id)}
+                onResize={(newStart, newDuration) => onStateResize(swimlane.id, state.id, newStart, newDuration)}
               />
             ))}
         </div>

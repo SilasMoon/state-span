@@ -1,12 +1,13 @@
+import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, Plus } from "lucide-react";
-import { ZoomLevel } from "@/types/gantt";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ZoomLevel } from "@/types/gantt";
+import { useRef } from "react";
 
 interface GanttToolbarProps {
   zoom: ZoomLevel;
@@ -14,6 +15,9 @@ interface GanttToolbarProps {
   onZoomOut: () => void;
   onAddActivityLane: () => void;
   onAddStateLane: () => void;
+  onExport: () => void;
+  onImport: (data: string) => void;
+  onClear: () => void;
 }
 
 export const GanttToolbar = ({
@@ -22,7 +26,28 @@ export const GanttToolbar = ({
   onZoomOut,
   onAddActivityLane,
   onAddStateLane,
+  onExport,
+  onImport,
+  onClear,
 }: GanttToolbarProps) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = event.target?.result as string;
+        onImport(content);
+      };
+      reader.readAsText(file);
+    }
+  };
+
   const getZoomLabel = () => {
     if (zoom === 1) return "1h";
     if (zoom === 24) return "1d";
@@ -47,6 +72,29 @@ export const GanttToolbar = ({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <Button variant="outline" size="sm" onClick={onExport}>
+        <Download className="w-4 h-4 mr-1" />
+        Export
+      </Button>
+      
+      <Button variant="outline" size="sm" onClick={handleImportClick}>
+        <Upload className="w-4 h-4 mr-1" />
+        Import
+      </Button>
+      
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      
+      <Button variant="destructive" size="sm" onClick={onClear}>
+        <Trash2 className="w-4 h-4 mr-1" />
+        Clear All
+      </Button>
 
       <div className="flex-1" />
 

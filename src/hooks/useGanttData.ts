@@ -4,12 +4,45 @@ import { GanttData, GanttSwimlane, GanttActivity, GanttState, GanttLink, ZoomLev
 let nextId = 1;
 const generateId = () => `item-${nextId++}`;
 
-export const useGanttData = () => {
-  const [data, setData] = useState<GanttData>({
-    swimlanes: {},
-    rootIds: [],
+const createDefaultData = (): GanttData => {
+  const activityLane: GanttSwimlane = {
+    id: generateId(),
+    name: "Planning Phase",
+    type: "activity",
+    parentId: undefined,
+    children: [],
+    expanded: true,
+    activities: [
+      { id: generateId(), start: 8, duration: 16, color: "#00bcd4", description: "Initial planning" },
+      { id: generateId(), start: 32, duration: 24, color: "#4caf50", description: "Design phase" },
+    ],
+  };
+
+  const stateLane: GanttSwimlane = {
+    id: generateId(),
+    name: "Project Status",
+    type: "state",
+    parentId: undefined,
+    children: [],
+    expanded: true,
+    states: [
+      { id: generateId(), start: 0, duration: 24, color: "#ff9800", description: "In Review" },
+      { id: generateId(), start: 24, duration: 40, color: "#4caf50", description: "Approved" },
+    ],
+  };
+
+  return {
+    swimlanes: {
+      [activityLane.id]: activityLane,
+      [stateLane.id]: stateLane,
+    },
+    rootIds: [activityLane.id, stateLane.id],
     links: [],
-  });
+  };
+};
+
+export const useGanttData = () => {
+  const [data, setData] = useState<GanttData>(createDefaultData());
   const [zoom, setZoom] = useState<ZoomLevel>(8);
 
   const addSwimlane = (type: "activity" | "state", parentId?: string) => {
@@ -280,6 +313,35 @@ export const useGanttData = () => {
     }));
   };
 
+  const clearAll = () => {
+    setData({
+      swimlanes: {},
+      rootIds: [],
+      links: [],
+    });
+    nextId = 1;
+  };
+
+  const exportData = () => {
+    return JSON.stringify(data, null, 2);
+  };
+
+  const importData = (jsonData: string) => {
+    try {
+      const parsed = JSON.parse(jsonData);
+      setData(parsed);
+      // Update nextId to avoid conflicts
+      const allIds = Object.keys(parsed.swimlanes);
+      const maxId = allIds.reduce((max, id) => {
+        const num = parseInt(id.split("-")[1]);
+        return num > max ? num : max;
+      }, 0);
+      nextId = maxId + 1;
+    } catch (error) {
+      throw new Error("Invalid JSON data");
+    }
+  };
+
   return {
     data,
     zoom,
@@ -296,5 +358,8 @@ export const useGanttData = () => {
     addLink,
     deleteLink,
     updateSwimlane,
+    clearAll,
+    exportData,
+    importData,
   };
 };
