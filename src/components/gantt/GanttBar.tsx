@@ -141,7 +141,7 @@ export const GanttBar = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <div
-            className={`absolute h-6 rounded cursor-grab group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
+            className={`absolute h-6 rounded ${isDragging === 'move' ? 'cursor-grabbing' : 'cursor-grab'} group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
               isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
             }`}
             style={{
