@@ -1,0 +1,38 @@
+import { ZoomLevel } from "@/types/gantt";
+
+interface GanttTimelineProps {
+  zoom: ZoomLevel;
+  totalHours: number;
+}
+
+export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
+  const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
+  const columns = Math.ceil(totalHours / zoom);
+
+  const renderTimeLabels = () => {
+    const labels = [];
+    for (let i = 0; i < columns; i++) {
+      const hour = i * zoom;
+      const day = Math.floor(hour / 24);
+      const hourInDay = hour % 24;
+
+      labels.push(
+        <div
+          key={i}
+          className="flex flex-col items-center justify-center border-r border-gantt-grid text-xs"
+          style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
+        >
+          <div className="text-gantt-text font-semibold">D{day}</div>
+          <div className="text-gantt-text-muted">{hourInDay}h</div>
+        </div>
+      );
+    }
+    return labels;
+  };
+
+  return (
+    <div className="sticky top-0 z-20 bg-gantt-header border-b-2 border-border">
+      <div className="flex h-12">{renderTimeLabels()}</div>
+    </div>
+  );
+};
