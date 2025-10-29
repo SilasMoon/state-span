@@ -36,11 +36,6 @@ export const GanttBar = ({
   // Sync local state with props when item changes (but not during drag)
   React.useEffect(() => {
     if (!isDragging) {
-      console.log('=== SYNCING STATE ===');
-      console.log('item.id:', item.id);
-      console.log('item.start:', item.start);
-      console.log('item.duration:', item.duration);
-      console.log('Setting tempStart to:', item.start);
       setTempStart(item.start);
       setTempDuration(item.duration);
     }
@@ -84,27 +79,20 @@ export const GanttBar = ({
     
     if (isDragging === 'move') {
       const deltaX = e.clientX - dragStart.x;
-      console.log('handleMouseMove - deltaX:', deltaX);
-      console.log('columnWidth:', columnWidth, 'zoom:', zoom);
       const hoursDelta = Math.round((deltaX / columnWidth) * zoom);
-      console.log('hoursDelta:', hoursDelta);
       const newStart = snapToGrid(Math.max(0, item.start + hoursDelta));
-      console.log('item.start:', item.start, 'newStart:', newStart);
       
       // Detect swimlane change by finding element under cursor
       const swimlaneElement = document.elementFromPoint(e.clientX, e.clientY);
       const rowElement = swimlaneElement?.closest('[data-swimlane-id]');
       if (rowElement) {
         const newSwimlaneId = rowElement.getAttribute('data-swimlane-id');
-        console.log('newSwimlaneId:', newSwimlaneId);
         if (newSwimlaneId) {
           setTargetSwimlaneId(newSwimlaneId);
           // Check overlap in target swimlane
           const canPlace = !checkOverlap(newSwimlaneId, item.id, newStart, tempDuration);
-          console.log('canPlace:', canPlace, 'newStart:', newStart);
           document.body.style.cursor = canPlace ? 'grabbing' : 'not-allowed';
           if (canPlace) {
-            console.log('Setting tempStart to:', newStart);
             setTempStart(newStart);
           }
         }
@@ -132,23 +120,10 @@ export const GanttBar = ({
 
   const handleMouseUp = () => {
     if (isDragging) {
-      console.log('=== MOUSE UP ===');
-      console.log('isDragging:', isDragging);
-      console.log('targetSwimlaneId:', targetSwimlaneId);
-      console.log('tempStart:', tempStart);
-      console.log('tempDuration:', tempDuration);
-      console.log('item.id:', item.id);
-      
       document.body.style.cursor = '';
       if (isDragging === 'move') {
-        const hasOverlap = checkOverlap(targetSwimlaneId, item.id, tempStart, tempDuration);
-        console.log('checkOverlap result:', hasOverlap);
-        
-        if (!hasOverlap) {
-          console.log('Calling onMove with:', targetSwimlaneId, tempStart);
+        if (!checkOverlap(targetSwimlaneId, item.id, tempStart, tempDuration)) {
           onMove(targetSwimlaneId, tempStart);
-        } else {
-          console.log('Move blocked by overlap');
         }
       } else {
         if (!checkOverlap(swimlaneId, item.id, tempStart, tempDuration)) {

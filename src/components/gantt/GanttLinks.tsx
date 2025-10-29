@@ -202,7 +202,45 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
       return null;
     }
 
-    const { path, isVertical } = createRoutedPath(from, to, link.fromId, link.toId);
+    // Detect if link is vertical and adjust to corner connections
+    const isVerticalLink = Math.abs(from.x1 - to.x2) < 5;
+    let adjustedFrom = { ...from };
+    let adjustedTo = { ...to };
+    
+    if (isVerticalLink) {
+      const goingDown = to.y2 > from.y1;
+      const offset = 8; // Distance from corner
+      
+      // Adjust x-coordinates to corners
+      // From position: use right corner if going right in general, left if going left
+      if (from.x1 > to.x2) {
+        // Going left, use left corner
+        adjustedFrom.x1 = from.x1 - offset;
+      } else {
+        // Going right or same, use right corner  
+        adjustedFrom.x1 = from.x1 + offset;
+      }
+      
+      // To position: use opposite corner
+      if (to.x2 > from.x1) {
+        // Coming from left, use left corner
+        adjustedTo.x2 = to.x2 - offset;
+      } else {
+        // Coming from right or same, use right corner
+        adjustedTo.x2 = to.x2 + offset;
+      }
+      
+      // Adjust y-coordinates to top or bottom based on direction
+      if (goingDown) {
+        adjustedFrom.y1 = from.y1 - 12; // Top of bar
+        adjustedTo.y2 = to.y2 - 12; // Top of bar
+      } else {
+        adjustedFrom.y1 = from.y1 + 12; // Bottom of bar
+        adjustedTo.y2 = to.y2 + 12; // Bottom of bar
+      }
+    }
+
+    const { path, isVertical } = createRoutedPath(adjustedFrom, adjustedTo, link.fromId, link.toId);
 
     const isSelected = selectedLink === link.id;
     const linkColor = link.color || "#00bcd4";
