@@ -391,7 +391,15 @@ export const GanttChart = () => {
         onClear={handleClear}
       />
 
-      <div className="flex-1 overflow-auto relative">
+      <div 
+        className="flex-1 overflow-auto relative"
+        onClick={(e) => {
+          if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.inline-block')) {
+            setSelected(null);
+            setSelectedLink(null);
+          }
+        }}
+      >
         <div className="inline-block min-w-full">
           <div className="flex">
             <div className="sticky left-0 z-20 bg-gantt-header border-r-2 border-border">

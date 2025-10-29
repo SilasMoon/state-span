@@ -272,14 +272,14 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
         <defs>
           <marker
             id={markerId}
-            markerWidth="10"
-            markerHeight="10"
-            refX="9"
-            refY="3"
+            markerWidth="8"
+            markerHeight="8"
+            refX="7"
+            refY="2.5"
             orient="auto"
           >
             <polygon
-              points="0 0, 10 3, 0 6"
+              points="0 0, 8 2.5, 0 5"
               fill={linkColor}
             />
           </marker>
@@ -354,14 +354,14 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
         {/* Selected arrowhead */}
         <marker
           id="arrowhead-selected"
-          markerWidth="10"
-          markerHeight="10"
-          refX="9"
-          refY="3"
+          markerWidth="8"
+          markerHeight="8"
+          refX="7"
+          refY="2.5"
           orient="auto"
         >
           <polygon
-            points="0 0, 10 3, 0 6"
+            points="0 0, 8 2.5, 0 5"
             fill="hsl(var(--destructive))"
           />
         </marker>
