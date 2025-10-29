@@ -300,6 +300,94 @@ export const useGanttData = () => {
     }));
   };
 
+  const moveActivity = (fromSwimlaneId: string, toSwimlaneId: string, activityId: string, newStart: number) => {
+    setData((prev) => {
+      const fromSwimlane = prev.swimlanes[fromSwimlaneId];
+      const toSwimlane = prev.swimlanes[toSwimlaneId];
+      
+      if (!fromSwimlane || !toSwimlane || toSwimlane.type !== "activity") return prev;
+      
+      const activity = fromSwimlane.activities?.find((a) => a.id === activityId);
+      if (!activity) return prev;
+      
+      const movedActivity = { ...activity, start: newStart };
+      
+      if (fromSwimlaneId === toSwimlaneId) {
+        return {
+          ...prev,
+          swimlanes: {
+            ...prev.swimlanes,
+            [toSwimlaneId]: {
+              ...toSwimlane,
+              activities: toSwimlane.activities?.map((a) =>
+                a.id === activityId ? movedActivity : a
+              ),
+            },
+          },
+        };
+      } else {
+        return {
+          ...prev,
+          swimlanes: {
+            ...prev.swimlanes,
+            [fromSwimlaneId]: {
+              ...fromSwimlane,
+              activities: fromSwimlane.activities?.filter((a) => a.id !== activityId),
+            },
+            [toSwimlaneId]: {
+              ...toSwimlane,
+              activities: [...(toSwimlane.activities || []), movedActivity],
+            },
+          },
+        };
+      }
+    });
+  };
+
+  const moveState = (fromSwimlaneId: string, toSwimlaneId: string, stateId: string, newStart: number) => {
+    setData((prev) => {
+      const fromSwimlane = prev.swimlanes[fromSwimlaneId];
+      const toSwimlane = prev.swimlanes[toSwimlaneId];
+      
+      if (!fromSwimlane || !toSwimlane || toSwimlane.type !== "state") return prev;
+      
+      const state = fromSwimlane.states?.find((s) => s.id === stateId);
+      if (!state) return prev;
+      
+      const movedState = { ...state, start: newStart };
+      
+      if (fromSwimlaneId === toSwimlaneId) {
+        return {
+          ...prev,
+          swimlanes: {
+            ...prev.swimlanes,
+            [toSwimlaneId]: {
+              ...toSwimlane,
+              states: toSwimlane.states?.map((s) =>
+                s.id === stateId ? movedState : s
+              ),
+            },
+          },
+        };
+      } else {
+        return {
+          ...prev,
+          swimlanes: {
+            ...prev.swimlanes,
+            [fromSwimlaneId]: {
+              ...fromSwimlane,
+              states: fromSwimlane.states?.filter((s) => s.id !== stateId),
+            },
+            [toSwimlaneId]: {
+              ...toSwimlane,
+              states: [...(toSwimlane.states || []), movedState],
+            },
+          },
+        };
+      }
+    });
+  };
+
   const updateSwimlane = (id: string, updates: Partial<GanttSwimlane>) => {
     setData((prev) => ({
       ...prev,
@@ -355,6 +443,8 @@ export const useGanttData = () => {
     updateState,
     deleteActivity,
     deleteState,
+    moveActivity,
+    moveState,
     addLink,
     deleteLink,
     updateSwimlane,

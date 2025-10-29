@@ -102,7 +102,7 @@ export const GanttLinks = ({ data, zoom, columnWidth }: GanttLinksProps) => {
   return (
     <svg
       className="absolute inset-0 pointer-events-none"
-      style={{ zIndex: 5 }}
+      style={{ zIndex: 50 }}
     >
       <defs>
         <marker

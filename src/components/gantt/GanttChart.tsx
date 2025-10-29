@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { GanttToolbar } from "./GanttToolbar";
 import { GanttTimeline } from "./GanttTimeline";
 import { GanttRow } from "./GanttRow";
@@ -22,6 +22,8 @@ export const GanttChart = () => {
     updateState,
     deleteActivity,
     deleteState,
+    moveActivity,
+    moveState,
     addLink,
     updateSwimlane,
     clearAll,
@@ -38,9 +40,10 @@ export const GanttChart = () => {
     description: string;
   } | null>(null);
 
-  const [linkingFrom, setLinkingFrom] = useState<{
+  const [selected, setSelected] = useState<{
+    type: "swimlane" | "activity" | "state";
     swimlaneId: string;
-    itemId: string;
+    itemId?: string;
   } | null>(null);
 
   // Calculate total hours dynamically based on content
@@ -135,19 +138,6 @@ export const GanttChart = () => {
     toast.success("Item updated");
   };
 
-  const handleStartLinking = (swimlaneId: string, itemId: string) => {
-    if (linkingFrom) {
-      // Complete the link
-      addLink(linkingFrom.swimlaneId, linkingFrom.itemId, swimlaneId, itemId);
-      setLinkingFrom(null);
-      toast.success("Link created");
-    } else {
-      // Start linking
-      setLinkingFrom({ swimlaneId, itemId });
-      toast.info("Click another item to link");
-    }
-  };
-
   const handleAddActivity = (swimlaneId: string, start: number) => {
     addActivity(swimlaneId, start, zoom * 2);
     toast.success("Activity added");
@@ -186,6 +176,20 @@ export const GanttChart = () => {
     }
   };
 
+  const checkOverlap = (swimlaneId: string, itemId: string, start: number, duration: number): boolean => {
+    const swimlane = data.swimlanes[swimlaneId];
+    if (!swimlane) return false;
+
+    const end = start + duration;
+    const items = swimlane.type === "activity" ? swimlane.activities : swimlane.states;
+    
+    return items?.some((item) => {
+      if (item.id === itemId) return false;
+      const itemEnd = item.start + item.duration;
+      return (start < itemEnd && end > item.start);
+    }) || false;
+  };
+
   const handleActivityResize = (swimlaneId: string, activityId: string, newStart: number, newDuration: number) => {
     updateActivity(swimlaneId, activityId, { start: newStart, duration: newDuration });
   };
@@ -193,6 +197,38 @@ export const GanttChart = () => {
   const handleStateResize = (swimlaneId: string, stateId: string, newStart: number, newDuration: number) => {
     updateState(swimlaneId, stateId, { start: newStart, duration: newDuration });
   };
+
+  const handleActivityMove = (fromSwimlaneId: string, activityId: string, toSwimlaneId: string, newStart: number) => {
+    moveActivity(fromSwimlaneId, toSwimlaneId, activityId, newStart);
+  };
+
+  const handleStateMove = (fromSwimlaneId: string, stateId: string, toSwimlaneId: string, newStart: number) => {
+    moveState(fromSwimlaneId, toSwimlaneId, stateId, newStart);
+  };
+
+  // Delete key handler
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Delete' && selected) {
+        if (selected.type === 'swimlane') {
+          deleteSwimlane(selected.swimlaneId);
+          setSelected(null);
+          toast.success("Swimlane deleted");
+        } else if (selected.type === 'activity' && selected.itemId) {
+          deleteActivity(selected.swimlaneId, selected.itemId);
+          setSelected(null);
+          toast.success("Activity deleted");
+        } else if (selected.type === 'state' && selected.itemId) {
+          deleteState(selected.swimlaneId, selected.itemId);
+          setSelected(null);
+          toast.success("State deleted");
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selected, deleteSwimlane, deleteActivity, deleteState]);
 
   const renderSwimlanes = (ids: string[], level: number = 0): JSX.Element[] => {
     const elements: JSX.Element[] = [];
@@ -208,6 +244,8 @@ export const GanttChart = () => {
           level={level}
           zoom={zoom}
           totalHours={totalHours}
+          selected={selected}
+          onSelect={(type, swimlaneId, itemId) => setSelected({ type, swimlaneId, itemId })}
           onToggleExpand={toggleExpanded}
           onDelete={deleteSwimlane}
           onAddChild={handleAddChild}
@@ -215,12 +253,12 @@ export const GanttChart = () => {
           onAddState={handleAddState}
           onActivityDoubleClick={handleActivityDoubleClick}
           onStateDoubleClick={handleStateDoubleClick}
-          onStartLinking={handleStartLinking}
-          onActivityDelete={deleteActivity}
-          onStateDelete={deleteState}
-          onSwimlaneNameChange={(id, name) => updateSwimlane(id, { name })}
+          onActivityMove={handleActivityMove}
+          onStateMove={handleStateMove}
           onActivityResize={handleActivityResize}
           onStateResize={handleStateResize}
+          onSwimlaneNameChange={(id, name) => updateSwimlane(id, { name })}
+          checkOverlap={checkOverlap}
         />
       );
 

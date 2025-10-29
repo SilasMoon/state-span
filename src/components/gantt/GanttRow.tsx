@@ -14,6 +14,8 @@ interface GanttRowProps {
   level: number;
   zoom: ZoomLevel;
   totalHours: number;
+  selected: { type: "swimlane" | "activity" | "state"; swimlaneId: string; itemId?: string } | null;
+  onSelect: (type: "swimlane" | "activity" | "state", swimlaneId: string, itemId?: string) => void;
   onToggleExpand: (id: string) => void;
   onDelete: (id: string) => void;
   onAddChild: (parentId: string, type: "activity" | "state") => void;
@@ -21,12 +23,12 @@ interface GanttRowProps {
   onAddState: (swimlaneId: string, start: number) => void;
   onActivityDoubleClick: (swimlaneId: string, activityId: string) => void;
   onStateDoubleClick: (swimlaneId: string, stateId: string) => void;
-  onStartLinking: (swimlaneId: string, itemId: string) => void;
-  onActivityDelete: (swimlaneId: string, activityId: string) => void;
-  onStateDelete: (swimlaneId: string, stateId: string) => void;
-  onSwimlaneNameChange: (id: string, name: string) => void;
+  onActivityMove: (fromSwimlaneId: string, activityId: string, toSwimlaneId: string, newStart: number) => void;
+  onStateMove: (fromSwimlaneId: string, stateId: string, toSwimlaneId: string, newStart: number) => void;
   onActivityResize: (swimlaneId: string, activityId: string, newStart: number, newDuration: number) => void;
   onStateResize: (swimlaneId: string, stateId: string, newStart: number, newDuration: number) => void;
+  onSwimlaneNameChange: (id: string, name: string) => void;
+  checkOverlap: (swimlaneId: string, itemId: string, start: number, duration: number) => boolean;
 }
 
 export const GanttRow = ({
@@ -34,6 +36,8 @@ export const GanttRow = ({
   level,
   zoom,
   totalHours,
+  selected,
+  onSelect,
   onToggleExpand,
   onDelete,
   onAddChild,
@@ -41,12 +45,12 @@ export const GanttRow = ({
   onAddState,
   onActivityDoubleClick,
   onStateDoubleClick,
-  onStartLinking,
-  onActivityDelete,
-  onStateDelete,
-  onSwimlaneNameChange,
+  onActivityMove,
+  onStateMove,
   onActivityResize,
   onStateResize,
+  onSwimlaneNameChange,
+  checkOverlap,
 }: GanttRowProps) => {
   const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
   const columns = Math.ceil(totalHours / zoom);
@@ -76,11 +80,19 @@ export const GanttRow = ({
     return cells;
   };
 
+  const isRowSelected = selected?.type === 'swimlane' && selected.swimlaneId === swimlane.id;
+
   return (
-    <div className="flex group hover:bg-gantt-row-hover/50 transition-colors border-b border-gantt-grid">
+    <div
+      className={`flex group hover:bg-gantt-row-hover/50 transition-colors border-b border-gantt-grid ${
+        isRowSelected ? 'bg-primary/10' : ''
+      }`}
+      data-swimlane-id={swimlane.id}
+    >
       <div
-        className="sticky left-0 z-10 bg-card border-r border-border flex items-center gap-2 px-3 py-2"
+        className="sticky left-0 z-10 bg-card border-r border-border flex items-center gap-2 px-3 py-2 cursor-pointer"
         style={{ width: "280px", minWidth: "280px", paddingLeft: `${level * 20 + 12}px` }}
+        onClick={() => onSelect('swimlane', swimlane.id)}
       >
         {hasChildren && (
           <Button
@@ -154,10 +166,12 @@ export const GanttRow = ({
                 swimlaneId={swimlane.id}
                 zoom={zoom}
                 columnWidth={columnWidth}
+                isSelected={selected?.type === 'activity' && selected.swimlaneId === swimlane.id && selected.itemId === activity.id}
                 onDoubleClick={() => onActivityDoubleClick(swimlane.id, activity.id)}
-                onStartLinking={() => onStartLinking(swimlane.id, activity.id)}
-                onDelete={() => onActivityDelete(swimlane.id, activity.id)}
+                onSelect={() => onSelect('activity', swimlane.id, activity.id)}
+                onMove={(toSwimlaneId, newStart) => onActivityMove(swimlane.id, activity.id, toSwimlaneId, newStart)}
                 onResize={(newStart, newDuration) => onActivityResize(swimlane.id, activity.id, newStart, newDuration)}
+                checkOverlap={checkOverlap}
               />
             ))}
           {swimlane.type === "state" &&
@@ -168,10 +182,12 @@ export const GanttRow = ({
                 swimlaneId={swimlane.id}
                 zoom={zoom}
                 columnWidth={columnWidth}
+                isSelected={selected?.type === 'state' && selected.swimlaneId === swimlane.id && selected.itemId === state.id}
                 onDoubleClick={() => onStateDoubleClick(swimlane.id, state.id)}
-                onStartLinking={() => onStartLinking(swimlane.id, state.id)}
-                onDelete={() => onStateDelete(swimlane.id, state.id)}
+                onSelect={() => onSelect('state', swimlane.id, state.id)}
+                onMove={(toSwimlaneId, newStart) => onStateMove(swimlane.id, state.id, toSwimlaneId, newStart)}
                 onResize={(newStart, newDuration) => onStateResize(swimlane.id, state.id, newStart, newDuration)}
+                checkOverlap={checkOverlap}
               />
             ))}
         </div>
