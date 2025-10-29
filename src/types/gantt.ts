@@ -22,6 +22,7 @@ export interface GanttLink {
   toId: string;
   fromSwimlaneId: string;
   toSwimlaneId: string;
+  color?: string;
 }
 
 export interface GanttSwimlane {

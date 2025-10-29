@@ -277,12 +277,25 @@ export const useGanttData = () => {
 
   const addLink = (fromSwimlaneId: string, fromId: string, toSwimlaneId: string, toId: string) => {
     const id = generateId();
+    
+    // Get source activity/state color
+    let color = "#00bcd4"; // default
+    const fromSwimlane = data.swimlanes[fromSwimlaneId];
+    if (fromSwimlane) {
+      const item = fromSwimlane.activities?.find((a) => a.id === fromId) || 
+                   fromSwimlane.states?.find((s) => s.id === fromId);
+      if (item) {
+        color = item.color;
+      }
+    }
+    
     const link: GanttLink = {
       id,
       fromId,
       toId,
       fromSwimlaneId,
       toSwimlaneId,
+      color,
     };
 
     setData((prev) => ({
@@ -291,6 +304,15 @@ export const useGanttData = () => {
     }));
 
     return id;
+  };
+
+  const updateLink = (linkId: string, updates: Partial<GanttLink>) => {
+    setData((prev) => ({
+      ...prev,
+      links: prev.links.map((link) =>
+        link.id === linkId ? { ...link, ...updates } : link
+      ),
+    }));
   };
 
   const deleteLink = (linkId: string) => {
@@ -447,6 +469,7 @@ export const useGanttData = () => {
     moveState,
     addLink,
     deleteLink,
+    updateLink,
     updateSwimlane,
     clearAll,
     exportData,

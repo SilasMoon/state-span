@@ -7,9 +7,10 @@ interface GanttLinksProps {
   columnWidth: number;
   selectedLink: string | null;
   onLinkSelect: (linkId: string) => void;
+  onLinkColorChange: (linkId: string, color: string) => void;
 }
 
-export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect }: GanttLinksProps) => {
+export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect, onLinkColorChange }: GanttLinksProps) => {
   console.log('GanttLinks render:', { linksCount: data.links.length, links: data.links });
   const getItemPosition = (swimlaneId: string, itemId: string) => {
     const swimlane = data.swimlanes[swimlaneId];
@@ -128,31 +129,53 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
       return `M ${from.x1} ${from.y1} L ${from.x1} ${to.y2}`;
     }
     
-    // Try direct elbowed path first
-    const midX = (from.x1 + to.x2) / 2;
-    const directPath = [
-      { x: from.x1, y: from.y1 },
-      { x: midX, y: from.y1 },
-      { x: midX, y: to.y2 },
-      { x: to.x2, y: to.y2 }
-    ];
-    
-    // Check if direct path overlaps any activities
-    let hasOverlap = false;
-    for (let i = 0; i < directPath.length - 1; i++) {
-      if (doesPathOverlap(directPath[i].x, directPath[i].y, directPath[i + 1].x, directPath[i + 1].y, allActivities)) {
-        hasOverlap = true;
-        break;
+    // Try direct horizontal path (shortest)
+    if (Math.abs(from.y1 - to.y2) < 10) {
+      // Same row - direct horizontal line
+      if (!doesPathOverlap(from.x1, from.y1, to.x2, to.y2, allActivities)) {
+        return `M ${from.x1} ${from.y1} L ${to.x2} ${to.y2}`;
       }
     }
     
-    if (!hasOverlap) {
-      return `M ${from.x1} ${from.y1} L ${midX} ${from.y1} L ${midX} ${to.y2} L ${to.x2} ${to.y2}`;
+    // Try direct elbowed path (2 segments: horizontal then vertical)
+    const paths = [
+      // Horizontal first, then vertical
+      [
+        { x: from.x1, y: from.y1 },
+        { x: to.x2, y: from.y1 },
+        { x: to.x2, y: to.y2 }
+      ],
+      // Vertical first, then horizontal
+      [
+        { x: from.x1, y: from.y1 },
+        { x: from.x1, y: to.y2 },
+        { x: to.x2, y: to.y2 }
+      ],
+      // Middle point (3 segments)
+      [
+        { x: from.x1, y: from.y1 },
+        { x: (from.x1 + to.x2) / 2, y: from.y1 },
+        { x: (from.x1 + to.x2) / 2, y: to.y2 },
+        { x: to.x2, y: to.y2 }
+      ]
+    ];
+    
+    // Find shortest path without overlap
+    for (const path of paths) {
+      let hasOverlap = false;
+      for (let i = 0; i < path.length - 1; i++) {
+        if (doesPathOverlap(path[i].x, path[i].y, path[i + 1].x, path[i + 1].y, allActivities)) {
+          hasOverlap = true;
+          break;
+        }
+      }
+      if (!hasOverlap) {
+        return `M ${path.map((p, i) => `${i === 0 ? '' : 'L '}${p.x} ${p.y}`).join(' ')}`;
+      }
     }
     
-    // If overlap detected, route around by going up/down first
+    // If all direct paths overlap, route around
     const routeY = from.y1 > to.y2 ? Math.min(from.y1, to.y2) - VERTICAL_OFFSET : Math.max(from.y1, to.y2) + VERTICAL_OFFSET;
-    
     return `M ${from.x1} ${from.y1} L ${from.x1 + 20} ${from.y1} L ${from.x1 + 20} ${routeY} L ${to.x2 - 20} ${routeY} L ${to.x2 - 20} ${to.y2} L ${to.x2} ${to.y2}`;
   };
 
@@ -170,6 +193,7 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
     console.log('Rendering link:', { link, from, to, path });
 
     const isSelected = selectedLink === link.id;
+    const linkColor = link.color || "#00bcd4";
 
     return (
       <g key={link.id}>
@@ -194,13 +218,33 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
         {/* Visible path */}
         <path
           d={path}
-          stroke={isSelected ? "hsl(var(--destructive))" : "hsl(var(--primary))"}
+          stroke={isSelected ? "hsl(var(--destructive))" : linkColor}
           strokeWidth={isSelected ? "3" : "2"}
           fill="none"
-          markerEnd="url(#arrowhead)"
+          markerEnd={isSelected ? "url(#arrowhead-selected)" : "url(#arrowhead)"}
           opacity={isSelected ? "1" : "0.7"}
           className="pointer-events-none"
         />
+        {/* Color picker when selected */}
+        {isSelected && (
+          <foreignObject
+            x={from.x1 + (to.x2 - from.x1) / 2 - 20}
+            y={Math.min(from.y1, to.y2) - 35}
+            width="40"
+            height="30"
+          >
+            <input
+              type="color"
+              value={linkColor}
+              onChange={(e) => {
+                e.stopPropagation();
+                onLinkColorChange(link.id, e.target.value);
+              }}
+              className="w-full h-full cursor-pointer border-2 border-background rounded"
+              style={{ pointerEvents: 'all' }}
+            />
+          </foreignObject>
+        )}
       </g>
     );
   };
@@ -246,7 +290,20 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
         >
           <polygon
             points="0 0, 10 3, 0 6"
-            fill="hsl(var(--primary))"
+            fill="currentColor"
+          />
+        </marker>
+        <marker
+          id="arrowhead-selected"
+          markerWidth="10"
+          markerHeight="10"
+          refX="9"
+          refY="3"
+          orient="auto"
+        >
+          <polygon
+            points="0 0, 10 3, 0 6"
+            fill="hsl(var(--destructive))"
           />
         </marker>
       </defs>

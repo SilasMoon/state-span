@@ -26,6 +26,7 @@ export const GanttChart = () => {
     moveState,
     addLink,
     deleteLink,
+    updateLink,
     updateSwimlane,
     clearAll,
     exportData,
@@ -403,6 +404,10 @@ export const GanttChart = () => {
           onLinkSelect={(linkId) => {
             setSelectedLink(linkId === "" ? null : linkId);
             if (linkId) setSelected(null);
+          }}
+          onLinkColorChange={(linkId, color) => {
+            updateLink(linkId, { color });
+            toast.success("Link color updated");
           }}
         />
 
