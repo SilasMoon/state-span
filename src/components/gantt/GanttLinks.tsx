@@ -105,6 +105,40 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
   };
 
 
+  const getAllItemPositions = () => {
+    const positions: Array<{ x: number; y: number; width: number; height: number }> = [];
+    Object.entries(data.swimlanes).forEach(([swimlaneId, swimlane]) => {
+      const items = [...(swimlane.activities || []), ...(swimlane.states || [])];
+      items.forEach((item) => {
+        const pos = getItemPosition(swimlaneId, item.id);
+        if (pos) {
+          positions.push({
+            x: pos.x2,
+            y: pos.y2 - 15,
+            width: pos.x1 - pos.x2,
+            height: 30,
+          });
+        }
+      });
+    });
+    return positions;
+  };
+
+  const doesSegmentOverlap = (x1: number, y1: number, x2: number, y2: number, obstacles: Array<{ x: number; y: number; width: number; height: number }>) => {
+    const lineMinX = Math.min(x1, x2);
+    const lineMaxX = Math.max(x1, x2);
+    const lineMinY = Math.min(y1, y2);
+    const lineMaxY = Math.max(y1, y2);
+    
+    for (const obs of obstacles) {
+      if (lineMaxX >= obs.x && lineMinX <= obs.x + obs.width &&
+          lineMaxY >= obs.y && lineMinY <= obs.y + obs.height) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const createRoutedPath = (from: { x1: number; y1: number }, 
                             to: { x2: number; y2: number }): { path: string; isVertical: boolean } => {
     const startX = from.x1;
@@ -112,31 +146,54 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
     const endX = to.x2;
     const endY = to.y2;
     
-    // Vertical alignment - straight line
+    const obstacles = getAllItemPositions();
+    
+    // Pure vertical line - only case where arrow is vertical
     if (Math.abs(startX - endX) < 5) {
       return { path: `M ${startX} ${startY} L ${endX} ${endY}`, isVertical: true };
     }
     
-    // Horizontal alignment - straight line
+    // Horizontal line - arrow horizontal
     if (Math.abs(startY - endY) < 5) {
-      return { path: `M ${startX} ${startY} L ${endX} ${endY}`, isVertical: false };
+      const hasOverlap = doesSegmentOverlap(startX, startY, endX, endY, obstacles);
+      if (!hasOverlap) {
+        return { path: `M ${startX} ${startY} L ${endX} ${endY}`, isVertical: false };
+      }
     }
     
-    // Right-angle path: horizontal then vertical (arrow ends vertical)
+    // Try simple right-angle path (horizontal then vertical) - arrow horizontal
     if (startX < endX) {
-      return { 
-        path: `M ${startX} ${startY} L ${endX} ${startY} L ${endX} ${endY}`, 
-        isVertical: true 
-      };
+      const path = `M ${startX} ${startY} L ${endX} ${startY} L ${endX} ${endY}`;
+      const seg1Overlap = doesSegmentOverlap(startX, startY, endX, startY, obstacles);
+      const seg2Overlap = doesSegmentOverlap(endX, startY, endX, endY, obstacles);
+      if (!seg1Overlap && !seg2Overlap) {
+        return { path, isVertical: false };
+      }
     }
     
-    // Going backward: go up/down first, then horizontal (arrow ends horizontal)
-    const midX = startX + 20;
-    const clearanceY = startY < endY ? Math.max(startY, endY) + 40 : Math.min(startY, endY) - 40;
-    return { 
-      path: `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${clearanceY} L ${endX - 20} ${clearanceY} L ${endX - 20} ${endY} L ${endX} ${endY}`,
-      isVertical: true
-    };
+    // Try vertical then horizontal - arrow horizontal
+    const pathVH = `M ${startX} ${startY} L ${startX} ${endY} L ${endX} ${endY}`;
+    const seg1VH = doesSegmentOverlap(startX, startY, startX, endY, obstacles);
+    const seg2VH = doesSegmentOverlap(startX, endY, endX, endY, obstacles);
+    if (!seg1VH && !seg2VH) {
+      return { path: pathVH, isVertical: false };
+    }
+    
+    // Three-segment path with midpoint - arrow horizontal
+    const midX = (startX + endX) / 2;
+    const path3 = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
+    const seg13 = doesSegmentOverlap(startX, startY, midX, startY, obstacles);
+    const seg23 = doesSegmentOverlap(midX, startY, midX, endY, obstacles);
+    const seg33 = doesSegmentOverlap(midX, endY, endX, endY, obstacles);
+    if (!seg13 && !seg23 && !seg33) {
+      return { path: path3, isVertical: false };
+    }
+    
+    // Route around with clearance - arrow horizontal
+    const clearance = 40;
+    const clearanceY = startY < endY ? Math.max(startY, endY) + clearance : Math.min(startY, endY) - clearance;
+    const routedPath = `M ${startX} ${startY} L ${startX + 20} ${startY} L ${startX + 20} ${clearanceY} L ${endX - 20} ${clearanceY} L ${endX - 20} ${endY} L ${endX} ${endY}`;
+    return { path: routedPath, isVertical: false };
   };
 
   const renderLink = (link: GanttLink) => {

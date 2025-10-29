@@ -63,7 +63,7 @@ export const GanttRow = ({
       cells.push(
         <div
           key={i}
-          className="border-r border-gantt-grid h-full hover:bg-gantt-row-hover cursor-pointer transition-colors"
+          className="border-r border-gantt-grid h-full cursor-pointer"
           style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
           onClick={(e) => {
             if (e.detail === 2) return; // ignore double clicks
