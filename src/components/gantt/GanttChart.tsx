@@ -426,16 +426,32 @@ export const GanttChart = () => {
           const endX = linkDragCurrent.x + scrollLeft;
           const endY = linkDragCurrent.y + scrollTop;
           
+          // Get source item color
+          const swimlane = data.swimlanes[linkDragStart.swimlaneId];
+          let sourceColor = "#00bcd4";
+          if (swimlane) {
+            const item = swimlane.activities?.find((a) => a.id === linkDragStart.itemId) || 
+                         swimlane.states?.find((s) => s.id === linkDragStart.itemId);
+            if (item) sourceColor = item.color;
+          }
+          
           let path: string;
           
-          // Check if vertically aligned
+          // Vertical alignment - straight line
           if (Math.abs(startX - endX) < 20) {
-            // Vertical path
-            path = `M ${startX} ${startY} L ${startX} ${endY}`;
-          } else {
-            // Elbowed path
-            const midX = (startX + endX) / 2;
-            path = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
+            path = `M ${startX} ${startY} L ${endX} ${endY}`;
+          }
+          // Horizontal alignment - straight line
+          else if (Math.abs(startY - endY) < 20) {
+            path = `M ${startX} ${startY} L ${endX} ${endY}`;
+          }
+          // 2-segment path (horizontal then vertical) - try first
+          else if (startX < endX) {
+            path = `M ${startX} ${startY} L ${endX} ${startY} L ${endX} ${endY}`;
+          }
+          // 2-segment path (vertical then horizontal)
+          else {
+            path = `M ${startX} ${startY} L ${startX} ${endY} L ${endX} ${endY}`;
           }
           
           return (
@@ -454,17 +470,17 @@ export const GanttChart = () => {
                 >
                   <polygon
                     points="0 0, 10 3, 0 6"
-                    fill="hsl(var(--primary))"
+                    fill={sourceColor}
                   />
                 </marker>
               </defs>
               <path
                 d={path}
-                stroke="hsl(var(--primary))"
+                stroke={sourceColor}
                 strokeWidth="2"
                 fill="none"
                 markerEnd="url(#arrowhead-temp)"
-                opacity="0.9"
+                opacity="0.7"
               />
             </svg>
           );

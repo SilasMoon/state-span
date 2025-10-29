@@ -120,61 +120,55 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
 
   const createRoutedPath = (from: { x1: number; y1: number; x2: number; y2: number }, 
                             to: { x1: number; y1: number; x2: number; y2: number }) => {
-    const allActivities = getAllItemPositions();
-    const VERTICAL_OFFSET = 60; // Offset to route above/below activities
-    
-    // Check if vertically aligned (same or close X position)
+    // Vertical alignment - straight line (0 bends)
     if (Math.abs(from.x1 - to.x2) < 20) {
-      // Vertical path - go straight down/up
-      return `M ${from.x1} ${from.y1} L ${from.x1} ${to.y2}`;
+      return `M ${from.x1} ${from.y1} L ${to.x2} ${to.y2}`;
     }
     
-    // Try direct horizontal path (shortest)
-    if (Math.abs(from.y1 - to.y2) < 10) {
-      // Same row - direct horizontal line
-      if (!doesPathOverlap(from.x1, from.y1, to.x2, to.y2, allActivities)) {
-        return `M ${from.x1} ${from.y1} L ${to.x2} ${to.y2}`;
-      }
+    // Horizontal alignment - straight line (0 bends)
+    if (Math.abs(from.y1 - to.y2) < 20) {
+      return `M ${from.x1} ${from.y1} L ${to.x2} ${to.y2}`;
     }
     
-    // Try direct elbowed path (2 segments: horizontal then vertical)
-    const paths = [
-      // Horizontal first, then vertical
-      [
-        { x: from.x1, y: from.y1 },
-        { x: to.x2, y: from.y1 },
-        { x: to.x2, y: to.y2 }
-      ],
-      // Vertical first, then horizontal
-      [
-        { x: from.x1, y: from.y1 },
-        { x: from.x1, y: to.y2 },
-        { x: to.x2, y: to.y2 }
-      ],
-      // Middle point (3 segments)
-      [
-        { x: from.x1, y: from.y1 },
-        { x: (from.x1 + to.x2) / 2, y: from.y1 },
-        { x: (from.x1 + to.x2) / 2, y: to.y2 },
-        { x: to.x2, y: to.y2 }
-      ]
+    const allActivities = getAllItemPositions();
+    
+    // Try 2-segment paths (1 bend) - shortest possible
+    const twoSegmentPaths = [
+      // Horizontal then vertical
+      { path: `M ${from.x1} ${from.y1} L ${to.x2} ${from.y1} L ${to.x2} ${to.y2}`, segments: [[from.x1, from.y1, to.x2, from.y1], [to.x2, from.y1, to.x2, to.y2]] },
+      // Vertical then horizontal
+      { path: `M ${from.x1} ${from.y1} L ${from.x1} ${to.y2} L ${to.x2} ${to.y2}`, segments: [[from.x1, from.y1, from.x1, to.y2], [from.x1, to.y2, to.x2, to.y2]] },
     ];
     
-    // Find shortest path without overlap
-    for (const path of paths) {
+    for (const { path, segments } of twoSegmentPaths) {
       let hasOverlap = false;
-      for (let i = 0; i < path.length - 1; i++) {
-        if (doesPathOverlap(path[i].x, path[i].y, path[i + 1].x, path[i + 1].y, allActivities)) {
+      for (const [x1, y1, x2, y2] of segments) {
+        if (doesPathOverlap(x1, y1, x2, y2, allActivities)) {
           hasOverlap = true;
           break;
         }
       }
-      if (!hasOverlap) {
-        return `M ${path.map((p, i) => `${i === 0 ? '' : 'L '}${p.x} ${p.y}`).join(' ')}`;
-      }
+      if (!hasOverlap) return path;
     }
     
-    // If all direct paths overlap, route around
+    // Try 3-segment path with midpoint (2 bends)
+    const midX = (from.x1 + to.x2) / 2;
+    const threeSegmentPath = {
+      path: `M ${from.x1} ${from.y1} L ${midX} ${from.y1} L ${midX} ${to.y2} L ${to.x2} ${to.y2}`,
+      segments: [[from.x1, from.y1, midX, from.y1], [midX, from.y1, midX, to.y2], [midX, to.y2, to.x2, to.y2]]
+    };
+    
+    let hasOverlap = false;
+    for (const [x1, y1, x2, y2] of threeSegmentPath.segments) {
+      if (doesPathOverlap(x1, y1, x2, y2, allActivities)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+    if (!hasOverlap) return threeSegmentPath.path;
+    
+    // Route around obstacles (last resort)
+    const VERTICAL_OFFSET = 60;
     const routeY = from.y1 > to.y2 ? Math.min(from.y1, to.y2) - VERTICAL_OFFSET : Math.max(from.y1, to.y2) + VERTICAL_OFFSET;
     return `M ${from.x1} ${from.y1} L ${from.x1 + 20} ${from.y1} L ${from.x1 + 20} ${routeY} L ${to.x2 - 20} ${routeY} L ${to.x2 - 20} ${to.y2} L ${to.x2} ${to.y2}`;
   };
@@ -221,10 +215,26 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
           stroke={isSelected ? "hsl(var(--destructive))" : linkColor}
           strokeWidth={isSelected ? "3" : "2"}
           fill="none"
-          markerEnd={isSelected ? "url(#arrowhead-selected)" : "url(#arrowhead)"}
+          markerEnd={isSelected ? "url(#arrowhead-selected)" : `url(#arrowhead-${link.id})`}
           opacity={isSelected ? "1" : "0.7"}
           className="pointer-events-none"
         />
+        {/* Custom arrowhead with link color */}
+        <defs>
+          <marker
+            id={`arrowhead-${link.id}`}
+            markerWidth="10"
+            markerHeight="10"
+            refX="9"
+            refY="3"
+            orient="auto"
+          >
+            <polygon
+              points="0 0, 10 3, 0 6"
+              fill={linkColor}
+            />
+          </marker>
+        </defs>
         {/* Color picker when selected */}
         {isSelected && (
           <foreignObject
