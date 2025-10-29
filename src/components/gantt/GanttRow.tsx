@@ -141,7 +141,7 @@ export const GanttRow = ({
 
       <div className="relative flex h-12" style={{ minWidth: `${columns * columnWidth}px` }}>
         <div className="absolute inset-0 flex">{renderGrid()}</div>
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 pointer-events-none">
           {swimlane.type === "activity" &&
             swimlane.activities?.map((activity) => (
               <GanttBar

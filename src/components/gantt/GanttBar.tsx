@@ -29,7 +29,7 @@ export const GanttBar = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <div
-            className="absolute top-1 h-10 rounded cursor-pointer group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all hover:scale-105"
+            className="absolute top-1 h-10 rounded cursor-pointer group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all hover:scale-105 pointer-events-auto"
             style={{
               left: `${left}px`,
               width: `${width}px`,
