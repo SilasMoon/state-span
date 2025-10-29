@@ -202,35 +202,26 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
       return null;
     }
 
-    // Detect if link is vertical and adjust to corner connections
+    // Detect if link is vertical and adjust to closest corners
     const isVerticalLink = Math.abs(from.x1 - to.x2) < 5;
     let adjustedFrom = { ...from };
     let adjustedTo = { ...to };
     
     if (isVerticalLink) {
-      const goingDown = to.y2 > from.y1;
-      const horizontalOffset = 10; // Distance from center horizontally
-      const verticalOffset = 12; // Half of bar height (24px / 2)
+      const barHeight = 24; // Activity/state bar height
+      const halfHeight = barHeight / 2;
       
-      // For vertical links, we want opposite corners
-      // Top bar connects from bottom-right or bottom-left
-      // Bottom bar connects to top-left or top-right
-      
-      if (goingDown) {
-        // From is above, To is below
-        adjustedFrom.x1 = from.x1 + horizontalOffset; // Right side of top bar
-        adjustedFrom.y1 = from.y1 + verticalOffset;   // Bottom of top bar
-        
-        adjustedTo.x2 = to.x2 - horizontalOffset;     // Left side of bottom bar
-        adjustedTo.y2 = to.y2 - verticalOffset;       // Top of bottom bar
+      // Connect from closest corners
+      if (from.y1 < to.y2) {
+        // From is above To: connect from bottom of from to top of to
+        adjustedFrom.y1 = from.y1 + halfHeight;  // Bottom edge of from bar
+        adjustedTo.y2 = to.y2 - halfHeight;       // Top edge of to bar
       } else {
-        // From is below, To is above
-        adjustedFrom.x1 = from.x1 + horizontalOffset; // Right side of bottom bar
-        adjustedFrom.y1 = from.y1 - verticalOffset;   // Top of bottom bar
-        
-        adjustedTo.x2 = to.x2 - horizontalOffset;     // Left side of top bar
-        adjustedTo.y2 = to.y2 + verticalOffset;       // Bottom of top bar
+        // From is below To: connect from top of from to bottom of to
+        adjustedFrom.y1 = from.y1 - halfHeight;  // Top edge of from bar
+        adjustedTo.y2 = to.y2 + halfHeight;       // Bottom edge of to bar
       }
+      // Keep x positions as they are (already at the correct horizontal edge)
     }
 
     const { path, isVertical } = createRoutedPath(adjustedFrom, adjustedTo, link.fromId, link.toId);
