@@ -42,6 +42,8 @@ export const GanttBar = ({
 
   const handleResizeStart = (e: React.MouseEvent, handle: 'start' | 'end') => {
     e.stopPropagation();
+    e.preventDefault();
+    document.body.style.cursor = 'ew-resize';
     setIsDragging(handle);
     setDragStart({ x: e.clientX, y: e.clientY, initialSwimlaneId: swimlaneId });
     setTempStart(item.start);
@@ -52,6 +54,8 @@ export const GanttBar = ({
   const handleMoveStart = (e: React.MouseEvent) => {
     if (e.target !== e.currentTarget) return;
     e.stopPropagation();
+    e.preventDefault();
+    document.body.style.cursor = 'grabbing';
     onSelect();
     setIsDragging('move');
     setDragStart({ x: e.clientX, y: e.clientY, initialSwimlaneId: swimlaneId });
@@ -76,7 +80,9 @@ export const GanttBar = ({
         if (newSwimlaneId) {
           setTargetSwimlaneId(newSwimlaneId);
           // Check overlap in target swimlane
-          if (!checkOverlap(newSwimlaneId, item.id, newStart, tempDuration)) {
+          const canPlace = !checkOverlap(newSwimlaneId, item.id, newStart, tempDuration);
+          document.body.style.cursor = canPlace ? 'grabbing' : 'not-allowed';
+          if (canPlace) {
             setTempStart(newStart);
           }
         }
@@ -104,6 +110,7 @@ export const GanttBar = ({
 
   const handleMouseUp = () => {
     if (isDragging) {
+      document.body.style.cursor = '';
       if (isDragging === 'move') {
         if (!checkOverlap(targetSwimlaneId, item.id, tempStart, tempDuration)) {
           onMove(targetSwimlaneId, tempStart);
@@ -134,7 +141,7 @@ export const GanttBar = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <div
-            className={`absolute h-6 rounded cursor-move group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
+            className={`absolute h-6 rounded cursor-grab group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
               isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
             }`}
             style={{
