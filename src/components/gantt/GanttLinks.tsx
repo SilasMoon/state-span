@@ -105,18 +105,28 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
   };
 
 
-  const getAllItemPositions = () => {
-    const positions: Array<{ x: number; y: number; width: number; height: number }> = [];
+  const getAllItemPositions = (excludeFromId?: string, excludeToId?: string) => {
+    const positions: Array<{ x: number; y: number; width: number; height: number; itemId: string }> = [];
+    const padding = 5; // Add padding around obstacles
+    
     Object.entries(data.swimlanes).forEach(([swimlaneId, swimlane]) => {
       const items = [...(swimlane.activities || []), ...(swimlane.states || [])];
       items.forEach((item) => {
+        // Exclude source and destination activities from obstacles
+        if (item.id === excludeFromId || item.id === excludeToId) {
+          return;
+        }
+        
         const pos = getItemPosition(swimlaneId, item.id);
         if (pos) {
+          const minX = Math.min(pos.x1, pos.x2);
+          const maxX = Math.max(pos.x1, pos.x2);
           positions.push({
-            x: pos.x2,
-            y: pos.y2 - 15,
-            width: pos.x1 - pos.x2,
-            height: 30,
+            x: minX - padding,
+            y: pos.y2 - 15 - padding,
+            width: (maxX - minX) + (padding * 2),
+            height: 30 + (padding * 2),
+            itemId: item.id,
           });
         }
       });
@@ -139,21 +149,46 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
     return false;
   };
 
+  const findOptimalMidpoint = (startX: number, startY: number, endX: number, endY: number, obstacles: Array<{ x: number; y: number; width: number; height: number }>) => {
+    const isForward = startX < endX;
+    const minX = Math.min(startX, endX);
+    const maxX = Math.max(startX, endX);
+    
+    if (isForward) {
+      // For forward links, find the first gap after the start
+      for (let testX = startX + 20; testX < endX; testX += 10) {
+        const hasObstacle = obstacles.some(obs => 
+          testX >= obs.x && testX <= obs.x + obs.width &&
+          ((startY >= obs.y && startY <= obs.y + obs.height) || 
+           (endY >= obs.y && endY <= obs.y + obs.height))
+        );
+        if (!hasObstacle) {
+          return testX;
+        }
+      }
+    }
+    
+    // Default to midpoint
+    return (startX + endX) / 2;
+  };
+
   const createRoutedPath = (from: { x1: number; y1: number }, 
-                            to: { x2: number; y2: number }): { path: string; isVertical: boolean } => {
+                            to: { x2: number; y2: number },
+                            fromId?: string,
+                            toId?: string): { path: string; isVertical: boolean } => {
     const startX = from.x1;
     const startY = from.y1;
     const endX = to.x2;
     const endY = to.y2;
     
-    const obstacles = getAllItemPositions();
+    const obstacles = getAllItemPositions(fromId, toId);
     
-    // Pure vertical line - only case where arrow is vertical
+    // PRIORITY 0: Pure vertical line - only case where arrow is vertical
     if (Math.abs(startX - endX) < 5) {
       return { path: `M ${startX} ${startY} L ${endX} ${endY}`, isVertical: true };
     }
     
-    // Horizontal line - arrow horizontal
+    // PRIORITY 1: Direct horizontal line (0 bends)
     if (Math.abs(startY - endY) < 5) {
       const hasOverlap = doesSegmentOverlap(startX, startY, endX, endY, obstacles);
       if (!hasOverlap) {
@@ -161,39 +196,75 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
       }
     }
     
-    // Try simple right-angle path (horizontal then vertical) - arrow horizontal
-    if (startX < endX) {
-      const path = `M ${startX} ${startY} L ${endX} ${startY} L ${endX} ${endY}`;
-      const seg1Overlap = doesSegmentOverlap(startX, startY, endX, startY, obstacles);
-      const seg2Overlap = doesSegmentOverlap(endX, startY, endX, endY, obstacles);
-      if (!seg1Overlap && !seg2Overlap) {
-        return { path, isVertical: false };
+    // PRIORITY 2: Simple 2-segment paths (1 bend) - direction agnostic
+    // Try H-V (horizontal then vertical)
+    const hvPath = `M ${startX} ${startY} L ${endX} ${startY} L ${endX} ${endY}`;
+    const hvSeg1 = doesSegmentOverlap(startX, startY, endX, startY, obstacles);
+    const hvSeg2 = doesSegmentOverlap(endX, startY, endX, endY, obstacles);
+    if (!hvSeg1 && !hvSeg2) {
+      return { path: hvPath, isVertical: false };
+    }
+    
+    // Try V-H (vertical then horizontal)
+    const vhPath = `M ${startX} ${startY} L ${startX} ${endY} L ${endX} ${endY}`;
+    const vhSeg1 = doesSegmentOverlap(startX, startY, startX, endY, obstacles);
+    const vhSeg2 = doesSegmentOverlap(startX, endY, endX, endY, obstacles);
+    if (!vhSeg1 && !vhSeg2) {
+      return { path: vhPath, isVertical: false };
+    }
+    
+    // PRIORITY 3: 3-segment paths with optimal midpoint (2 bends)
+    const sameRow = Math.abs(startY - endY) < 5;
+    
+    if (sameRow || Math.abs(startY - endY) < 100) {
+      // Try H-V-H pattern with optimal midpoint
+      const midX = findOptimalMidpoint(startX, startY, endX, endY, obstacles);
+      const hvhPath = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
+      const hvhSeg1 = doesSegmentOverlap(startX, startY, midX, startY, obstacles);
+      const hvhSeg2 = doesSegmentOverlap(midX, startY, midX, endY, obstacles);
+      const hvhSeg3 = doesSegmentOverlap(midX, endY, endX, endY, obstacles);
+      if (!hvhSeg1 && !hvhSeg2 && !hvhSeg3) {
+        return { path: hvhPath, isVertical: false };
+      }
+    } else {
+      // Try V-H-V pattern for different rows
+      const midY = (startY + endY) / 2;
+      const vhvPath = `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`;
+      const vhvSeg1 = doesSegmentOverlap(startX, startY, startX, midY, obstacles);
+      const vhvSeg2 = doesSegmentOverlap(startX, midY, endX, midY, obstacles);
+      const vhvSeg3 = doesSegmentOverlap(endX, midY, endX, endY, obstacles);
+      if (!vhvSeg1 && !vhvSeg2 && !vhvSeg3) {
+        return { path: vhvPath, isVertical: false };
       }
     }
     
-    // Try vertical then horizontal - arrow horizontal
-    const pathVH = `M ${startX} ${startY} L ${startX} ${endY} L ${endX} ${endY}`;
-    const seg1VH = doesSegmentOverlap(startX, startY, startX, endY, obstacles);
-    const seg2VH = doesSegmentOverlap(startX, endY, endX, endY, obstacles);
-    if (!seg1VH && !seg2VH) {
-      return { path: pathVH, isVertical: false };
-    }
+    // PRIORITY 4: Smart clearance routing (2 bends max)
+    // Calculate bounds of obstacles in the path
+    const minX = Math.min(startX, endX);
+    const maxX = Math.max(startX, endX);
+    const minY = Math.min(startY, endY);
+    const maxY = Math.max(startY, endY);
     
-    // Three-segment path with midpoint - arrow horizontal
-    const midX = (startX + endX) / 2;
-    const path3 = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
-    const seg13 = doesSegmentOverlap(startX, startY, midX, startY, obstacles);
-    const seg23 = doesSegmentOverlap(midX, startY, midX, endY, obstacles);
-    const seg33 = doesSegmentOverlap(midX, endY, endX, endY, obstacles);
-    if (!seg13 && !seg23 && !seg33) {
-      return { path: path3, isVertical: false };
-    }
+    let maxObstacleY = minY;
+    let minObstacleY = maxY;
     
-    // Route around with clearance - arrow horizontal
-    const clearance = 40;
-    const clearanceY = startY < endY ? Math.max(startY, endY) + clearance : Math.min(startY, endY) - clearance;
-    const routedPath = `M ${startX} ${startY} L ${startX + 20} ${startY} L ${startX + 20} ${clearanceY} L ${endX - 20} ${clearanceY} L ${endX - 20} ${endY} L ${endX} ${endY}`;
-    return { path: routedPath, isVertical: false };
+    obstacles.forEach(obs => {
+      if (obs.x < maxX && obs.x + obs.width > minX) {
+        maxObstacleY = Math.max(maxObstacleY, obs.y + obs.height);
+        minObstacleY = Math.min(minObstacleY, obs.y);
+      }
+    });
+    
+    // Route above or below based on available space
+    const clearance = 15;
+    const routeAbove = startY < endY;
+    const clearanceY = routeAbove ? maxObstacleY + clearance : minObstacleY - clearance;
+    
+    // Use 3-segment path routing around obstacles
+    const midX = findOptimalMidpoint(startX, startY, endX, endY, obstacles);
+    const clearedPath = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${clearanceY} L ${midX} ${endY} L ${endX} ${endY}`;
+    
+    return { path: clearedPath, isVertical: false };
   };
 
   const renderLink = (link: GanttLink) => {
@@ -205,7 +276,7 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
       return null;
     }
 
-    const { path, isVertical } = createRoutedPath(from, to);
+    const { path, isVertical } = createRoutedPath(from, to, link.fromId, link.toId);
 
     const isSelected = selectedLink === link.id;
     const linkColor = link.color || "#00bcd4";
