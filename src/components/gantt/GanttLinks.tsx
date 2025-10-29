@@ -82,95 +82,28 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
     };
   };
 
-  const getAllItemPositions = () => {
-    const positions: Array<{ x: number; y: number; width: number; height: number }> = [];
-    Object.entries(data.swimlanes).forEach(([swimlaneId, swimlane]) => {
-      const items = [...(swimlane.activities || []), ...(swimlane.states || [])];
-      items.forEach((item) => {
-        const pos = getItemPosition(swimlaneId, item.id);
-        if (pos) {
-          positions.push({
-            x: pos.x2,
-            y: pos.y2 - 20,
-            width: pos.x1 - pos.x2,
-            height: 40,
-          });
-        }
-      });
-    });
-    return positions;
-  };
-
-  const doesPathOverlap = (x1: number, y1: number, x2: number, y2: number, activities: Array<{ x: number; y: number; width: number; height: number }>) => {
-    // Check if a straight line segment overlaps with any activity
-    for (const act of activities) {
-      // Simple bounding box intersection check
-      const lineMinX = Math.min(x1, x2);
-      const lineMaxX = Math.max(x1, x2);
-      const lineMinY = Math.min(y1, y2);
-      const lineMaxY = Math.max(y1, y2);
-      
-      if (lineMaxX >= act.x && lineMinX <= act.x + act.width &&
-          lineMaxY >= act.y && lineMinY <= act.y + act.height) {
-        return true;
-      }
-    }
-    return false;
-  };
 
   const createRoutedPath = (from: { x1: number; y1: number; x2: number; y2: number }, 
                             to: { x1: number; y1: number; x2: number; y2: number }) => {
     // Vertical alignment - straight line (0 bends)
-    if (Math.abs(from.x1 - to.x2) < 20) {
+    if (Math.abs(from.x1 - to.x2) < 5) {
       return `M ${from.x1} ${from.y1} L ${to.x2} ${to.y2}`;
     }
     
     // Horizontal alignment - straight line (0 bends)
-    if (Math.abs(from.y1 - to.y2) < 20) {
+    if (Math.abs(from.y1 - to.y2) < 5) {
       return `M ${from.x1} ${from.y1} L ${to.x2} ${to.y2}`;
     }
     
-    const allActivities = getAllItemPositions();
-    
-    // Try 2-segment paths (1 bend) - shortest possible
-    const twoSegmentPaths = [
-      // Horizontal then vertical
-      { path: `M ${from.x1} ${from.y1} L ${to.x2} ${from.y1} L ${to.x2} ${to.y2}`, segments: [[from.x1, from.y1, to.x2, from.y1], [to.x2, from.y1, to.x2, to.y2]] },
-      // Vertical then horizontal
-      { path: `M ${from.x1} ${from.y1} L ${from.x1} ${to.y2} L ${to.x2} ${to.y2}`, segments: [[from.x1, from.y1, from.x1, to.y2], [from.x1, to.y2, to.x2, to.y2]] },
-    ];
-    
-    for (const { path, segments } of twoSegmentPaths) {
-      let hasOverlap = false;
-      for (const [x1, y1, x2, y2] of segments) {
-        if (doesPathOverlap(x1, y1, x2, y2, allActivities)) {
-          hasOverlap = true;
-          break;
-        }
-      }
-      if (!hasOverlap) return path;
+    // For all other cases, use simple 2-segment path (1 bend)
+    // Choose the path that is most direct
+    if (from.x1 < to.x2) {
+      // Going right: horizontal then vertical
+      return `M ${from.x1} ${from.y1} L ${to.x2} ${from.y1} L ${to.x2} ${to.y2}`;
+    } else {
+      // Going left: vertical then horizontal
+      return `M ${from.x1} ${from.y1} L ${from.x1} ${to.y2} L ${to.x2} ${to.y2}`;
     }
-    
-    // Try 3-segment path with midpoint (2 bends)
-    const midX = (from.x1 + to.x2) / 2;
-    const threeSegmentPath = {
-      path: `M ${from.x1} ${from.y1} L ${midX} ${from.y1} L ${midX} ${to.y2} L ${to.x2} ${to.y2}`,
-      segments: [[from.x1, from.y1, midX, from.y1], [midX, from.y1, midX, to.y2], [midX, to.y2, to.x2, to.y2]]
-    };
-    
-    let hasOverlap = false;
-    for (const [x1, y1, x2, y2] of threeSegmentPath.segments) {
-      if (doesPathOverlap(x1, y1, x2, y2, allActivities)) {
-        hasOverlap = true;
-        break;
-      }
-    }
-    if (!hasOverlap) return threeSegmentPath.path;
-    
-    // Route around obstacles (last resort)
-    const VERTICAL_OFFSET = 60;
-    const routeY = from.y1 > to.y2 ? Math.min(from.y1, to.y2) - VERTICAL_OFFSET : Math.max(from.y1, to.y2) + VERTICAL_OFFSET;
-    return `M ${from.x1} ${from.y1} L ${from.x1 + 20} ${from.y1} L ${from.x1 + 20} ${routeY} L ${to.x2 - 20} ${routeY} L ${to.x2 - 20} ${to.y2} L ${to.x2} ${to.y2}`;
   };
 
   const renderLink = (link: GanttLink) => {

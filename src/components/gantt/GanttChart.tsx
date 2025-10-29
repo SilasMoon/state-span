@@ -221,6 +221,8 @@ export const GanttChart = () => {
 
     const handleMouseMove = (e: MouseEvent) => {
       if (linkDragStart) {
+        e.preventDefault();
+        e.stopPropagation();
         setLinkDragCurrent({ x: e.clientX, y: e.clientY });
       }
     };
@@ -249,12 +251,12 @@ export const GanttChart = () => {
     window.addEventListener('startLinkDrag', handleStartLink);
     
     if (linkDragStart) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mousemove', handleMouseMove, { capture: true });
+      document.addEventListener('mouseup', handleMouseUp, { capture: true });
       return () => {
         window.removeEventListener('startLinkDrag', handleStartLink);
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('mousemove', handleMouseMove, true);
+        document.removeEventListener('mouseup', handleMouseUp, true);
       };
     }
     
@@ -445,12 +447,13 @@ export const GanttChart = () => {
           else if (Math.abs(startY - endY) < 20) {
             path = `M ${startX} ${startY} L ${endX} ${endY}`;
           }
-          // 2-segment path (horizontal then vertical) - try first
+          // Simple 2-segment path based on direction
           else if (startX < endX) {
+            // Going right: horizontal then vertical
             path = `M ${startX} ${startY} L ${endX} ${startY} L ${endX} ${endY}`;
           }
-          // 2-segment path (vertical then horizontal)
           else {
+            // Going left: vertical then horizontal
             path = `M ${startX} ${startY} L ${startX} ${endY} L ${endX} ${endY}`;
           }
           
