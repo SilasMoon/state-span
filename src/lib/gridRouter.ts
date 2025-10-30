@@ -231,7 +231,8 @@ export class GridRouter {
         path[0] = start;
         path[path.length - 1] = end;
         
-        return this.smoothPath(path);
+        const smoothed = this.smoothPath(path);
+        return this.ensureHorizontalArrowhead(smoothed);
       }
       
       closedSet.add(currentKey);
@@ -273,7 +274,8 @@ export class GridRouter {
     
     // No path found - create a safe vertical-first path as fallback
     console.warn('[GridRouter] No path found, using safe fallback path');
-    return this.createSafeFallbackPath(start, end);
+    const fallbackPath = this.createSafeFallbackPath(start, end);
+    return this.ensureHorizontalArrowhead(fallbackPath);
   }
 
   private createSafeFallbackPath(start: Point, end: Point): Point[] {
@@ -315,6 +317,37 @@ export class GridRouter {
     
     smoothed.push(path[path.length - 1]);
     return smoothed;
+  }
+
+  /**
+   * Ensures the final segment approaches the target horizontally
+   * (unless start and end Y are the same, which is already horizontal)
+   */
+  private ensureHorizontalArrowhead(path: Point[]): Point[] {
+    if (path.length < 2) return path;
+    
+    const start = path[0];
+    const end = path[path.length - 1];
+    
+    // If Y positions are the same, already horizontal
+    if (Math.abs(start.y - end.y) < 1) return path;
+    
+    // Check if last segment is already horizontal
+    const secondToLast = path[path.length - 2];
+    const lastSegmentIsHorizontal = Math.abs(secondToLast.y - end.y) < 1;
+    
+    if (lastSegmentIsHorizontal) {
+      // Already horizontal, no adjustment needed
+      return path;
+    }
+    
+    // Last segment is vertical, need to add a horizontal approach
+    // Insert a point that creates: vertical -> horizontal -> end
+    const adjustedPath = [...path];
+    adjustedPath[adjustedPath.length - 1] = { x: secondToLast.x, y: end.y };
+    adjustedPath.push(end);
+    
+    return adjustedPath;
   }
 
   public static createSVGPath(points: Point[], cornerRadius: number = 8): string {
