@@ -39,15 +39,25 @@ export const GanttLinks = ({
 
   // Get item position with support for temp positions during drag
   const getItemPosition = (swimlaneId: string, itemId: string): ItemPosition | null => {
+    console.log('[GanttLinks] getItemPosition START', { swimlaneId, itemId });
+    
     const tempPos = itemTempPositions[itemId];
     const effectiveSwimlaneId = tempPos?.swimlaneId || swimlaneId;
     
     const swimlane = data.swimlanes[effectiveSwimlaneId];
-    if (!swimlane) return null;
+    if (!swimlane) {
+      console.error('[GanttLinks] Swimlane not found!', { effectiveSwimlaneId });
+      return null;
+    }
 
     const item = swimlane.activities?.find((a) => a.id === itemId) || 
                  swimlane.states?.find((s) => s.id === itemId);
-    if (!item) return null;
+    if (!item) {
+      console.error('[GanttLinks] Item not found in swimlane!', { itemId, swimlaneId: effectiveSwimlaneId, activities: swimlane.activities?.map(a => a.id), states: swimlane.states?.map(s => s.id) });
+      return null;
+    }
+    
+    console.log('[GanttLinks] Found item', { itemId, itemStart: item.start, itemDuration: item.duration });
     
     const itemStart = tempPos?.start ?? item.start;
     const itemDuration = tempPos?.duration ?? item.duration;
