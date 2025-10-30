@@ -198,45 +198,47 @@ export const GanttRow = ({
           type="text"
           value={swimlane.name}
           onChange={(e) => onSwimlaneNameChange(swimlane.id, e.target.value)}
-          className="flex-1 bg-transparent border-none outline-none text-sm text-foreground cursor-pointer"
+          className="bg-transparent border-none outline-none text-sm text-foreground cursor-pointer min-w-0"
           onClick={() => onSelect('swimlane', swimlane.id)}
         />
         
-        <span
-          className={`text-xs px-2 py-0.5 rounded ml-auto ${
-            swimlane.type === "activity"
-              ? "bg-primary/20 text-primary"
-              : "bg-secondary/20 text-secondary"
-          }`}
-        >
-          {swimlane.type}
-        </span>
-
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                <Plus className="w-3 h-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => onAddChild(swimlane.id, "activity")}>
-                Add Activity Child
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAddChild(swimlane.id, "state")}>
-                Add State Child
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-            onClick={() => onDelete(swimlane.id)}
+        <div className="flex items-center gap-2 ml-auto">
+          <span
+            className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
+              swimlane.type === "activity"
+                ? "bg-primary/20 text-primary"
+                : "bg-secondary/20 text-secondary"
+            }`}
           >
-            <Trash2 className="w-3 h-3" />
-          </Button>
+            {swimlane.type}
+          </span>
+
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                  <Plus className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => onAddChild(swimlane.id, "activity")}>
+                  Add Activity Child
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onAddChild(swimlane.id, "state")}>
+                  Add State Child
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+              onClick={() => onDelete(swimlane.id)}
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          </div>
         </div>
       </div>
 
