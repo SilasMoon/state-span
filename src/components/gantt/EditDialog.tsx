@@ -93,6 +93,7 @@ export const EditDialog = ({
               id="label"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
               placeholder="Enter label..."
               maxLength={50}
               className="mt-2"
@@ -137,6 +138,7 @@ export const EditDialog = ({
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
               placeholder="Add a description..."
               rows={4}
               className="mt-2"

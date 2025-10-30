@@ -330,29 +330,10 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
       return null;
     }
 
-    // Detect if link is vertical and adjust to closest corners
-    const isVerticalLink = Math.abs(from.x1 - to.x2) < 5;
-    let adjustedFrom = { ...from };
-    let adjustedTo = { ...to };
-    
-    if (isVerticalLink) {
-      const barHeight = 24; // Activity/state bar height
-      const halfHeight = barHeight / 2;
-      
-      // Connect from closest corners
-      if (from.y1 < to.y2) {
-        // From is above To: connect from bottom of from to top of to
-        adjustedFrom.y1 = from.y1 + halfHeight;  // Bottom edge of from bar
-        adjustedTo.y2 = to.y2 - halfHeight;       // Top edge of to bar
-      } else {
-        // From is below To: connect from top of from to bottom of to
-        adjustedFrom.y1 = from.y1 - halfHeight;  // Top edge of from bar
-        adjustedTo.y2 = to.y2 + halfHeight;       // Bottom edge of to bar
-      }
-      // Keep x positions as they are (already at the correct horizontal edge)
-    }
+    // Use exact edge positions without vertical adjustment
+    // Links should connect at the horizontal edges at the vertical center of bars
 
-    const { path, isVertical } = createRoutedPath(adjustedFrom, adjustedTo, link.fromId, link.toId, link.fromSwimlaneId, link.toSwimlaneId);
+    const { path, isVertical } = createRoutedPath(from, to, link.fromId, link.toId, link.fromSwimlaneId, link.toSwimlaneId);
 
     const isSelected = selectedLink === link.id;
     const linkColor = link.color || "#00bcd4";
