@@ -86,6 +86,26 @@ export const GanttChart = () => {
     offsetY: number;
   } | null>(null);
 
+  const [copiedItem, setCopiedItem] = useState<{
+    type: "activity" | "state";
+    swimlaneId: string;
+    itemId: string;
+    color: string;
+    label: string;
+    labelColor: string;
+    description: string;
+    duration: number;
+  } | null>(null);
+
+  const [copyGhost, setCopyGhost] = useState<{
+    mouseX: number;
+    mouseY: number;
+    duration: number;
+    color: string;
+    label: string;
+    labelColor: string;
+  } | null>(null);
+
   // Ref for the main container to handle keyboard events
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -419,12 +439,63 @@ export const GanttChart = () => {
     moveState(fromSwimlaneId, toSwimlaneId, stateId, newStart);
   };
 
-  // Delete key handler - attached to container
+  // Keyboard handlers - attached to container
   React.useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const modifier = isMac ? e.metaKey : e.ctrlKey;
+
+      // Copy: Ctrl+C / Cmd+C
+      if (modifier && e.key === 'c') {
+        e.preventDefault();
+        if (selected && selected.type !== 'swimlane' && selected.itemId) {
+          const swimlane = data.swimlanes[selected.swimlaneId];
+          if (!swimlane) return;
+          
+          const item = selected.type === 'activity' 
+            ? swimlane.activities?.find(a => a.id === selected.itemId)
+            : swimlane.states?.find(s => s.id === selected.itemId);
+          
+          if (item) {
+            setCopiedItem({
+              type: selected.type as "activity" | "state",
+              swimlaneId: selected.swimlaneId,
+              itemId: selected.itemId,
+              color: item.color,
+              label: item.label || "",
+              labelColor: item.labelColor || "#000000",
+              description: item.description || "",
+              duration: item.duration,
+            });
+            toast.success("Item copied - move mouse and click or press Ctrl+V to paste");
+          }
+        }
+        return;
+      }
+
+      // Paste: Ctrl+V / Cmd+V
+      if (modifier && e.key === 'v') {
+        e.preventDefault();
+        if (copiedItem && copyGhost) {
+          handlePaste();
+        }
+        return;
+      }
+
+      // Escape: Cancel copy mode
+      if (e.key === 'Escape') {
+        if (copiedItem) {
+          setCopiedItem(null);
+          setCopyGhost(null);
+          toast.info("Copy cancelled");
+        }
+        return;
+      }
+
+      // Delete
       console.log('[GanttChart] Delete key pressed', { selected, selectedLink });
       if (e.key === 'Delete') {
         if (selectedLink) {
@@ -452,7 +523,7 @@ export const GanttChart = () => {
 
     container.addEventListener('keydown', handleKeyDown);
     return () => container.removeEventListener('keydown', handleKeyDown);
-  }, [selected, selectedLink, deleteSwimlane, deleteActivity, deleteState, deleteLink]);
+  }, [selected, selectedLink, copiedItem, copyGhost, data.swimlanes, deleteSwimlane, deleteActivity, deleteState, deleteLink]);
 
   // Auto-focus container when item is selected
   React.useEffect(() => {
@@ -460,6 +531,101 @@ export const GanttChart = () => {
       containerRef.current.focus();
     }
   }, [selected]);
+
+  // Track mouse movement for copy ghost
+  React.useEffect(() => {
+    if (!copiedItem) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      setCopyGhost({
+        mouseX: e.clientX,
+        mouseY: e.clientY,
+        duration: copiedItem.duration,
+        color: copiedItem.color,
+        label: copiedItem.label,
+        labelColor: copiedItem.labelColor,
+      });
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    return () => document.removeEventListener('mousemove', handleMouseMove);
+  }, [copiedItem]);
+
+  // Handle paste operation
+  const handlePaste = () => {
+    if (!copiedItem || !copyGhost) return;
+
+    // Find which swimlane the cursor is over
+    const element = document.elementFromPoint(copyGhost.mouseX, copyGhost.mouseY);
+    const rowElement = element?.closest('[data-swimlane-id]');
+    
+    if (!rowElement) {
+      toast.error("Position cursor over a swimlane to paste");
+      return;
+    }
+
+    const targetSwimlaneId = rowElement.getAttribute('data-swimlane-id');
+    if (!targetSwimlaneId) return;
+
+    const targetSwimlane = data.swimlanes[targetSwimlaneId];
+    if (!targetSwimlane) return;
+
+    // Check if types match
+    if (copiedItem.type === 'activity' && targetSwimlane.type !== 'activity') {
+      toast.error("Can only paste activities to activity swimlanes");
+      return;
+    }
+    if (copiedItem.type === 'state' && targetSwimlane.type !== 'state') {
+      toast.error("Can only paste states to state swimlanes");
+      return;
+    }
+
+    // Calculate start time based on cursor position
+    const scrollContainer = document.querySelector('.overflow-auto');
+    const scrollLeft = scrollContainer?.scrollLeft || 0;
+    const swimlaneLabelWidth = 280;
+    const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
+    
+    const gridX = copyGhost.mouseX + scrollLeft - swimlaneLabelWidth;
+    const start = Math.max(0, Math.round((gridX / columnWidth) * zoom / zoom) * zoom);
+
+    // Check for overlap
+    if (checkOverlap(targetSwimlaneId, '', start, copiedItem.duration)) {
+      toast.error("Cannot paste here - overlaps with existing item");
+      return;
+    }
+
+    // Create the new item
+    if (copiedItem.type === 'activity') {
+      addActivity(targetSwimlaneId, start, copiedItem.duration);
+      const newActivity = targetSwimlane.activities?.[targetSwimlane.activities.length - 1];
+      if (newActivity) {
+        updateActivity(targetSwimlaneId, newActivity.id, {
+          color: copiedItem.color,
+          label: copiedItem.label,
+          labelColor: copiedItem.labelColor,
+          description: copiedItem.description,
+        });
+      }
+      toast.success("Activity pasted");
+    } else {
+      addState(targetSwimlaneId, start, copiedItem.duration);
+      const newState = targetSwimlane.states?.[targetSwimlane.states.length - 1];
+      if (newState) {
+        updateState(targetSwimlaneId, newState.id, {
+          color: copiedItem.color,
+          label: copiedItem.label,
+          labelColor: copiedItem.labelColor,
+          description: copiedItem.description,
+        });
+      }
+      toast.success("State pasted");
+    }
+
+    // Clear copy mode
+    setCopiedItem(null);
+    setCopyGhost(null);
+  };
 
   const handleDragStateChange = (itemId: string, swimlaneId: string) => 
     (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => {
@@ -555,6 +721,14 @@ export const GanttChart = () => {
         tabIndex={0}
         className="flex-1 overflow-auto relative outline-none focus:ring-2 focus:ring-primary/20"
         onClick={(e) => {
+          // If in copy mode, paste on click
+          if (copiedItem && copyGhost) {
+            e.preventDefault();
+            e.stopPropagation();
+            handlePaste();
+            return;
+          }
+          
           if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.inline-block')) {
             setSelected(null);
             setSelectedLink(null);
@@ -626,6 +800,42 @@ export const GanttChart = () => {
                 borderColor: "#fff",
               }}
             />,
+            document.body
+          );
+        })()}
+
+        {/* Copy ghost preview */}
+        {copyGhost && (() => {
+          const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
+          const width = (copyGhost.duration / zoom) * columnWidth;
+          
+          return createPortal(
+            <div
+              className="absolute h-6 rounded flex items-center justify-center text-xs font-medium pointer-events-none border-2 border-dashed animate-pulse"
+              style={{
+                left: `${copyGhost.mouseX}px`,
+                width: `${width}px`,
+                top: `${copyGhost.mouseY}px`,
+                backgroundColor: copyGhost.color,
+                opacity: 0.6,
+                color: "#fff",
+                zIndex: 100,
+                borderColor: "#3b82f6",
+                transform: 'translate(-50%, -50%)',
+              }}
+            >
+              {copyGhost.label && (
+                <span 
+                  className="px-2 truncate font-medium text-shadow-sm" 
+                  style={{ 
+                    color: copyGhost.labelColor,
+                    textShadow: '0 1px 2px rgba(255,255,255,0.5)'
+                  }}
+                >
+                  {copyGhost.label}
+                </span>
+              )}
+            </div>,
             document.body
           );
         })()}
