@@ -34,6 +34,10 @@ export const GanttChart = () => {
     exportData,
     importData,
     calculateSummaryBar,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useGanttData();
 
   const [editDialog, setEditDialog] = useState<{
@@ -495,6 +499,26 @@ export const GanttChart = () => {
         return;
       }
 
+      // Undo: Ctrl+Z / Cmd+Z
+      if (modifier && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (canUndo) {
+          undo();
+          toast.success("Undo");
+        }
+        return;
+      }
+
+      // Redo: Ctrl+Y / Cmd+Y or Ctrl+Shift+Z / Cmd+Shift+Z
+      if (modifier && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        if (canRedo) {
+          redo();
+          toast.success("Redo");
+        }
+        return;
+      }
+
       // Delete
       console.log('[GanttChart] Delete key pressed', { selected, selectedLink });
       if (e.key === 'Delete') {
@@ -523,7 +547,7 @@ export const GanttChart = () => {
 
     container.addEventListener('keydown', handleKeyDown);
     return () => container.removeEventListener('keydown', handleKeyDown);
-  }, [selected, selectedLink, copiedItem, copyGhost, data.swimlanes, deleteSwimlane, deleteActivity, deleteState, deleteLink]);
+  }, [selected, selectedLink, copiedItem, copyGhost, data.swimlanes, deleteSwimlane, deleteActivity, deleteState, deleteLink, undo, redo, canUndo, canRedo]);
 
   // Auto-focus container when item is selected
   React.useEffect(() => {
@@ -708,6 +732,10 @@ export const GanttChart = () => {
         onExport={handleExport}
         onImport={handleImport}
         onClear={handleClear}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
       />
 
       <div 

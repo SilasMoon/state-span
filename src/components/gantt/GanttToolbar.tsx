@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2 } from "lucide-react";
+import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,6 +19,10 @@ interface GanttToolbarProps {
   onExport: () => void;
   onImport: (data: string) => void;
   onClear: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 export const GanttToolbar = ({
@@ -31,6 +35,10 @@ export const GanttToolbar = ({
   onExport,
   onImport,
   onClear,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
 }: GanttToolbarProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -96,6 +104,27 @@ export const GanttToolbar = ({
       <Button variant="destructive" size="sm" onClick={onClear}>
         <Trash2 className="w-4 h-4 mr-1" />
         Clear All
+      </Button>
+
+      <div className="h-6 w-px bg-border mx-1" />
+
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={onUndo}
+        disabled={!canUndo}
+        title="Undo (Ctrl+Z)"
+      >
+        <Undo className="w-4 h-4" />
+      </Button>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={onRedo}
+        disabled={!canRedo}
+        title="Redo (Ctrl+Y)"
+      >
+        <Redo className="w-4 h-4" />
       </Button>
 
       <div className="flex-1" />

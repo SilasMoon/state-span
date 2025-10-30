@@ -44,6 +44,41 @@ const createDefaultData = (): GanttData => {
 export const useGanttData = () => {
   const [data, setData] = useState<GanttData>(createDefaultData());
   const [zoom, setZoom] = useState<ZoomLevel>(8);
+  const [history, setHistory] = useState<GanttData[]>([]);
+  const [future, setFuture] = useState<GanttData[]>([]);
+
+  // Wrapper to track history when data changes
+  const updateData = (updater: (prev: GanttData) => GanttData) => {
+    setData((prev) => {
+      const next = updater(prev);
+      if (next !== prev) {
+        setHistory((h) => [...h, prev].slice(-50)); // Keep last 50 states
+        setFuture([]); // Clear redo stack when new action is made
+      }
+      return next;
+    });
+  };
+
+  const undo = () => {
+    if (history.length === 0) return;
+    
+    const previous = history[history.length - 1];
+    setHistory((h) => h.slice(0, -1));
+    setFuture((f) => [data, ...f].slice(0, 50));
+    setData(previous);
+  };
+
+  const redo = () => {
+    if (future.length === 0) return;
+    
+    const next = future[0];
+    setFuture((f) => f.slice(1));
+    setHistory((h) => [...h, data].slice(-50));
+    setData(next);
+  };
+
+  const canUndo = history.length > 0;
+  const canRedo = future.length > 0;
 
   // Helper function to calculate summary bar from children
   const calculateSummaryBar = (swimlaneId: string, swimlanes: Record<string, GanttSwimlane>): { start: number; duration: number; hasContent: boolean } | null => {
@@ -97,7 +132,7 @@ export const useGanttData = () => {
       states: type === "state" ? [] : undefined,
     };
 
-    setData((prev) => {
+    updateData((prev) => {
       const newData = { ...prev };
       newData.swimlanes = { ...prev.swimlanes, [id]: newSwimlane };
 
@@ -121,7 +156,7 @@ export const useGanttData = () => {
   };
 
   const deleteSwimlane = (id: string) => {
-    setData((prev) => {
+    updateData((prev) => {
       const newData = { ...prev };
       const swimlane = newData.swimlanes[id];
       if (!swimlane) return prev;
@@ -159,7 +194,7 @@ export const useGanttData = () => {
   };
 
   const toggleExpanded = (id: string) => {
-    setData((prev) => ({
+    updateData((prev) => ({
       ...prev,
       swimlanes: {
         ...prev.swimlanes,
@@ -220,7 +255,7 @@ export const useGanttData = () => {
       description: "",
     };
 
-    setData((prev) => {
+    updateData((prev) => {
       const swimlane = prev.swimlanes[swimlaneId];
       if (!swimlane || swimlane.type !== "state") return prev;
       
@@ -246,7 +281,7 @@ export const useGanttData = () => {
   };
 
   const updateActivity = (swimlaneId: string, activityId: string, updates: Partial<GanttActivity>) => {
-    setData((prev) => {
+    updateData((prev) => {
       const swimlane = prev.swimlanes[swimlaneId];
       if (!swimlane || !swimlane.activities) return prev;
 
@@ -327,7 +362,7 @@ export const useGanttData = () => {
   };
 
   const updateState = (swimlaneId: string, stateId: string, updates: Partial<GanttState>) => {
-    setData((prev) => {
+    updateData((prev) => {
       const swimlane = prev.swimlanes[swimlaneId];
       if (!swimlane || !swimlane.states) return prev;
 
@@ -361,7 +396,7 @@ export const useGanttData = () => {
   };
 
   const deleteActivity = (swimlaneId: string, activityId: string) => {
-    setData((prev) => {
+    updateData((prev) => {
       const swimlane = prev.swimlanes[swimlaneId];
       if (!swimlane || !swimlane.activities) return prev;
 
@@ -385,7 +420,7 @@ export const useGanttData = () => {
   };
 
   const deleteState = (swimlaneId: string, stateId: string) => {
-    setData((prev) => {
+    updateData((prev) => {
       const swimlane = prev.swimlanes[swimlaneId];
       if (!swimlane || !swimlane.states) return prev;
 
@@ -443,7 +478,7 @@ export const useGanttData = () => {
   };
 
   const updateLink = (linkId: string, updates: Partial<GanttLink>) => {
-    setData((prev) => ({
+    updateData((prev) => ({
       ...prev,
       links: prev.links.map((link) =>
         link.id === linkId ? { ...link, ...updates } : link
@@ -452,14 +487,14 @@ export const useGanttData = () => {
   };
 
   const deleteLink = (linkId: string) => {
-    setData((prev) => ({
+    updateData((prev) => ({
       ...prev,
       links: prev.links.filter((link) => link.id !== linkId),
     }));
   };
 
   const moveActivity = (fromSwimlaneId: string, toSwimlaneId: string, activityId: string, newStart: number) => {
-    setData((prev) => {
+    updateData((prev) => {
       const fromSwimlane = prev.swimlanes[fromSwimlaneId];
       const toSwimlane = prev.swimlanes[toSwimlaneId];
       
@@ -577,7 +612,7 @@ export const useGanttData = () => {
   };
 
   const moveState = (fromSwimlaneId: string, toSwimlaneId: string, stateId: string, newStart: number) => {
-    setData((prev) => {
+    updateData((prev) => {
       const fromSwimlane = prev.swimlanes[fromSwimlaneId];
       const toSwimlane = prev.swimlanes[toSwimlaneId];
       
@@ -651,7 +686,7 @@ export const useGanttData = () => {
   };
 
   const updateSwimlane = (id: string, updates: Partial<GanttSwimlane>) => {
-    setData((prev) => ({
+    updateData((prev) => ({
       ...prev,
       swimlanes: {
         ...prev.swimlanes,
@@ -664,11 +699,11 @@ export const useGanttData = () => {
   };
 
   const clearAll = () => {
-    setData({
+    updateData(() => ({
       swimlanes: {},
       rootIds: [],
       links: [],
-    });
+    }));
     nextId = 1;
   };
 
@@ -679,7 +714,7 @@ export const useGanttData = () => {
   const importData = (jsonData: string) => {
     try {
       const parsed = JSON.parse(jsonData);
-      setData(parsed);
+      updateData(() => parsed);
       // Update nextId to avoid conflicts
       const allIds = Object.keys(parsed.swimlanes);
       const maxId = allIds.reduce((max, id) => {
@@ -715,5 +750,9 @@ export const useGanttData = () => {
     exportData,
     importData,
     calculateSummaryBar,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   };
 };
