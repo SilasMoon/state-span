@@ -227,9 +227,12 @@ export const GanttLinks = ({
     const start = { x: startX, y: fromPos.barCenterY };
     const end = { x: endX, y: toPos.barCenterY };
 
-    console.log(`[GanttLinks] renderLink ${link.id}`, {
-      from: { itemId: link.fromId, swimlaneId: link.fromSwimlaneId, barCenterY: fromPos.barCenterY, startX },
-      to: { itemId: link.toId, swimlaneId: link.toSwimlaneId, barCenterY: toPos.barCenterY, endX },
+    console.log('[GanttLinks] renderLink', link.id, {
+      from: { itemId: link.fromId, swimlaneId: link.fromSwimlaneId, barCenterY: fromPos.barCenterY, x: fromPos.x, width: fromPos.width },
+      to: { itemId: link.toId, swimlaneId: link.toSwimlaneId, barCenterY: toPos.barCenterY, x: toPos.x, width: toPos.width },
+      linkType: link.type,
+      calculatedStartX: startX,
+      calculatedEndX: endX,
       start,
       end
     });
