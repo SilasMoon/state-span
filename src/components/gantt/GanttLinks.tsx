@@ -92,38 +92,24 @@ export const GanttLinks = ({
       x = barRect.left - svgRect.left;
       width = barRect.width;
       
-      console.log('[GanttLinks] DOM-based position', {
-        itemId,
-        barViewport: { left: barRect.left, width: barRect.width },
-        svgViewport: { left: svgRect.left },
-        svgCoordinates: { x, width },
-        note: 'Using actual DOM positions with scroll compensation'
-      });
+      // CRITICAL: Also get Y position from DOM for consistency
+      // The bar's visual center in SVG coordinates
+      const barCenterY = (barRect.top + barRect.height / 2) - svgRect.top;
+      
+      return {
+        x,
+        y: rowTop + 24, // Keep for legacy compatibility
+        width,
+        swimlaneId: effectiveSwimlaneId,
+        barCenterY
+      };
     } else {
       // Fallback: calculate from data (won't account for scroll)
       x = (itemStart / zoom) * columnWidth;
       width = (itemDuration / zoom) * columnWidth;
-      
-      console.log('[GanttLinks] Calculated position (fallback)', {
-        itemId,
-        itemStart,
-        itemDuration,
-        calculatedX: x,
-        calculatedWidth: width,
-        note: 'Fallback - may not match if scrolled'
-      });
     }
     
-    // CRITICAL: Match EXACT handle positioning from GanttBar.tsx
-    // Link handles in GanttBar.tsx use: style={{ top: '50%', transform: 'translateY(-50%)' }}
-    // This centers them in the row container (h-12 = 48px from GanttRow.tsx line 331)
-    // 
-    // The handles are positioned relative to the row container (NOT the bar itself):
-    // - Row container: 48px tall (SWIMLANE_HEIGHT)
-    // - Handle position: top: 50% = SWIMLANE_HEIGHT / 2 = 24px from row top
-    // - This applies to BOTH activity bars and state bars
-    //
-    // Therefore: barCenterY = rowTop + (SWIMLANE_HEIGHT / 2)
+    // Fallback: calculate barCenterY from row position
     const barCenterY = rowTop + (SWIMLANE_HEIGHT / 2);
 
     return {
