@@ -401,12 +401,14 @@ export const GanttChart = () => {
   // Delete key handler
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      console.log('[GanttChart] Delete key pressed', { selected, selectedLink });
       if (e.key === 'Delete') {
         if (selectedLink) {
           deleteLink(selectedLink);
           setSelectedLink(null);
           toast.success("Link deleted");
         } else if (selected) {
+          console.log('[GanttChart] Deleting selected item', selected);
           if (selected.type === 'swimlane') {
             deleteSwimlane(selected.swimlaneId);
             setSelected(null);
