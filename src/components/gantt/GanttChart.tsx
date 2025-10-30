@@ -26,6 +26,7 @@ export const GanttChart = () => {
     deleteState,
     moveActivity,
     moveState,
+    moveSwimlane,
     addLink,
     deleteLink,
     updateLink,
@@ -765,6 +766,7 @@ export const GanttChart = () => {
             onActivityResize={handleActivityResize}
             onStateResize={handleStateResize}
             onSwimlaneNameChange={(id, name) => updateSwimlane(id, { name })}
+            onSwimlaneDrop={moveSwimlane}
             checkOverlap={checkOverlap}
             onDragStateChange={handleDragStateChange}
             summaryBar={summaryBar}

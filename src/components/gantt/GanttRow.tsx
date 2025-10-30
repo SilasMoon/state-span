@@ -30,6 +30,7 @@ interface GanttRowProps {
   onActivityResize: (swimlaneId: string, activityId: string, newStart: number, newDuration: number) => void;
   onStateResize: (swimlaneId: string, stateId: string, newStart: number, newDuration: number) => void;
   onSwimlaneNameChange: (id: string, name: string) => void;
+  onSwimlaneDrop: (swimlaneId: string, targetParentId: string | null, insertBeforeId: string | null) => void;
   checkOverlap: (swimlaneId: string, itemId: string, start: number, duration: number) => boolean;
   onDragStateChange: (itemId: string, swimlaneId: string) => (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => void;
   summaryBar: { start: number; duration: number; hasContent: boolean } | null;
@@ -54,6 +55,7 @@ export const GanttRow = ({
   onActivityResize,
   onStateResize,
   onSwimlaneNameChange,
+  onSwimlaneDrop,
   checkOverlap,
   onDragStateChange,
   summaryBar,
@@ -68,6 +70,8 @@ export const GanttRow = ({
     currentHour: number;
     hasMoved: boolean;
   } | null>(null);
+
+  const [dragOver, setDragOver] = useState<'top' | 'bottom' | 'inside' | null>(null);
 
   const renderGrid = () => {
     const cells = [];
@@ -169,16 +173,95 @@ export const GanttRow = ({
 
   const isRowSelected = selected?.type === 'swimlane' && selected.swimlaneId === swimlane.id;
 
+  // Drag and drop handlers for swimlane reordering
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('swimlane-id', swimlane.id);
+    e.dataTransfer.setData('swimlane-type', swimlane.type);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const draggedId = e.dataTransfer.types.includes('swimlane-id') ? 'swimlane' : null;
+    if (!draggedId) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const height = rect.height;
+    
+    // Determine drop zone: top third, middle third, or bottom third
+    if (y < height * 0.25) {
+      setDragOver('top');
+    } else if (y > height * 0.75) {
+      setDragOver('bottom');
+    } else {
+      setDragOver('inside');
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (e.currentTarget === e.target) {
+      setDragOver(null);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const draggedId = e.dataTransfer.getData('swimlane-id');
+    const draggedType = e.dataTransfer.getData('swimlane-type');
+    
+    if (!draggedId || draggedId === swimlane.id) {
+      setDragOver(null);
+      return;
+    }
+
+    // Check type compatibility for 'inside' drop
+    if (dragOver === 'inside' && draggedType !== swimlane.type) {
+      toast.error(`Cannot move ${draggedType} swimlane into ${swimlane.type} swimlane`);
+      setDragOver(null);
+      return;
+    }
+
+    if (dragOver === 'top') {
+      // Insert before this swimlane
+      onSwimlaneDrop(draggedId, swimlane.parentId || null, swimlane.id);
+      toast.success("Swimlane moved");
+    } else if (dragOver === 'bottom') {
+      // Insert after this swimlane - we need to find the next sibling
+      onSwimlaneDrop(draggedId, swimlane.parentId || null, null);
+      toast.success("Swimlane moved");
+    } else if (dragOver === 'inside') {
+      // Make this swimlane the parent
+      onSwimlaneDrop(draggedId, swimlane.id, null);
+      toast.success("Swimlane moved");
+    }
+
+    setDragOver(null);
+  };
+
   return (
     <div
-      className={`flex transition-colors border-b border-gantt-grid`}
+      className={`flex transition-colors border-b border-gantt-grid relative ${
+        dragOver === 'top' ? 'border-t-4 border-t-primary' : ''
+      } ${dragOver === 'bottom' ? 'border-b-4 border-b-primary' : ''} ${
+        dragOver === 'inside' ? 'bg-primary/10' : ''
+      }`}
       data-swimlane-id={swimlane.id}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       <div
-        className={`sticky left-0 z-10 bg-card border-r border-border flex items-center gap-2 px-3 py-2 group ${
+        className={`sticky left-0 z-10 bg-card border-r border-border flex items-center gap-2 px-3 py-2 group cursor-move ${
           isRowSelected ? 'bg-primary/10 ring-2 ring-primary ring-inset' : ''
         }`}
         style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px`, paddingLeft: `${level * 20 + 12}px` }}
+        draggable
+        onDragStart={handleDragStart}
       >
         {hasChildren && (
           <Button

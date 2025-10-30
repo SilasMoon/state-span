@@ -811,6 +811,97 @@ export const useGanttData = () => {
     });
   };
 
+  const moveSwimlane = (swimlaneId: string, targetParentId: string | null, insertBeforeId: string | null) => {
+    updateData((prev) => {
+      const swimlane = prev.swimlanes[swimlaneId];
+      if (!swimlane) return prev;
+
+      // Don't allow moving into itself or its own descendants
+      const isDescendant = (potentialParentId: string): boolean => {
+        if (potentialParentId === swimlaneId) return true;
+        const potentialParent = prev.swimlanes[potentialParentId];
+        if (!potentialParent || !potentialParent.parentId) return false;
+        return isDescendant(potentialParent.parentId);
+      };
+
+      if (targetParentId && isDescendant(targetParentId)) {
+        console.warn("Cannot move swimlane into its own descendant");
+        return prev;
+      }
+
+      // Check type compatibility if moving to a parent
+      if (targetParentId) {
+        const targetParent = prev.swimlanes[targetParentId];
+        if (targetParent && targetParent.type !== swimlane.type) {
+          console.warn("Cannot move swimlane to parent of different type");
+          return prev;
+        }
+      }
+
+      const newData = { ...prev };
+      newData.swimlanes = { ...prev.swimlanes };
+
+      // Remove from old location
+      if (swimlane.parentId) {
+        const oldParent = newData.swimlanes[swimlane.parentId];
+        newData.swimlanes[swimlane.parentId] = {
+          ...oldParent,
+          children: oldParent.children.filter(id => id !== swimlaneId),
+        };
+      } else {
+        newData.rootIds = newData.rootIds.filter(id => id !== swimlaneId);
+      }
+
+      // Update swimlane's parentId
+      newData.swimlanes[swimlaneId] = {
+        ...swimlane,
+        parentId: targetParentId || undefined,
+      };
+
+      // Insert at new location
+      if (targetParentId) {
+        const newParent = newData.swimlanes[targetParentId];
+        const newChildren = [...newParent.children];
+        
+        if (insertBeforeId) {
+          const insertIndex = newChildren.indexOf(insertBeforeId);
+          if (insertIndex >= 0) {
+            newChildren.splice(insertIndex, 0, swimlaneId);
+          } else {
+            newChildren.push(swimlaneId);
+          }
+        } else {
+          newChildren.push(swimlaneId);
+        }
+
+        newData.swimlanes[targetParentId] = {
+          ...newParent,
+          children: newChildren,
+          // Clear parent's items when adding first child
+          activities: newParent.type === "activity" && newChildren.length === 1 ? [] : newParent.activities,
+          states: newParent.type === "state" && newChildren.length === 1 ? [] : newParent.states,
+        };
+      } else {
+        const newRootIds = [...newData.rootIds];
+        
+        if (insertBeforeId) {
+          const insertIndex = newRootIds.indexOf(insertBeforeId);
+          if (insertIndex >= 0) {
+            newRootIds.splice(insertIndex, 0, swimlaneId);
+          } else {
+            newRootIds.push(swimlaneId);
+          }
+        } else {
+          newRootIds.push(swimlaneId);
+        }
+
+        newData.rootIds = newRootIds;
+      }
+
+      return newData;
+    });
+  };
+
   const updateSwimlane = (id: string, updates: Partial<GanttSwimlane>) => {
     updateData((prev) => ({
       ...prev,
@@ -868,6 +959,7 @@ export const useGanttData = () => {
     deleteState,
     moveActivity,
     moveState,
+    moveSwimlane,
     addLink,
     deleteLink,
     updateLink,
