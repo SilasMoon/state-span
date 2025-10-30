@@ -340,35 +340,42 @@ export const GanttChart = () => {
       // Dynamically import html2canvas
       const html2canvas = await import('html2canvas').then(m => m.default);
       
-      // Get the scrollable container (the one with overflow-auto)
+      // Get the inner chart container (not the scrollable wrapper)
+      const chartContainer = document.querySelector('.gantt-chart-container') as HTMLElement;
+      if (!chartContainer) {
+        toast.error("Chart container not found");
+        return;
+      }
+
+      // Get the scrollable container to determine visible area
       const scrollContainer = containerRef.current;
       if (!scrollContainer) {
-        toast.error("Chart container not found");
+        toast.error("Scroll container not found");
         return;
       }
 
       toast.info("Generating image...");
       
-      // Calculate visible dimensions
+      // Get the visible viewport dimensions
       const visibleWidth = scrollContainer.clientWidth;
       const visibleHeight = scrollContainer.clientHeight;
       const scrollLeft = scrollContainer.scrollLeft;
       const scrollTop = scrollContainer.scrollTop;
       
-      // Capture the entire scrollable content
-      const canvas = await html2canvas(scrollContainer, {
+      // Capture only the visible portion of the chart
+      const canvas = await html2canvas(chartContainer, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
         useCORS: true,
         foreignObjectRendering: true,
         allowTaint: true,
-        x: scrollLeft,
-        y: scrollTop,
+        scrollX: -scrollLeft,
+        scrollY: -scrollTop,
         width: visibleWidth,
         height: visibleHeight,
-        windowWidth: scrollContainer.scrollWidth,
-        windowHeight: scrollContainer.scrollHeight,
+        windowWidth: chartContainer.scrollWidth,
+        windowHeight: chartContainer.scrollHeight,
       });
 
       canvas.toBlob((blob) => {
