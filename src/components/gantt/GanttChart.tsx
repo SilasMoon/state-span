@@ -70,6 +70,8 @@ export const GanttChart = () => {
     tempStart: number;
     tempDuration: number;
     color: string;
+    mouseX: number;
+    mouseY: number;
   } | null>(null);
 
   // Calculate total hours dynamically based on content
@@ -412,7 +414,7 @@ export const GanttChart = () => {
   }, [selected, selectedLink, deleteSwimlane, deleteActivity, deleteState, deleteLink]);
 
   const handleDragStateChange = (itemId: string, swimlaneId: string) => 
-    (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number) => {
+    (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number) => {
       if (isDragging && targetSwimlaneId) {
         const swimlane = data.swimlanes[swimlaneId];
         const item = swimlane?.activities?.find(a => a.id === itemId) || swimlane?.states?.find(s => s.id === itemId);
@@ -424,6 +426,8 @@ export const GanttChart = () => {
             tempStart,
             tempDuration,
             color: item.color,
+            mouseX,
+            mouseY,
           });
         }
       } else {
@@ -539,22 +543,19 @@ export const GanttChart = () => {
 
         {/* Drag preview ghost bar */}
         {dragPreview && (() => {
-          const targetRow = document.querySelector(`[data-swimlane-id="${dragPreview.targetSwimlaneId}"]`);
-          if (!targetRow) return null;
-          
           const scrollContainer = document.querySelector('.overflow-auto');
           const scrollLeft = scrollContainer?.scrollLeft || 0;
           const scrollTop = scrollContainer?.scrollTop || 0;
-          
-          const targetRect = targetRow.getBoundingClientRect();
           const containerRect = scrollContainer?.getBoundingClientRect();
           
           if (!containerRect) return null;
           
           const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
-          const left = (dragPreview.tempStart / zoom) * columnWidth + 280; // 280 is swimlane name column width
+          
+          // Calculate position based on actual mouse coordinates
+          const left = dragPreview.mouseX - containerRect.left + scrollLeft;
+          const top = dragPreview.mouseY - containerRect.top + scrollTop - 12; // 12 is half of bar height
           const width = (dragPreview.tempDuration / zoom) * columnWidth;
-          const top = targetRect.top - containerRect.top + scrollTop + (targetRect.height / 2) - 12; // 12 is half of bar height (24px)
           
           return createPortal(
             <div

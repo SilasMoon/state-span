@@ -13,7 +13,7 @@ interface GanttBarProps {
   onMove: (toSwimlaneId: string, newStart: number) => void;
   onResize: (newStart: number, newDuration: number) => void;
   checkOverlap: (swimlaneId: string, itemId: string, start: number, duration: number) => boolean;
-  onDragStateChange?: (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number) => void;
+  onDragStateChange?: (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number) => void;
 }
 
 export const GanttBar = ({
@@ -97,8 +97,8 @@ export const GanttBar = ({
           if (canPlace) {
             setTempStart(newStart);
           }
-          // Notify parent of drag state change
-          onDragStateChange?.(true, newSwimlaneId !== swimlaneId ? newSwimlaneId : null, newStart, tempDuration);
+          // Always notify parent with current mouse position for smooth ghost tracking
+          onDragStateChange?.(true, newSwimlaneId !== swimlaneId ? newSwimlaneId : null, newStart, tempDuration, e.clientX, e.clientY);
         }
       }
     } else if (isDragging === 'start') {
@@ -137,7 +137,7 @@ export const GanttBar = ({
       setIsDragging(null);
       setTargetSwimlaneId(swimlaneId);
       // Notify parent that dragging stopped
-      onDragStateChange?.(false, null, item.start, item.duration);
+      onDragStateChange?.(false, null, item.start, item.duration, 0, 0);
     }
   };
 
