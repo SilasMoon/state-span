@@ -68,11 +68,25 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
     };
 
     const y = findYPosition(swimlaneId, 48);
-    if (y === null) return null;
+    if (y === null) {
+      console.error(`[GanttLinks] Could not find Y position for swimlane ${swimlaneId}`);
+      return null;
+    }
     
-    // Log to debug Y position calculation
+    // Comprehensive debug logging
     if (linkForLogging) {
-      console.log(`[Link ${linkForLogging.id}] Y position for ${data.swimlanes[swimlaneId]?.name} (${swimlaneId}): ${y}px, item: ${item.label} (${itemId})`);
+      const swimlaneName = data.swimlanes[swimlaneId]?.name || 'Unknown';
+      const itemLabel = item.label || itemId;
+      console.log(`[Link ${linkForLogging.id}] Connection point:`, {
+        swimlane: `${swimlaneName} (${swimlaneId})`,
+        item: `${itemLabel} (${itemId})`,
+        yPosition: `${y}px`,
+        itemStart: item.start,
+        itemDuration: item.duration,
+        isFromPoint: itemId === linkForLogging.fromId,
+        isToPoint: itemId === linkForLogging.toId,
+        linkType: linkForLogging.type
+      });
     }
 
     const x = (item.start / zoom) * columnWidth + swimlaneColumnWidth;
