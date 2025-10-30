@@ -447,7 +447,7 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
     <svg
       className="absolute pointer-events-none"
       style={{ 
-        zIndex: 60,
+        zIndex: 40,
         left: 0,
         top: 0,
         width: '100%',
