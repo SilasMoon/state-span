@@ -98,20 +98,38 @@ export const GanttChart = () => {
   };
 
   const handleZoomToFit = () => {
-    // Get the scrollable container element
     const scrollContainer = document.querySelector('.overflow-auto');
     if (!scrollContainer) return;
 
     const viewportWidth = scrollContainer.clientWidth - 280; // Subtract swimlane name column width
-    const scrollLeft = scrollContainer.scrollLeft;
     
-    // Calculate current visible time range based on scroll position and current zoom
-    const currentColumnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
-    const visibleStartHour = (scrollLeft / currentColumnWidth) * zoom;
-    const visibleEndHour = ((scrollLeft + viewportWidth) / currentColumnWidth) * zoom;
-    const visibleDuration = visibleEndHour - visibleStartHour;
+    // Calculate actual timeline extent from all content
+    let minStart = Infinity;
+    let maxEnd = 0;
     
-    // Calculate best zoom level to fit the visible duration
+    Object.values(data.swimlanes).forEach((swimlane) => {
+      swimlane.activities?.forEach((activity) => {
+        if (activity.start < minStart) minStart = activity.start;
+        const end = activity.start + activity.duration;
+        if (end > maxEnd) maxEnd = end;
+      });
+      swimlane.states?.forEach((state) => {
+        if (state.start < minStart) minStart = state.start;
+        const end = state.start + state.duration;
+        if (end > maxEnd) maxEnd = end;
+      });
+    });
+    
+    // If no content, use default
+    if (minStart === Infinity) {
+      setZoom(24);
+      toast.info("Timeline zoomed to fit");
+      return;
+    }
+    
+    const actualContentDuration = maxEnd - minStart;
+    
+    // Calculate best zoom level to fit the actual content
     const levels: ZoomLevel[] = [24, 12, 8, 4, 2, 1];
     const columnWidths: Record<ZoomLevel, number> = { 1: 30, 2: 40, 4: 50, 8: 60, 12: 70, 24: 80 };
     
@@ -119,7 +137,7 @@ export const GanttChart = () => {
     
     for (const level of levels) {
       const columnWidth = columnWidths[level];
-      const columns = Math.ceil(visibleDuration / level);
+      const columns = Math.ceil(actualContentDuration / level);
       const requiredWidth = columns * columnWidth;
       
       if (requiredWidth <= viewportWidth) {
@@ -129,7 +147,17 @@ export const GanttChart = () => {
     }
     
     setZoom(bestZoom);
-    toast.info("Timeline zoomed to fit");
+    
+    // Scroll to the start of content
+    setTimeout(() => {
+      if (scrollContainer && minStart > 0) {
+        const columnWidth = columnWidths[bestZoom];
+        const scrollTo = (minStart / bestZoom) * columnWidth;
+        scrollContainer.scrollLeft = scrollTo;
+      }
+    }, 0);
+    
+    toast.info("Timeline zoomed to fit content");
   };
 
   const handleAddActivityLane = () => {
