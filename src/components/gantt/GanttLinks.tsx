@@ -52,33 +52,37 @@ export const GanttLinks = ({
     const itemStart = tempPos?.start ?? item.start;
     const itemDuration = tempPos?.duration ?? item.duration;
 
-    // Calculate vertical position - Y is the TOP of the swimlane row
+    // Calculate vertical position - Y is the TOP of the swimlane row container
     const rowTop = findYPosition(effectiveSwimlaneId);
     if (rowTop === null) return null;
     
     const x = (itemStart / zoom) * columnWidth + swimlaneColumnWidth;
     const width = (itemDuration / zoom) * columnWidth;
     
-    // CRITICAL FIX: Calculate exact bar center matching CSS rendering
-    // The row container is h-12 (48px tall)
-    // Activity bars: h-6 (24px), style={{ top: '50%', transform: 'translateY(-50%)' }}
-    //   - CSS centers it: actual position is rowTop + 24px (middle of 48px row)
-    //   - Bar spans from rowTop + 12px to rowTop + 36px
-    //   - Bar center: rowTop + 24px
-    // State bars: h-full (48px), style={{ top: 0 }}
-    //   - Top-aligned: starts at rowTop + 0px
-    //   - Bar spans from rowTop + 0px to rowTop + 48px  
-    //   - Bar center: rowTop + 24px
+    // MATCH EXACT HANDLE POSITIONING FROM GanttBar.tsx
+    // The handles use: style={{ top: '50%', transform: 'translateY(-50%)' }}
+    // This positions them relative to the bar element
     
-    const isStateBar = swimlane.type === 'state';
+    // Activity bars (h-6 = 24px): 
+    //   Bar positioned at top: 50%, transform: translateY(-50%) = centered in 48px row
+    //   Bar top absolute: rowTop + (48-24)/2 = rowTop + 12px
+    //   Bar center: rowTop + 12 + 12 = rowTop + 24px
+    //   Handle at 50% of bar = 12px from bar top
+    //   Handle absolute: rowTop + 12 + 12 = rowTop + 24px
     
-    // For activity bars: center of the 24px bar centered in 48px row = rowTop + 24
-    // For state bars: center of the 48px bar in 48px row = rowTop + 24
+    // State bars (h-full = 48px):
+    //   Bar positioned at top: 0 = top-aligned in 48px row  
+    //   Bar top absolute: rowTop + 0px
+    //   Bar center: rowTop + 0 + 24 = rowTop + 24px
+    //   Handle at 50% of bar = 24px from bar top
+    //   Handle absolute: rowTop + 0 + 24 = rowTop + 24px
+    
+    // Both types: handle center is at rowTop + 24px
     const barCenterY = rowTop + 24;
 
     return {
       x,
-      y: rowTop + 24, // Keep for backward compatibility
+      y: rowTop + 24,
       width,
       swimlaneId: effectiveSwimlaneId,
       barCenterY
@@ -339,15 +343,16 @@ export const GanttLinks = ({
     >
       {data.links.map(renderLink)}
       
-      {/* Debug mode: Show attachment points and bar boundaries */}
+      {/* Debug mode: Show attachment points and bar boundaries with detailed info */}
       {debugMode && data.links.map(link => {
         const fromPos = getItemPosition(link.fromSwimlaneId, link.fromId);
         const toPos = getItemPosition(link.toSwimlaneId, link.toId);
         
         if (!fromPos || !toPos) return null;
 
-        let startX = fromPos.x + fromPos.width;
-        let endX = toPos.x;
+        // Calculate exact attachment X coordinates (matching handle centers)
+        let startX = fromPos.x + fromPos.width; // Right edge (finish)
+        let endX = toPos.x; // Left edge (start)
 
         switch (link.type) {
           case 'SS':
@@ -366,7 +371,7 @@ export const GanttLinks = ({
         
         return (
           <g key={`debug-${link.id}`}>
-            {/* Show bar boundaries */}
+            {/* Show FROM bar outline */}
             <rect
               x={fromPos.x}
               y={fromPos.barCenterY - BAR_HEIGHT / 2}
@@ -374,10 +379,12 @@ export const GanttLinks = ({
               height={BAR_HEIGHT}
               fill="none"
               stroke="#10b981"
-              strokeWidth="1"
+              strokeWidth="2"
               strokeDasharray="4 2"
-              opacity="0.5"
+              opacity="0.6"
             />
+            
+            {/* Show TO bar outline */}
             <rect
               x={toPos.x}
               y={toPos.barCenterY - BAR_HEIGHT / 2}
@@ -385,82 +392,106 @@ export const GanttLinks = ({
               height={BAR_HEIGHT}
               fill="none"
               stroke="#ef4444"
-              strokeWidth="1"
+              strokeWidth="2"
               strokeDasharray="4 2"
-              opacity="0.5"
+              opacity="0.6"
             />
             
-            {/* From attachment point - at exact bar center */}
-            <circle
-              cx={startX}
-              cy={fromPos.barCenterY}
-              r="6"
-              fill="#10b981"
-              stroke="#ffffff"
-              strokeWidth="2"
-            />
+            {/* Crosshair at FROM attachment (should match handle center) */}
             <line
-              x1={startX - 10}
+              x1={startX - 15}
               y1={fromPos.barCenterY}
-              x2={startX + 10}
+              x2={startX + 15}
               y2={fromPos.barCenterY}
               stroke="#10b981"
-              strokeWidth="2"
+              strokeWidth="3"
             />
             <line
               x1={startX}
-              y1={fromPos.barCenterY - 10}
+              y1={fromPos.barCenterY - 15}
               x2={startX}
-              y2={fromPos.barCenterY + 10}
+              y2={fromPos.barCenterY + 15}
               stroke="#10b981"
-              strokeWidth="2"
+              strokeWidth="3"
+            />
+            <circle
+              cx={startX}
+              cy={fromPos.barCenterY}
+              r="8"
+              fill="none"
+              stroke="#10b981"
+              strokeWidth="3"
             />
             
-            {/* To attachment point - at exact bar center */}
-            <circle
-              cx={endX}
-              cy={toPos.barCenterY}
-              r="6"
-              fill="#ef4444"
-              stroke="#ffffff"
-              strokeWidth="2"
-            />
+            {/* Crosshair at TO attachment (should match handle center) */}
             <line
-              x1={endX - 10}
+              x1={endX - 15}
               y1={toPos.barCenterY}
-              x2={endX + 10}
+              x2={endX + 15}
               y2={toPos.barCenterY}
               stroke="#ef4444"
-              strokeWidth="2"
+              strokeWidth="3"
             />
             <line
               x1={endX}
-              y1={toPos.barCenterY - 10}
+              y1={toPos.barCenterY - 15}
               x2={endX}
-              y2={toPos.barCenterY + 10}
+              y2={toPos.barCenterY + 15}
               stroke="#ef4444"
-              strokeWidth="2"
+              strokeWidth="3"
+            />
+            <circle
+              cx={endX}
+              cy={toPos.barCenterY}
+              r="8"
+              fill="none"
+              stroke="#ef4444"
+              strokeWidth="3"
             />
             
-            {/* Labels */}
+            {/* Coordinate labels */}
             <text
-              x={startX + 12}
-              y={fromPos.barCenterY - 12}
+              x={startX + 20}
+              y={fromPos.barCenterY - 20}
               fill="#10b981"
-              fontSize="10"
+              fontSize="12"
               fontWeight="bold"
+              className="pointer-events-none"
             >
-              FROM ({Math.round(startX)}, {Math.round(fromPos.barCenterY)})
+              FROM: ({startX.toFixed(1)}, {fromPos.barCenterY.toFixed(1)})
             </text>
             <text
-              x={endX + 12}
-              y={toPos.barCenterY + 20}
+              x={endX + 20}
+              y={toPos.barCenterY + 25}
               fill="#ef4444"
-              fontSize="10"
+              fontSize="12"
               fontWeight="bold"
+              className="pointer-events-none"
             >
-              TO ({Math.round(endX)}, {Math.round(toPos.barCenterY)})
+              TO: ({endX.toFixed(1)}, {toPos.barCenterY.toFixed(1)})
             </text>
+            
+            {/* Row center reference line */}
+            <line
+              x1={fromPos.x - 50}
+              y1={fromPos.barCenterY}
+              x2={fromPos.x + fromPos.width + 50}
+              y2={fromPos.barCenterY}
+              stroke="#10b981"
+              strokeWidth="1"
+              strokeDasharray="2 2"
+              opacity="0.3"
+            />
+            <line
+              x1={toPos.x - 50}
+              y1={toPos.barCenterY}
+              x2={toPos.x + toPos.width + 50}
+              y2={toPos.barCenterY}
+              stroke="#ef4444"
+              strokeWidth="1"
+              strokeDasharray="2 2"
+              opacity="0.3"
+            />
           </g>
         );
       })}
