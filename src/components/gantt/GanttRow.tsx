@@ -231,8 +231,9 @@ export const GanttRow = ({
       onSwimlaneDrop(draggedId, swimlane.parentId || null, swimlane.id);
       toast.success("Swimlane moved");
     } else if (dragOver === 'bottom') {
-      // Insert after this swimlane - we need to find the next sibling
-      onSwimlaneDrop(draggedId, swimlane.parentId || null, null);
+      // Insert after this swimlane by passing this ID as insertBeforeId with special handling
+      // The moveSwimlane function will need to handle finding the next sibling
+      onSwimlaneDrop(draggedId, swimlane.parentId || null, `after:${swimlane.id}`);
       toast.success("Swimlane moved");
     } else if (dragOver === 'inside') {
       // Make this swimlane the parent

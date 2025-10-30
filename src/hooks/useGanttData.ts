@@ -841,6 +841,22 @@ export const useGanttData = () => {
       const newData = { ...prev };
       newData.swimlanes = { ...prev.swimlanes };
 
+      // Handle "after:id" syntax for insertBeforeId
+      let actualInsertBeforeId = insertBeforeId;
+      if (insertBeforeId?.startsWith('after:')) {
+        const afterId = insertBeforeId.substring(6);
+        // Find the next sibling after this ID
+        const siblings = targetParentId 
+          ? newData.swimlanes[targetParentId].children 
+          : newData.rootIds;
+        const afterIndex = siblings.indexOf(afterId);
+        if (afterIndex >= 0 && afterIndex < siblings.length - 1) {
+          actualInsertBeforeId = siblings[afterIndex + 1];
+        } else {
+          actualInsertBeforeId = null; // Append to end
+        }
+      }
+
       // Remove from old location
       if (swimlane.parentId) {
         const oldParent = newData.swimlanes[swimlane.parentId];
@@ -863,8 +879,8 @@ export const useGanttData = () => {
         const newParent = newData.swimlanes[targetParentId];
         const newChildren = [...newParent.children];
         
-        if (insertBeforeId) {
-          const insertIndex = newChildren.indexOf(insertBeforeId);
+        if (actualInsertBeforeId) {
+          const insertIndex = newChildren.indexOf(actualInsertBeforeId);
           if (insertIndex >= 0) {
             newChildren.splice(insertIndex, 0, swimlaneId);
           } else {
@@ -884,8 +900,8 @@ export const useGanttData = () => {
       } else {
         const newRootIds = [...newData.rootIds];
         
-        if (insertBeforeId) {
-          const insertIndex = newRootIds.indexOf(insertBeforeId);
+        if (actualInsertBeforeId) {
+          const insertIndex = newRootIds.indexOf(actualInsertBeforeId);
           if (insertIndex >= 0) {
             newRootIds.splice(insertIndex, 0, swimlaneId);
           } else {

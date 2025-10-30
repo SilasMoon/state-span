@@ -862,6 +862,7 @@ export const GanttChart = () => {
           data={data}
           zoom={zoom}
           columnWidth={zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80}
+          swimlaneColumnWidth={swimlaneColumnWidth}
           selectedLink={selectedLink}
           onLinkSelect={(linkId) => {
             setSelectedLink(linkId === "" ? null : linkId);

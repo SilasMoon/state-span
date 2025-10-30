@@ -5,12 +5,13 @@ interface GanttLinksProps {
   data: GanttData;
   zoom: ZoomLevel;
   columnWidth: number;
+  swimlaneColumnWidth: number;
   selectedLink: string | null;
   onLinkSelect: (linkId: string) => void;
   onLinkDoubleClick: (linkId: string) => void;
 }
 
-export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect, onLinkDoubleClick }: GanttLinksProps) => {
+export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selectedLink, onLinkSelect, onLinkDoubleClick }: GanttLinksProps) => {
   const getItemPosition = (swimlaneId: string, itemId: string, link?: { type: string; fromId: string; toId: string }) => {
     const swimlane = data.swimlanes[swimlaneId];
     if (!swimlane) return null;
@@ -69,8 +70,7 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
     const y = findYPosition(swimlaneId, 48);
     if (y === null) return null;
 
-    const swimlaneLabelWidth = 280;
-    const x = (item.start / zoom) * columnWidth + swimlaneLabelWidth;
+    const x = (item.start / zoom) * columnWidth + swimlaneColumnWidth;
     const width = (item.duration / zoom) * columnWidth;
 
     // Determine which end to use based on link type
