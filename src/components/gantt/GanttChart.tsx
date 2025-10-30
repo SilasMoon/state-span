@@ -106,21 +106,28 @@ export const GanttChart = () => {
     
     // Calculate best zoom level to fit the timeline
     const levels: ZoomLevel[] = [24, 12, 8, 4, 2, 1];
-    const columnWidths = { 1: 30, 2: 40, 4: 50, 8: 60, 12: 70, 24: 80 };
+    const columnWidths: Record<ZoomLevel, number> = { 1: 30, 2: 40, 4: 50, 8: 60, 12: 70, 24: 80 };
+    
+    let bestZoom: ZoomLevel = 24;
+    let smallestOverflow = Infinity;
     
     for (const level of levels) {
       const columnWidth = columnWidths[level];
       const columns = Math.ceil(totalHours / level);
       const requiredWidth = columns * columnWidth;
+      const overflow = requiredWidth - viewportWidth;
       
-      if (requiredWidth <= viewportWidth) {
-        setZoom(level);
-        return;
+      // If it fits perfectly or has the smallest overflow
+      if (overflow <= 0) {
+        bestZoom = level;
+        break;
+      } else if (overflow < smallestOverflow) {
+        smallestOverflow = overflow;
+        bestZoom = level;
       }
     }
     
-    // If nothing fits, use the smallest zoom
-    setZoom(24);
+    setZoom(bestZoom);
     toast.info("Timeline zoomed to fit");
   };
 

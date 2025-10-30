@@ -410,10 +410,13 @@ export const useGanttData = () => {
       const activity = fromSwimlane.activities?.find((a) => a.id === activityId);
       if (!activity) return prev;
       
+      const positionDelta = newStart - activity.start;
       const movedActivity = { ...activity, start: newStart };
       
+      let newData: GanttData;
+      
       if (fromSwimlaneId === toSwimlaneId) {
-        return {
+        newData = {
           ...prev,
           swimlanes: {
             ...prev.swimlanes,
@@ -425,8 +428,13 @@ export const useGanttData = () => {
             },
           },
         };
+        
+        // Propagate position change to linked activities (same swimlane)
+        if (positionDelta !== 0) {
+          newData = propagatePositionChange(newData, fromSwimlaneId, activityId, positionDelta);
+        }
       } else {
-        return {
+        newData = {
           ...prev,
           swimlanes: {
             ...prev.swimlanes,
@@ -441,7 +449,53 @@ export const useGanttData = () => {
           },
         };
       }
+      
+      return newData;
     });
+  };
+
+  // Helper function to propagate position changes through links
+  const propagatePositionChange = (data: GanttData, fromSwimlaneId: string, fromItemId: string, positionDelta: number): GanttData => {
+    // Find all links where this item is the source
+    const affectedLinks = data.links.filter(link => 
+      link.fromSwimlaneId === fromSwimlaneId && link.fromId === fromItemId
+    );
+
+    let newData = { ...data };
+
+    affectedLinks.forEach(link => {
+      const toSwimlane = newData.swimlanes[link.toSwimlaneId];
+      if (!toSwimlane) return;
+
+      // Update the target activity/state position
+      if (toSwimlane.activities) {
+        newData.swimlanes[link.toSwimlaneId] = {
+          ...toSwimlane,
+          activities: toSwimlane.activities.map(act => 
+            act.id === link.toId 
+              ? { ...act, start: act.start + positionDelta }
+              : act
+          ),
+        };
+
+        // Recursively propagate to activities linked from this one
+        newData = propagatePositionChange(newData, link.toSwimlaneId, link.toId, positionDelta);
+      } else if (toSwimlane.states) {
+        newData.swimlanes[link.toSwimlaneId] = {
+          ...toSwimlane,
+          states: toSwimlane.states.map(state => 
+            state.id === link.toId 
+              ? { ...state, start: state.start + positionDelta }
+              : state
+          ),
+        };
+
+        // Recursively propagate to states linked from this one
+        newData = propagatePositionChange(newData, link.toSwimlaneId, link.toId, positionDelta);
+      }
+    });
+
+    return newData;
   };
 
   const moveState = (fromSwimlaneId: string, toSwimlaneId: string, stateId: string, newStart: number) => {
@@ -454,10 +508,13 @@ export const useGanttData = () => {
       const state = fromSwimlane.states?.find((s) => s.id === stateId);
       if (!state) return prev;
       
+      const positionDelta = newStart - state.start;
       const movedState = { ...state, start: newStart };
       
+      let newData: GanttData;
+      
       if (fromSwimlaneId === toSwimlaneId) {
-        return {
+        newData = {
           ...prev,
           swimlanes: {
             ...prev.swimlanes,
@@ -469,8 +526,13 @@ export const useGanttData = () => {
             },
           },
         };
+        
+        // Propagate position change to linked states (same swimlane)
+        if (positionDelta !== 0) {
+          newData = propagatePositionChange(newData, fromSwimlaneId, stateId, positionDelta);
+        }
       } else {
-        return {
+        newData = {
           ...prev,
           swimlanes: {
             ...prev.swimlanes,
@@ -485,6 +547,8 @@ export const useGanttData = () => {
           },
         };
       }
+      
+      return newData;
     });
   };
 
