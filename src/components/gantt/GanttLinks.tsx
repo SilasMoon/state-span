@@ -16,9 +16,10 @@ interface GanttLinksProps {
 
 interface ItemPosition {
   x: number; // Left edge
-  y: number; // Vertical center
+  y: number; // Vertical center of ROW
   width: number;
   swimlaneId: string;
+  barCenterY: number; // Vertical center of BAR itself (for proper attachment)
 }
 
 export const GanttLinks = ({ 
@@ -57,12 +58,19 @@ export const GanttLinks = ({
     
     const x = (itemStart / zoom) * columnWidth + swimlaneColumnWidth;
     const width = (itemDuration / zoom) * columnWidth;
+    
+    // Calculate the exact vertical center of the bar
+    // Activity bars: 24px tall, centered in 48px row -> bar center at row_top + 24px
+    // State bars: 48px tall, top-aligned in 48px row -> bar center at row_top + 24px
+    // Both cases: bar center is at the middle of the swimlane row
+    const barCenterY = y + (SWIMLANE_HEIGHT / 2);
 
     return {
       x,
-      y: y + SWIMLANE_HEIGHT / 2, // Center of row
+      y: y + SWIMLANE_HEIGHT / 2, // Center of row (same as bar center for both types)
       width,
-      swimlaneId: effectiveSwimlaneId
+      swimlaneId: effectiveSwimlaneId,
+      barCenterY // Explicit bar center for attachment
     };
   };
 
@@ -162,32 +170,34 @@ export const GanttLinks = ({
 
     if (!fromPos || !toPos) return null;
 
-    // Determine attachment points based on link type
-    let startX = fromPos.x + fromPos.width; // Default: finish (right)
-    let endX = toPos.x; // Default: start (left)
+    // CRITICAL: Attachment points must be at the EXACT middle of the bar side
+    // Determine horizontal attachment points (left or right edge of bar)
+    let startX = fromPos.x + fromPos.width; // Default: finish (right edge)
+    let endX = toPos.x; // Default: start (left edge)
 
     switch (link.type) {
       case 'SS': // Start-to-Start
-        startX = fromPos.x;
-        endX = toPos.x;
+        startX = fromPos.x; // Left edge of from bar
+        endX = toPos.x; // Left edge of to bar
         break;
       case 'SF': // Start-to-Finish
-        startX = fromPos.x;
-        endX = toPos.x + toPos.width;
+        startX = fromPos.x; // Left edge of from bar
+        endX = toPos.x + toPos.width; // Right edge of to bar
         break;
       case 'FF': // Finish-to-Finish
-        startX = fromPos.x + fromPos.width;
-        endX = toPos.x + toPos.width;
+        startX = fromPos.x + fromPos.width; // Right edge of from bar
+        endX = toPos.x + toPos.width; // Right edge of to bar
         break;
       case 'FS': // Finish-to-Start (default)
       default:
-        startX = fromPos.x + fromPos.width;
-        endX = toPos.x;
+        startX = fromPos.x + fromPos.width; // Right edge of from bar
+        endX = toPos.x; // Left edge of to bar
         break;
     }
 
-    const start = { x: startX, y: fromPos.y };
-    const end = { x: endX, y: toPos.y };
+    // Use barCenterY for exact vertical center attachment
+    const start = { x: startX, y: fromPos.barCenterY };
+    const end = { x: endX, y: toPos.barCenterY };
 
     // Special case: same position
     if (Math.abs(start.x - end.x) < 5 && Math.abs(start.y - end.y) < 5) {
@@ -318,7 +328,7 @@ export const GanttLinks = ({
     >
       {data.links.map(renderLink)}
       
-      {/* Debug mode: Show attachment points */}
+      {/* Debug mode: Show attachment points and bar boundaries */}
       {debugMode && data.links.map(link => {
         const fromPos = getItemPosition(link.fromSwimlaneId, link.fromId);
         const toPos = getItemPosition(link.toSwimlaneId, link.toId);
@@ -345,78 +355,100 @@ export const GanttLinks = ({
         
         return (
           <g key={`debug-${link.id}`}>
-            {/* From point */}
+            {/* Show bar boundaries */}
+            <rect
+              x={fromPos.x}
+              y={fromPos.barCenterY - BAR_HEIGHT / 2}
+              width={fromPos.width}
+              height={BAR_HEIGHT}
+              fill="none"
+              stroke="#10b981"
+              strokeWidth="1"
+              strokeDasharray="4 2"
+              opacity="0.5"
+            />
+            <rect
+              x={toPos.x}
+              y={toPos.barCenterY - BAR_HEIGHT / 2}
+              width={toPos.width}
+              height={BAR_HEIGHT}
+              fill="none"
+              stroke="#ef4444"
+              strokeWidth="1"
+              strokeDasharray="4 2"
+              opacity="0.5"
+            />
+            
+            {/* From attachment point - at exact bar center */}
             <circle
               cx={startX}
-              cy={fromPos.y}
-              r="5"
+              cy={fromPos.barCenterY}
+              r="6"
               fill="#10b981"
               stroke="#ffffff"
               strokeWidth="2"
-              opacity="0.8"
             />
             <line
-              x1={startX - 8}
-              y1={fromPos.y}
-              x2={startX + 8}
-              y2={fromPos.y}
+              x1={startX - 10}
+              y1={fromPos.barCenterY}
+              x2={startX + 10}
+              y2={fromPos.barCenterY}
               stroke="#10b981"
               strokeWidth="2"
             />
             <line
               x1={startX}
-              y1={fromPos.y - 8}
+              y1={fromPos.barCenterY - 10}
               x2={startX}
-              y2={fromPos.y + 8}
+              y2={fromPos.barCenterY + 10}
               stroke="#10b981"
               strokeWidth="2"
             />
             
-            {/* To point */}
+            {/* To attachment point - at exact bar center */}
             <circle
               cx={endX}
-              cy={toPos.y}
-              r="5"
+              cy={toPos.barCenterY}
+              r="6"
               fill="#ef4444"
               stroke="#ffffff"
               strokeWidth="2"
-              opacity="0.8"
             />
             <line
-              x1={endX - 8}
-              y1={toPos.y}
-              x2={endX + 8}
-              y2={toPos.y}
+              x1={endX - 10}
+              y1={toPos.barCenterY}
+              x2={endX + 10}
+              y2={toPos.barCenterY}
               stroke="#ef4444"
               strokeWidth="2"
             />
             <line
               x1={endX}
-              y1={toPos.y - 8}
+              y1={toPos.barCenterY - 10}
               x2={endX}
-              y2={toPos.y + 8}
+              y2={toPos.barCenterY + 10}
               stroke="#ef4444"
               strokeWidth="2"
             />
             
             {/* Labels */}
             <text
-              x={startX + 10}
-              y={fromPos.y - 10}
+              x={startX + 12}
+              y={fromPos.barCenterY - 12}
               fill="#10b981"
-              fontSize="11"
+              fontSize="10"
               fontWeight="bold"
             >
-              FROM
+              FROM ({Math.round(startX)}, {Math.round(fromPos.barCenterY)})
             </text>
             <text
-              x={endX + 10}
-              y={toPos.y + 20}
+              x={endX + 12}
+              y={toPos.barCenterY + 20}
               fill="#ef4444"
-              fontSize="11"
+              fontSize="10"
               fontWeight="bold"
             >
-              TO
+              TO ({Math.round(endX)}, {Math.round(toPos.barCenterY)})
             </text>
           </g>
         );
