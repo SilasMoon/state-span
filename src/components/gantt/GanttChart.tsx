@@ -581,8 +581,10 @@ export const GanttChart = () => {
 
       // Delete
       console.log('[GanttChart] Delete key pressed', { selected, selectedLink });
-      if (e.key === 'Delete') {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
         if (selectedLink) {
+          console.log('[GanttChart] Deleting link:', selectedLink);
           deleteLink(selectedLink);
           setSelectedLink(null);
           toast.success("Link deleted");

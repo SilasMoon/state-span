@@ -572,33 +572,35 @@ export const useGanttData = () => {
   const addLink = (fromSwimlaneId: string, fromId: string, toSwimlaneId: string, toId: string, type: "FS" | "SS" | "FF" | "SF" = "FS") => {
     const id = generateId();
     
-    // Get source activity/state color
-    let color = "#00bcd4"; // default
-    const fromSwimlane = data.swimlanes[fromSwimlaneId];
-    if (fromSwimlane) {
-      const item = fromSwimlane.activities?.find((a) => a.id === fromId) || 
-                   fromSwimlane.states?.find((s) => s.id === fromId);
-      if (item) {
-        color = item.color;
+    updateData((prev) => {
+      // Get source activity/state color from current data
+      let color = "#00bcd4"; // default
+      const fromSwimlane = prev.swimlanes[fromSwimlaneId];
+      if (fromSwimlane) {
+        const item = fromSwimlane.activities?.find((a) => a.id === fromId) || 
+                     fromSwimlane.states?.find((s) => s.id === fromId);
+        if (item) {
+          color = item.color;
+        }
       }
-    }
-    
-    const link: GanttLink = {
-      id,
-      fromId,
-      toId,
-      fromSwimlaneId,
-      toSwimlaneId,
-      type,
-      color,
-      label: "",
-      lag: 0,
-    };
+      
+      const link: GanttLink = {
+        id,
+        fromId,
+        toId,
+        fromSwimlaneId,
+        toSwimlaneId,
+        type,
+        color,
+        label: "",
+        lag: 0,
+      };
 
-    setData((prev) => ({
-      ...prev,
-      links: [...prev.links, link],
-    }));
+      return {
+        ...prev,
+        links: [...prev.links, link],
+      };
+    });
 
     return id;
   };
