@@ -52,25 +52,36 @@ export const GanttLinks = ({
     const itemStart = tempPos?.start ?? item.start;
     const itemDuration = tempPos?.duration ?? item.duration;
 
-    // Calculate vertical position
-    const y = findYPosition(effectiveSwimlaneId);
-    if (y === null) return null;
+    // Calculate vertical position - Y is the TOP of the swimlane row
+    const rowTop = findYPosition(effectiveSwimlaneId);
+    if (rowTop === null) return null;
     
     const x = (itemStart / zoom) * columnWidth + swimlaneColumnWidth;
     const width = (itemDuration / zoom) * columnWidth;
     
-    // Calculate the exact vertical center of the bar
-    // Activity bars: 24px tall, centered in 48px row -> bar center at row_top + 24px
-    // State bars: 48px tall, top-aligned in 48px row -> bar center at row_top + 24px
-    // Both cases: bar center is at the middle of the swimlane row
-    const barCenterY = y + (SWIMLANE_HEIGHT / 2);
+    // CRITICAL FIX: Calculate exact bar center matching CSS rendering
+    // The row container is h-12 (48px tall)
+    // Activity bars: h-6 (24px), style={{ top: '50%', transform: 'translateY(-50%)' }}
+    //   - CSS centers it: actual position is rowTop + 24px (middle of 48px row)
+    //   - Bar spans from rowTop + 12px to rowTop + 36px
+    //   - Bar center: rowTop + 24px
+    // State bars: h-full (48px), style={{ top: 0 }}
+    //   - Top-aligned: starts at rowTop + 0px
+    //   - Bar spans from rowTop + 0px to rowTop + 48px  
+    //   - Bar center: rowTop + 24px
+    
+    const isStateBar = swimlane.type === 'state';
+    
+    // For activity bars: center of the 24px bar centered in 48px row = rowTop + 24
+    // For state bars: center of the 48px bar in 48px row = rowTop + 24
+    const barCenterY = rowTop + 24;
 
     return {
       x,
-      y: y + SWIMLANE_HEIGHT / 2, // Center of row (same as bar center for both types)
+      y: rowTop + 24, // Keep for backward compatibility
       width,
       swimlaneId: effectiveSwimlaneId,
-      barCenterY // Explicit bar center for attachment
+      barCenterY
     };
   };
 

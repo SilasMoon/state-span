@@ -64,38 +64,26 @@ export class GridRouter {
   }
 
   private markObstacles() {
-    // CRITICAL: Mark horizontal zones through bars as completely forbidden
-    // This ensures links NEVER cross horizontally over any task bar
-    const VERTICAL_PADDING = 2; // Cells above/below
-    const HORIZONTAL_EXTENSION = 100; // Extend bars horizontally to block crossing
+    // Mark obstacles with appropriate padding to prevent crossing bars
+    // Use moderate padding to allow routing around bars without over-restricting
+    const VERTICAL_PADDING = 3; // Cells above/below bar
+    const HORIZONTAL_PADDING = 2; // Cells left/right of bar
     
     this.obstacles.forEach(obstacle => {
       const barLeft = Math.floor(obstacle.x / this.gridSize);
       const barRight = Math.ceil((obstacle.x + obstacle.width) / this.gridSize);
-      const barTop = Math.floor(obstacle.y / this.gridSize) - VERTICAL_PADDING;
-      const barBottom = Math.ceil((obstacle.y + obstacle.height) / this.gridSize) + VERTICAL_PADDING;
+      const barTop = Math.floor(obstacle.y / this.gridSize);
+      const barBottom = Math.ceil((obstacle.y + obstacle.height) / this.gridSize);
       
-      // Mark the entire horizontal zone at bar height as forbidden
-      // This prevents any horizontal traversal across bars
-      for (let y = Math.max(0, barTop); y < Math.min(this.height, barBottom); y++) {
-        // Extend the forbidden zone horizontally beyond the bar
-        const extendedLeft = Math.max(0, barLeft - HORIZONTAL_EXTENSION);
-        const extendedRight = Math.min(this.width, barRight + HORIZONTAL_EXTENSION);
-        
-        for (let x = extendedLeft; x < extendedRight; x++) {
-          this.grid[y][x] = true; // Mark as occupied
-        }
-      }
-      
-      // Also mark area immediately around the bar with extra padding
-      const minX = Math.max(0, barLeft - 3);
-      const maxX = Math.min(this.width, barRight + 3);
-      const minY = Math.max(0, barTop - 1);
-      const maxY = Math.min(this.height, barBottom + 1);
+      // Mark the bar area plus padding as occupied
+      const minX = Math.max(0, barLeft - HORIZONTAL_PADDING);
+      const maxX = Math.min(this.width, barRight + HORIZONTAL_PADDING);
+      const minY = Math.max(0, barTop - VERTICAL_PADDING);
+      const maxY = Math.min(this.height, barBottom + VERTICAL_PADDING);
       
       for (let y = minY; y < maxY; y++) {
         for (let x = minX; x < maxX; x++) {
-          this.grid[y][x] = true;
+          this.grid[y][x] = true; // Mark as occupied
         }
       }
     });
@@ -158,33 +146,13 @@ export class GridRouter {
   private calculateMoveCost(current: Point, next: Point, parent: Point | null): number {
     let cost = 1; // Base cost
     
-    // Penalize direction changes heavily to prefer straight lines
+    // Penalize direction changes to prefer straight lines
     if (parent) {
       const prevDirection = this.getDirection(parent, current);
       const nextDirection = this.getDirection(current, next);
       
       if (prevDirection !== nextDirection) {
-        cost += 5; // Very high penalty for turns to prefer straight paths
-      }
-    }
-    
-    // Additional check: heavily penalize horizontal moves near obstacles
-    const currentDirection = this.getDirection(current, next);
-    if (currentDirection === 'left' || currentDirection === 'right') {
-      // Check if this horizontal move is near any obstacle
-      const nearObstacle = this.obstacles.some(obs => {
-        const obsTop = Math.floor(obs.y / this.gridSize);
-        const obsBottom = Math.ceil((obs.y + obs.height) / this.gridSize);
-        const currentYInRange = next.y >= obsTop && next.y <= obsBottom;
-        
-        if (currentYInRange) {
-          return true;
-        }
-        return false;
-      });
-      
-      if (nearObstacle) {
-        cost += 50; // Extremely high penalty for horizontal moves at bar height
+        cost += 4; // High penalty for turns
       }
     }
     
