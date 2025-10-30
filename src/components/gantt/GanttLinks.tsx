@@ -138,11 +138,22 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
   const createRoutedPath = (from: { x1: number; y1: number }, 
                             to: { x2: number; y2: number },
                             fromId?: string,
-                            toId?: string): { path: string; isVertical: boolean } => {
+                            toId?: string,
+                            fromSwimlaneId?: string,
+                            toSwimlaneId?: string): { path: string; isVertical: boolean } => {
     const startX = from.x1;
     const startY = from.y1;
     const endX = to.x2;
     const endY = to.y2;
+    
+    // RULE 0: Consecutive tasks on same swimlane - always straight line
+    const sameSwimlane = fromSwimlaneId && toSwimlaneId && fromSwimlaneId === toSwimlaneId;
+    const sameRow = Math.abs(startY - endY) < 5;
+    const horizontalFlow = endX > startX;
+    
+    if (sameSwimlane && sameRow && horizontalFlow) {
+      return { path: `M ${startX} ${startY} L ${endX} ${endY}`, isVertical: false };
+    }
     
     const activityRanges = getActivityYRanges(fromId, toId);
     
@@ -224,7 +235,7 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
       // Keep x positions as they are (already at the correct horizontal edge)
     }
 
-    const { path, isVertical } = createRoutedPath(adjustedFrom, adjustedTo, link.fromId, link.toId);
+    const { path, isVertical } = createRoutedPath(adjustedFrom, adjustedTo, link.fromId, link.toId, link.fromSwimlaneId, link.toSwimlaneId);
 
     const isSelected = selectedLink === link.id;
     const linkColor = link.color || "#00bcd4";
