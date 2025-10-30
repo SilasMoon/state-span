@@ -64,18 +64,38 @@ export class GridRouter {
   }
 
   private markObstacles() {
-    // Add padding around obstacles for cleaner routing
-    const PADDING = 2; // cells
+    // CRITICAL: Mark horizontal zones through bars as completely forbidden
+    // This ensures links NEVER cross horizontally over any task bar
+    const VERTICAL_PADDING = 2; // Cells above/below
+    const HORIZONTAL_EXTENSION = 100; // Extend bars horizontally to block crossing
     
     this.obstacles.forEach(obstacle => {
-      const minX = Math.floor(obstacle.x / this.gridSize) - PADDING;
-      const maxX = Math.ceil((obstacle.x + obstacle.width) / this.gridSize) + PADDING;
-      const minY = Math.floor(obstacle.y / this.gridSize) - PADDING;
-      const maxY = Math.ceil((obstacle.y + obstacle.height) / this.gridSize) + PADDING;
+      const barLeft = Math.floor(obstacle.x / this.gridSize);
+      const barRight = Math.ceil((obstacle.x + obstacle.width) / this.gridSize);
+      const barTop = Math.floor(obstacle.y / this.gridSize) - VERTICAL_PADDING;
+      const barBottom = Math.ceil((obstacle.y + obstacle.height) / this.gridSize) + VERTICAL_PADDING;
       
-      for (let y = Math.max(0, minY); y < Math.min(this.height, maxY); y++) {
-        for (let x = Math.max(0, minX); x < Math.min(this.width, maxX); x++) {
+      // Mark the entire horizontal zone at bar height as forbidden
+      // This prevents any horizontal traversal across bars
+      for (let y = Math.max(0, barTop); y < Math.min(this.height, barBottom); y++) {
+        // Extend the forbidden zone horizontally beyond the bar
+        const extendedLeft = Math.max(0, barLeft - HORIZONTAL_EXTENSION);
+        const extendedRight = Math.min(this.width, barRight + HORIZONTAL_EXTENSION);
+        
+        for (let x = extendedLeft; x < extendedRight; x++) {
           this.grid[y][x] = true; // Mark as occupied
+        }
+      }
+      
+      // Also mark area immediately around the bar with extra padding
+      const minX = Math.max(0, barLeft - 3);
+      const maxX = Math.min(this.width, barRight + 3);
+      const minY = Math.max(0, barTop - 1);
+      const maxY = Math.min(this.height, barBottom + 1);
+      
+      for (let y = minY; y < maxY; y++) {
+        for (let x = minX; x < maxX; x++) {
+          this.grid[y][x] = true;
         }
       }
     });
@@ -144,7 +164,27 @@ export class GridRouter {
       const nextDirection = this.getDirection(current, next);
       
       if (prevDirection !== nextDirection) {
-        cost += 3; // High penalty for turns
+        cost += 5; // Very high penalty for turns to prefer straight paths
+      }
+    }
+    
+    // Additional check: heavily penalize horizontal moves near obstacles
+    const currentDirection = this.getDirection(current, next);
+    if (currentDirection === 'left' || currentDirection === 'right') {
+      // Check if this horizontal move is near any obstacle
+      const nearObstacle = this.obstacles.some(obs => {
+        const obsTop = Math.floor(obs.y / this.gridSize);
+        const obsBottom = Math.ceil((obs.y + obs.height) / this.gridSize);
+        const currentYInRange = next.y >= obsTop && next.y <= obsBottom;
+        
+        if (currentYInRange) {
+          return true;
+        }
+        return false;
+      });
+      
+      if (nearObstacle) {
+        cost += 50; // Extremely high penalty for horizontal moves at bar height
       }
     }
     
@@ -155,27 +195,40 @@ export class GridRouter {
     const gridStart = this.toGridCoords(start);
     const gridEnd = this.toGridCoords(end);
     
-    // Ensure start and end are valid
-    if (!this.isValidCell(gridStart.x, gridStart.y)) {
-      // Find nearest valid cell to start
-      gridStart.x = Math.max(0, Math.min(this.width - 1, gridStart.x));
-      gridStart.y = Math.max(0, Math.min(this.height - 1, gridStart.y));
-    }
+    // Find valid cells by moving vertically first (away from bars)
+    const findValidStartCell = (cell: Point): Point => {
+      // Try moving up and down to find a valid cell
+      for (let offset = 0; offset < 10; offset++) {
+        if (this.isValidCell(cell.x, cell.y + offset)) {
+          return { x: cell.x, y: cell.y + offset };
+        }
+        if (this.isValidCell(cell.x, cell.y - offset)) {
+          return { x: cell.x, y: cell.y - offset };
+        }
+      }
+      // Fallback to clamping
+      return {
+        x: Math.max(0, Math.min(this.width - 1, cell.x)),
+        y: Math.max(0, Math.min(this.height - 1, cell.y))
+      };
+    };
     
-    if (!this.isValidCell(gridEnd.x, gridEnd.y)) {
-      // Find nearest valid cell to end
-      gridEnd.x = Math.max(0, Math.min(this.width - 1, gridEnd.x));
-      gridEnd.y = Math.max(0, Math.min(this.height - 1, gridEnd.y));
-    }
+    const validStart = !this.isValidCell(gridStart.x, gridStart.y) 
+      ? findValidStartCell(gridStart) 
+      : gridStart;
+    
+    const validEnd = !this.isValidCell(gridEnd.x, gridEnd.y) 
+      ? findValidStartCell(gridEnd) 
+      : gridEnd;
     
     const openSet: GridCell[] = [];
     const closedSet = new Set<string>();
     
     const startCell: GridCell = {
-      x: gridStart.x,
-      y: gridStart.y,
+      x: validStart.x,
+      y: validStart.y,
       g: 0,
-      h: this.heuristic(gridStart, gridEnd),
+      h: this.heuristic(validStart, validEnd),
       f: 0,
       parent: null
     };
@@ -196,7 +249,7 @@ export class GridRouter {
       const currentKey = `${current.x},${current.y}`;
       
       // Check if we reached the goal
-      if (current.x === gridEnd.x && current.y === gridEnd.y) {
+      if (current.x === validEnd.x && current.y === validEnd.y) {
         // Reconstruct path
         const path: Point[] = [];
         let node: GridCell | null = current;
@@ -234,7 +287,7 @@ export class GridRouter {
             x: neighbor.x,
             y: neighbor.y,
             g: tentativeG,
-            h: this.heuristic(neighbor, gridEnd),
+            h: this.heuristic(neighbor, validEnd),
             f: 0,
             parent: current
           };
@@ -250,9 +303,26 @@ export class GridRouter {
       });
     }
     
-    // No path found - return direct line as fallback
-    console.warn('[GridRouter] No path found, using direct line');
-    return [start, end];
+    // No path found - create a safe vertical-first path as fallback
+    console.warn('[GridRouter] No path found, using safe fallback path');
+    return this.createSafeFallbackPath(start, end);
+  }
+
+  private createSafeFallbackPath(start: Point, end: Point): Point[] {
+    // Create a path that goes vertical first, then horizontal, then vertical
+    // This ensures we never cross bars horizontally
+    const path: Point[] = [start];
+    
+    // Move vertically away from start to a safe zone
+    const midY = start.y < end.y 
+      ? Math.max(start.y, end.y) + 30 // Go above
+      : Math.min(start.y, end.y) - 30; // Go below
+    
+    path.push({ x: start.x, y: midY });
+    path.push({ x: end.x, y: midY });
+    path.push(end);
+    
+    return path;
   }
 
   private smoothPath(path: Point[]): Point[] {
