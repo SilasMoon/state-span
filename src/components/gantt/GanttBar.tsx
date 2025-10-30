@@ -37,6 +37,28 @@ export const GanttBar = ({
   const [tempStart, setTempStart] = useState(item.start);
   const [tempDuration, setTempDuration] = useState(item.duration);
   const [targetSwimlaneId, setTargetSwimlaneId] = useState(swimlaneId);
+  const [isModifierPressed, setIsModifierPressed] = useState(false);
+
+  // Track modifier key for link mode
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey || e.ctrlKey || e.metaKey) {
+        setIsModifierPressed(true);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        setIsModifierPressed(false);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   // Sync local state with props when item changes (but not during drag)
   React.useEffect(() => {
@@ -171,9 +193,9 @@ export const GanttBar = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <div
-            className={`absolute ${isState ? 'h-full' : 'h-6 rounded'} ${isDragging === 'move' ? 'cursor-grabbing' : 'cursor-grab'} group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
+            className={`absolute ${isState ? 'h-full' : 'h-6 rounded'} ${isDragging === 'move' ? 'cursor-grabbing' : isModifierPressed ? 'cursor-crosshair' : 'cursor-grab'} group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
               isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
-            } ${isDragging === 'move' && targetSwimlaneId !== swimlaneId ? 'opacity-50' : ''}`}
+            } ${isDragging === 'move' && targetSwimlaneId !== swimlaneId ? 'opacity-50' : ''} ${isModifierPressed ? 'ring-2 ring-blue-400/50' : ''}`}
             style={{
               left: `${left}px`,
               width: `${width}px`,
@@ -193,57 +215,69 @@ export const GanttBar = ({
             data-swimlane-id={swimlaneId}
             data-item-id={item.id}
           >
-            {/* Resize handle - left */}
-            <div
-              className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-              onMouseDown={(e) => handleResizeStart(e, 'start')}
-            />
-            
-            {/* Resize handle - right */}
-            <div
-              className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-              onMouseDown={(e) => handleResizeStart(e, 'end')}
-            />
+            {/* Resize handles - show when NOT in link mode */}
+            {!isModifierPressed && (
+              <>
+                {/* Resize handle - left */}
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize hover:bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  onMouseDown={(e) => handleResizeStart(e, 'start')}
+                />
+                
+                {/* Resize handle - right */}
+                <div
+                  className="absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize hover:bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  onMouseDown={(e) => handleResizeStart(e, 'end')}
+                />
+              </>
+            )}
 
-            {/* Link creation handles */}
-            {/* Left handle (start) */}
-            <div
-              className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-blue-500 border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-20 hover:scale-125"
-              data-handle-type="start"
-              data-swimlane-id={swimlaneId}
-              data-item-id={item.id}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                const event = e.nativeEvent;
-                window.dispatchEvent(new CustomEvent('startLinkDrag', {
-                  detail: { swimlaneId, itemId: item.id, handleType: 'start', x: event.clientX, y: event.clientY }
-                }));
-              }}
-              title="Drag from start"
-            />
-            
-            {/* Right handle (finish) */}
-            <div
-              className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-green-500 border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-20 hover:scale-125"
-              data-handle-type="finish"
-              data-swimlane-id={swimlaneId}
-              data-item-id={item.id}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                const event = e.nativeEvent;
-                window.dispatchEvent(new CustomEvent('startLinkDrag', {
-                  detail: { swimlaneId, itemId: item.id, handleType: 'finish', x: event.clientX, y: event.clientY }
-                }));
-              }}
-              title="Drag from finish"
-            />
+            {/* Link creation handles - show when modifier key pressed */}
+            {isModifierPressed && (
+              <>
+                {/* Left handle (start) */}
+                <div
+                  className="absolute -left-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-blue-500 border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-20 hover:scale-125"
+                  data-handle-type="start"
+                  data-swimlane-id={swimlaneId}
+                  data-item-id={item.id}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    const event = e.nativeEvent;
+                    window.dispatchEvent(new CustomEvent('startLinkDrag', {
+                      detail: { swimlaneId, itemId: item.id, handleType: 'start', x: event.clientX, y: event.clientY }
+                    }));
+                  }}
+                  title="Drag from start"
+                />
+                
+                {/* Right handle (finish) */}
+                <div
+                  className="absolute -right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-green-500 border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-20 hover:scale-125"
+                  data-handle-type="finish"
+                  data-swimlane-id={swimlaneId}
+                  data-item-id={item.id}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    const event = e.nativeEvent;
+                    window.dispatchEvent(new CustomEvent('startLinkDrag', {
+                      detail: { swimlaneId, itemId: item.id, handleType: 'finish', x: event.clientX, y: event.clientY }
+                    }));
+                  }}
+                  title="Drag from finish"
+                />
+              </>
+            )}
           </div>
         </TooltipTrigger>
-        {item.description && (
-          <TooltipContent>
-            <p className="max-w-xs">{item.description}</p>
-          </TooltipContent>
-        )}
+        <TooltipContent>
+          {item.description && <p className="max-w-xs mb-2">{item.description}</p>}
+          {!isModifierPressed && (
+            <p className="text-xs text-muted-foreground italic">
+              Hold Shift/Ctrl to create links
+            </p>
+          )}
+        </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
