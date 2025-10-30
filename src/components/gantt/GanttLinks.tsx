@@ -12,15 +12,25 @@ interface GanttLinksProps {
 }
 
 export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selectedLink, onLinkSelect, onLinkDoubleClick }: GanttLinksProps) => {
-  const getItemPosition = (swimlaneId: string, itemId: string, link?: { type: string; fromId: string; toId: string }) => {
+  const getItemPosition = (swimlaneId: string, itemId: string, linkForLogging?: GanttLink) => {
     const swimlane = data.swimlanes[swimlaneId];
-    if (!swimlane) return null;
-
-    let item = swimlane.activities?.find((a) => a.id === itemId);
-    if (!item) {
-      item = swimlane.states?.find((s) => s.id === itemId);
+    if (!swimlane) {
+      console.error('[GanttLinks] Swimlane not found:', { swimlaneId, itemId, linkId: linkForLogging?.id });
+      return null;
     }
-    if (!item) return null;
+
+    const item = swimlane.activities?.find((a) => a.id === itemId) || swimlane.states?.find((s) => s.id === itemId);
+    if (!item) {
+      console.error('[GanttLinks] Item not found in swimlane:', { 
+        swimlaneId, 
+        swimlaneName: swimlane.name,
+        itemId, 
+        linkId: linkForLogging?.id,
+        availableActivities: swimlane.activities?.map(a => a.id),
+        availableStates: swimlane.states?.map(s => s.id)
+      });
+      return null;
+    }
 
     // Calculate swimlane vertical position
     let yPos = 48; // Header height (h-12 = 48px)
@@ -68,7 +78,28 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
     };
 
     const y = findYPosition(swimlaneId, 48);
-    if (y === null) return null;
+    if (y === null) {
+      console.error('[GanttLinks] Y position not found for swimlane:', { 
+        swimlaneId, 
+        swimlaneName: swimlane.name,
+        itemId, 
+        linkId: linkForLogging?.id,
+        rootIds: data.rootIds
+      });
+      return null;
+    }
+    
+    console.log('[GanttLinks] Position calculated:', {
+      linkId: linkForLogging?.id,
+      swimlaneId,
+      swimlaneName: swimlane.name,
+      itemId,
+      itemLabel: item.label,
+      yPosition: y,
+      xStart: (item.start / zoom) * columnWidth + swimlaneColumnWidth,
+      itemStart: item.start,
+      itemDuration: item.duration
+    });
 
     const x = (item.start / zoom) * columnWidth + swimlaneColumnWidth;
     const width = (item.duration / zoom) * columnWidth;
@@ -77,18 +108,18 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
     let x1 = x + width; // Default: finish (right side)
     let x2 = x; // Default: start (left side)
     
-    if (link) {
+    if (linkForLogging) {
       // For 'from' position
-      if (itemId === link.fromId) {
-        if (link.type === 'SS' || link.type === 'SF') {
+      if (itemId === linkForLogging.fromId) {
+        if (linkForLogging.type === 'SS' || linkForLogging.type === 'SF') {
           x1 = x; // Start position
         } else {
           x1 = x + width; // Finish position
         }
       }
       // For 'to' position
-      if (itemId === link.toId) {
-        if (link.type === 'FS' || link.type === 'SS') {
+      if (itemId === linkForLogging.toId) {
+        if (linkForLogging.type === 'FS' || linkForLogging.type === 'SS') {
           x2 = x; // Start position
         } else {
           x2 = x + width; // Finish position
@@ -299,11 +330,20 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
   };
 
   const renderLink = (link: GanttLink) => {
+    console.log('[GanttLinks] Rendering link:', {
+      linkId: link.id,
+      fromSwimlaneId: link.fromSwimlaneId,
+      fromId: link.fromId,
+      toSwimlaneId: link.toSwimlaneId,
+      toId: link.toId,
+      type: link.type
+    });
+    
     const from = getItemPosition(link.fromSwimlaneId, link.fromId, link);
     const to = getItemPosition(link.toSwimlaneId, link.toId, link);
 
     if (!from || !to) {
-      console.warn('Link positions not found:', { 
+      console.warn('[GanttLinks] Link positions not found:', { 
         linkId: link.id,
         fromSwimlaneId: link.fromSwimlaneId,
         fromId: link.fromId,
@@ -318,6 +358,12 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
       });
       return null;
     }
+    
+    console.log('[GanttLinks] Link coordinates:', {
+      linkId: link.id,
+      from: { x1: from.x1, y1: from.y1, x2: from.x2, y2: from.y2 },
+      to: { x1: to.x1, y1: to.y1, x2: to.x2, y2: to.y2 }
+    });
 
     // Detect if link is vertical and adjust to closest corners
     const isVerticalLink = Math.abs(from.x1 - to.x2) < 5;
