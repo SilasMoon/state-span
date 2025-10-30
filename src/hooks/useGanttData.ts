@@ -13,8 +13,8 @@ const createDefaultData = (): GanttData => {
     children: [],
     expanded: true,
     activities: [
-      { id: generateId(), start: 8, duration: 16, color: "#00bcd4", label: "Planning", description: "Initial planning" },
-      { id: generateId(), start: 32, duration: 24, color: "#4caf50", label: "Design", description: "Design phase" },
+      { id: generateId(), start: 8, duration: 16, color: "#00bcd4", label: "Planning", labelColor: "#000000", description: "Initial planning" },
+      { id: generateId(), start: 32, duration: 24, color: "#4caf50", label: "Design", labelColor: "#000000", description: "Design phase" },
     ],
   };
 
@@ -26,8 +26,8 @@ const createDefaultData = (): GanttData => {
     children: [],
     expanded: true,
     states: [
-      { id: generateId(), start: 0, duration: 24, color: "#ff9800", label: "Review", description: "In Review" },
-      { id: generateId(), start: 24, duration: 40, color: "#4caf50", label: "Approved", description: "Approved" },
+      { id: generateId(), start: 0, duration: 24, color: "#ff9800", label: "Review", labelColor: "#000000", description: "In Review" },
+      { id: generateId(), start: 24, duration: 40, color: "#4caf50", label: "Approved", labelColor: "#000000", description: "Approved" },
     ],
   };
 
@@ -137,6 +137,7 @@ export const useGanttData = () => {
       duration,
       color: "#00bcd4",
       label: "",
+      labelColor: "#000000",
       description: "",
     };
 
@@ -167,6 +168,7 @@ export const useGanttData = () => {
       duration,
       color: "#ab47bc",
       label: "",
+      labelColor: "#000000",
       description: "",
     };
 

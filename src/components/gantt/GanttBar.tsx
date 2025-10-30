@@ -234,7 +234,13 @@ export const GanttBar = ({
             >
               {/* Display label inside the bar */}
               {item.label && (
-                <span className="px-2 truncate text-shadow-sm" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+                <span 
+                  className="px-2 truncate font-medium text-shadow-sm" 
+                  style={{ 
+                    color: item.labelColor || '#000000',
+                    textShadow: '0 1px 2px rgba(255,255,255,0.5)'
+                  }}
+                >
                   {item.label}
                 </span>
               )}
@@ -259,7 +265,17 @@ export const GanttBar = ({
           </TooltipTrigger>
           <TooltipContent className="max-w-sm">
             <div className="space-y-2">
-              <div className="space-y-1">
+              {item.label && (
+                <div className="font-semibold text-base">
+                  {item.label}
+                </div>
+              )}
+              {item.description && (
+                <div className={item.label ? "pt-2 border-t border-border" : ""}>
+                  <p className="text-sm">{item.description}</p>
+                </div>
+              )}
+              <div className={`space-y-1 ${(item.label || item.description) ? "pt-2 border-t border-border" : ""}`}>
                 <div className="flex justify-between gap-4 text-sm">
                   <span className="font-medium">Start:</span>
                   <span>{startFormatted}</span>
@@ -273,11 +289,6 @@ export const GanttBar = ({
                   <span>{item.duration} hours</span>
                 </div>
               </div>
-              {item.description && (
-                <div className="pt-2 border-t border-border">
-                  <p className="text-sm">{item.description}</p>
-                </div>
-              )}
               {!isModifierPressed && (
                 <p className="text-xs text-muted-foreground italic pt-2 border-t border-border">
                   Hold Shift/Ctrl to create links

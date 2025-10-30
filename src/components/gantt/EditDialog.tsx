@@ -15,10 +15,11 @@ interface EditDialogProps {
   onClose: () => void;
   initialColor: string;
   initialLabel: string;
+  initialLabelColor: string;
   initialDescription: string;
   start: number;
   duration: number;
-  onSave: (color: string, label: string, description: string) => void;
+  onSave: (color: string, label: string, labelColor: string, description: string) => void;
 }
 
 const formatHoursToDayTime = (hours: number): string => {
@@ -34,11 +35,17 @@ const PRESET_COLORS = [
   "#795548", "#607d8b", "#ff5722", "#8bc34a", "#673ab7"
 ];
 
+const LABEL_TEXT_COLORS = [
+  "#000000", "#FFFFFF", "#ff0000", "#00ff00", "#0000ff",
+  "#ffff00", "#ff00ff", "#00ffff", "#808080", "#800000"
+];
+
 export const EditDialog = ({
   open,
   onClose,
   initialColor,
   initialLabel,
+  initialLabelColor,
   initialDescription,
   start,
   duration,
@@ -46,6 +53,7 @@ export const EditDialog = ({
 }: EditDialogProps) => {
   const [color, setColor] = useState(initialColor);
   const [label, setLabel] = useState(initialLabel);
+  const [labelColor, setLabelColor] = useState(initialLabelColor);
   const [description, setDescription] = useState(initialDescription);
   
   const endHour = start + duration;
@@ -53,7 +61,7 @@ export const EditDialog = ({
   const endFormatted = formatHoursToDayTime(endHour);
 
   const handleSave = () => {
-    onSave(color, label, description);
+    onSave(color, label, labelColor, description);
     onClose();
   };
 
@@ -92,7 +100,7 @@ export const EditDialog = ({
           </div>
 
           <div>
-            <Label>Color</Label>
+            <Label>Background Color</Label>
             <div className="grid grid-cols-5 gap-2 mt-2">
               {PRESET_COLORS.map((presetColor) => (
                 <button
@@ -102,6 +110,22 @@ export const EditDialog = ({
                   }`}
                   style={{ backgroundColor: presetColor }}
                   onClick={() => setColor(presetColor)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <Label>Label Text Color</Label>
+            <div className="grid grid-cols-5 gap-2 mt-2">
+              {LABEL_TEXT_COLORS.map((textColor) => (
+                <button
+                  key={textColor}
+                  className={`w-full h-10 rounded border-2 transition-all hover:scale-110 ${
+                    labelColor === textColor ? "border-primary ring-2 ring-primary" : "border-border"
+                  }`}
+                  style={{ backgroundColor: textColor }}
+                  onClick={() => setLabelColor(textColor)}
                 />
               ))}
             </div>

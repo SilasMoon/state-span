@@ -6,6 +6,7 @@ export interface GanttState {
   duration: number; // hours
   color: string;
   label?: string;
+  labelColor?: string;
   description?: string;
 }
 
@@ -15,6 +16,7 @@ export interface GanttActivity {
   duration: number; // hours
   color: string;
   label?: string;
+  labelColor?: string;
   description?: string;
 }
 
