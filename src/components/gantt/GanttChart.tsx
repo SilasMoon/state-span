@@ -123,6 +123,11 @@ export const GanttChart = () => {
   
   // Ref for resize handle
   const resizeRef = React.useRef<HTMLDivElement>(null);
+  
+  // Ref to track resize state
+  const isResizingRef = React.useRef(false);
+  const resizeStartXRef = React.useRef(0);
+  const resizeStartWidthRef = React.useRef(0);
 
   // Calculate total hours dynamically based on content
   const calculateTotalHours = () => {
@@ -459,30 +464,30 @@ export const GanttChart = () => {
     const handle = resizeRef.current;
     if (!handle) return;
 
-    let isResizing = false;
-    let startX = 0;
-    let startWidth = 0;
-
     const handleMouseDown = (e: MouseEvent) => {
-      isResizing = true;
-      startX = e.clientX;
-      startWidth = swimlaneColumnWidth;
+      isResizingRef.current = true;
+      resizeStartXRef.current = e.clientX;
+      resizeStartWidthRef.current = swimlaneColumnWidth;
       document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
       e.preventDefault();
+      e.stopPropagation();
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-      const delta = e.clientX - startX;
-      const newWidth = Math.max(200, Math.min(600, startWidth + delta)); // Min 200px, max 600px
+      if (!isResizingRef.current) return;
+      e.preventDefault();
+      const delta = e.clientX - resizeStartXRef.current;
+      const newWidth = Math.max(200, Math.min(600, resizeStartWidthRef.current + delta)); // Min 200px, max 600px
       setSwimlaneColumnWidth(newWidth);
       localStorage.setItem('gantt-swimlane-width', newWidth.toString());
     };
 
     const handleMouseUp = () => {
-      if (isResizing) {
-        isResizing = false;
+      if (isResizingRef.current) {
+        isResizingRef.current = false;
         document.body.style.cursor = '';
+        document.body.style.userSelect = '';
       }
     };
 
