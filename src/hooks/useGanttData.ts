@@ -448,6 +448,26 @@ export const useGanttData = () => {
             },
           },
         };
+        
+        // Update all links that reference this activity to use the new swimlane ID
+        newData.links = newData.links.map(link => {
+          const needsUpdate = 
+            (link.fromSwimlaneId === fromSwimlaneId && link.fromId === activityId) ||
+            (link.toSwimlaneId === fromSwimlaneId && link.toId === activityId);
+          
+          if (!needsUpdate) return link;
+          
+          return {
+            ...link,
+            fromSwimlaneId: link.fromId === activityId ? toSwimlaneId : link.fromSwimlaneId,
+            toSwimlaneId: link.toId === activityId ? toSwimlaneId : link.toSwimlaneId,
+          };
+        });
+        
+        // Propagate position changes if any
+        if (positionDelta !== 0) {
+          newData = propagatePositionChange(newData, toSwimlaneId, activityId, positionDelta);
+        }
       }
       
       return newData;
@@ -546,6 +566,26 @@ export const useGanttData = () => {
             },
           },
         };
+        
+        // Update all links that reference this state to use the new swimlane ID
+        newData.links = newData.links.map(link => {
+          const needsUpdate = 
+            (link.fromSwimlaneId === fromSwimlaneId && link.fromId === stateId) ||
+            (link.toSwimlaneId === fromSwimlaneId && link.toId === stateId);
+          
+          if (!needsUpdate) return link;
+          
+          return {
+            ...link,
+            fromSwimlaneId: link.fromId === stateId ? toSwimlaneId : link.fromSwimlaneId,
+            toSwimlaneId: link.toId === stateId ? toSwimlaneId : link.toSwimlaneId,
+          };
+        });
+        
+        // Propagate position changes if any
+        if (positionDelta !== 0) {
+          newData = propagatePositionChange(newData, toSwimlaneId, stateId, positionDelta);
+        }
       }
       
       return newData;
