@@ -166,16 +166,20 @@ export class GridRouter {
 
   /**
    * Creates a clean elbow path using only horizontal and vertical segments
-   * Pattern: Horizontal -> Vertical -> Horizontal (always ends horizontally)
+   * Pattern depends on whether start and end are on same Y level:
+   * - Same Y: Direct horizontal path (vertical arrowhead)
+   * - Different Y: Elbow path ending horizontally
    */
   private createElbowPath(start: Point, end: Point): Point[] {
     const path: Point[] = [start];
     
-    // If already on same horizontal line, direct horizontal path
+    // If already on same horizontal line, direct horizontal path (vertical arrowhead)
     if (Math.abs(start.y - end.y) < 1) {
       path.push(end);
       return path;
     }
+    
+    // Different Y levels: create elbow path that ends horizontally
     
     // Calculate clearance needed around obstacles
     const CLEARANCE = 24; // pixels above/below bars

@@ -44,7 +44,8 @@ export const GanttLinks = ({
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
   
   // Update positions when chart scrolls or resizes
-  React.useEffect(() => {
+  // Use useLayoutEffect to read DOM after layout but before paint
+  React.useLayoutEffect(() => {
     const container = document.querySelector('.overflow-auto');
     if (!container) return;
     
@@ -52,11 +53,14 @@ export const GanttLinks = ({
     container.addEventListener('scroll', handleUpdate);
     window.addEventListener('resize', handleUpdate);
     
+    // Initial update to ensure positions are read after bars are rendered
+    forceUpdate();
+    
     return () => {
       container.removeEventListener('scroll', handleUpdate);
       window.removeEventListener('resize', handleUpdate);
     };
-  }, []);
+  }, [data, itemTempPositions]); // Re-run when data or temp positions change
 
   // Get item position with support for temp positions during drag
   const getItemPosition = (swimlaneId: string, itemId: string): ItemPosition | null => {
