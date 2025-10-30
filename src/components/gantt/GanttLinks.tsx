@@ -37,6 +37,9 @@ export const GanttLinks = ({
   const BAR_HEIGHT = 24;
   const GRID_SIZE = 12; // Grid cell size for pathfinding
 
+  // Ref to SVG element to get its position for coordinate transformation
+  const svgRef = React.useRef<SVGSVGElement>(null);
+
   // Get item position with support for temp positions during drag
   const getItemPosition = (swimlaneId: string, itemId: string): ItemPosition | null => {
     const tempPos = itemTempPositions[itemId];
@@ -52,18 +55,46 @@ export const GanttLinks = ({
     const itemStart = tempPos?.start ?? item.start;
     const itemDuration = tempPos?.duration ?? item.duration;
 
-    // Calculate vertical position - Y is the TOP of the swimlane row container
+    // Calculate vertical position
     const rowTop = findYPosition(effectiveSwimlaneId);
     if (rowTop === null) return null;
     
-    // CRITICAL: Match coordinate system with GanttBar handle positioning
-    // Bars and handles in GanttBar.tsx are positioned with style={{ left: `${left}px` }}
-    // where left = (itemStart / zoom) * columnWidth
-    // These are positioned relative to the ROW's chart area container (NOT including swimlane column)
-    //
-    // The SVG must use the SAME coordinate system - chart-area relative, not full-canvas relative
-    const x = (itemStart / zoom) * columnWidth;
-    const width = (itemDuration / zoom) * columnWidth;
+    // CRITICAL FIX: Use actual DOM position to handle scroll offset
+    // Find the actual bar element in the DOM
+    const barElement = document.querySelector(`[data-item-id="${item.id}"][data-swimlane-id="${effectiveSwimlaneId}"]`);
+    
+    let x, width;
+    
+    if (barElement && svgRef.current) {
+      // Get positions relative to viewport
+      const barRect = barElement.getBoundingClientRect();
+      const svgRect = svgRef.current.getBoundingClientRect();
+      
+      // Convert to SVG coordinate system
+      x = barRect.left - svgRect.left;
+      width = barRect.width;
+      
+      console.log('[GanttLinks] DOM-based position', {
+        itemId,
+        barViewport: { left: barRect.left, width: barRect.width },
+        svgViewport: { left: svgRect.left },
+        svgCoordinates: { x, width },
+        note: 'Using actual DOM positions with scroll compensation'
+      });
+    } else {
+      // Fallback: calculate from data (won't account for scroll)
+      x = (itemStart / zoom) * columnWidth;
+      width = (itemDuration / zoom) * columnWidth;
+      
+      console.log('[GanttLinks] Calculated position (fallback)', {
+        itemId,
+        itemStart,
+        itemDuration,
+        calculatedX: x,
+        calculatedWidth: width,
+        note: 'Fallback - may not match if scrolled'
+      });
+    }
     
     // CRITICAL: Match EXACT handle positioning from GanttBar.tsx
     // Link handles in GanttBar.tsx use: style={{ top: '50%', transform: 'translateY(-50%)' }}
@@ -76,18 +107,6 @@ export const GanttLinks = ({
     //
     // Therefore: barCenterY = rowTop + (SWIMLANE_HEIGHT / 2)
     const barCenterY = rowTop + (SWIMLANE_HEIGHT / 2);
-    
-    console.log('[GanttLinks] Position calc', {
-      itemId,
-      itemStart,
-      itemDuration,
-      columnWidth,
-      calculatedX: x,
-      calculatedWidth: width,
-      rowTop,
-      barCenterY,
-      note: 'Coordinates relative to chart area (not including swimlane column)'
-    });
 
     return {
       x,
@@ -342,17 +361,9 @@ export const GanttLinks = ({
     );
   };
 
-  // Log coordinate system info on mount and when swimlaneColumnWidth changes
-  React.useEffect(() => {
-    console.log('[GanttLinks] SVG coordinate system', {
-      swimlaneColumnWidth,
-      svgLeftOffset: swimlaneColumnWidth,
-      note: 'SVG x=0 should align with chart area left edge (after swimlane column)'
-    });
-  }, [swimlaneColumnWidth]);
-
   return (
     <svg
+      ref={svgRef}
       className="absolute pointer-events-none"
       style={{ 
         zIndex: 40,
