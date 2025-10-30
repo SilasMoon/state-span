@@ -218,7 +218,7 @@ export const useGanttData = () => {
       description: "",
     };
 
-    setData((prev) => {
+    updateData((prev) => {
       const swimlane = prev.swimlanes[swimlaneId];
       if (!swimlane || swimlane.type !== "activity") return prev;
       
