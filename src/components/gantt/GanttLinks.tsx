@@ -303,7 +303,19 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
     const to = getItemPosition(link.toSwimlaneId, link.toId, link);
 
     if (!from || !to) {
-      console.warn('Link positions not found:', { link, from, to });
+      console.warn('Link positions not found:', { 
+        linkId: link.id,
+        fromSwimlaneId: link.fromSwimlaneId,
+        fromId: link.fromId,
+        toSwimlaneId: link.toSwimlaneId,
+        toId: link.toId,
+        from, 
+        to,
+        swimlaneExists: {
+          from: !!data.swimlanes[link.fromSwimlaneId],
+          to: !!data.swimlanes[link.toSwimlaneId]
+        }
+      });
       return null;
     }
 
