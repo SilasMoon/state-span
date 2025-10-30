@@ -129,17 +129,23 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
   };
 
 
-  // New obstacle detection for routing
+  // ==================== PHASE 2: Enhanced Obstacle Detection ====================
+  
   interface Obstacle {
     swimlaneId: string;
     itemId: string;
     xStart: number;
     xEnd: number;
     y: number;
+    width: number;
+    height: number;
   }
 
-  const getSwimlanesBetween = (fromId: string, toId: string): string[] => {
-    // Get the vertical order of all visible swimlanes
+  const SWIMLANE_HEIGHT = 48;
+  const BAR_HEIGHT = 24;
+  const TOLERANCE_MARGIN = 5; // px clearance around obstacles
+
+  const getSwimlanesBetween = (fromId: string, toId: string, includeEndpoints: boolean = false): string[] => {
     const visibleOrder: string[] = [];
     const traverse = (ids: string[]) => {
       ids.forEach(id => {
@@ -152,15 +158,14 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
     };
     traverse(data.rootIds);
     
-    // Find indices
     const fromIndex = visibleOrder.indexOf(fromId);
     const toIndex = visibleOrder.indexOf(toId);
     
     if (fromIndex === -1 || toIndex === -1) return [];
     
-    // Return swimlanes between (exclusive of source and target)
-    const start = Math.min(fromIndex, toIndex) + 1;
-    const end = Math.max(fromIndex, toIndex);
+    // Return swimlanes between, optionally including source and target
+    const start = Math.min(fromIndex, toIndex) + (includeEndpoints ? 0 : 1);
+    const end = Math.max(fromIndex, toIndex) + (includeEndpoints ? 1 : 0);
     
     return visibleOrder.slice(start, end);
   };
@@ -169,29 +174,41 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
     fromSwimlaneId: string,
     toSwimlaneId: string,
     pathStartX: number,
-    pathEndX: number
+    pathEndX: number,
+    fromItemId?: string,
+    toItemId?: string
   ): Obstacle[] => {
     const obstacles: Obstacle[] = [];
     
-    // Get all swimlanes between source and target
-    const swimlanesBetween = getSwimlanesBetween(fromSwimlaneId, toSwimlaneId);
+    // PHASE 2: Include source and target swimlanes for better detection
+    const swimlanesToCheck = getSwimlanesBetween(fromSwimlaneId, toSwimlaneId, true);
     
-    // For each swimlane, check all activities/states
-    swimlanesBetween.forEach(swimlaneId => {
+    swimlanesToCheck.forEach(swimlaneId => {
       const swimlane = data.swimlanes[swimlaneId];
       if (!swimlane) return;
       
       const items = [...(swimlane.activities || []), ...(swimlane.states || [])];
       
       items.forEach(item => {
+        // Skip the source and target items themselves
+        if (item.id === fromItemId || item.id === toItemId) return;
+        
         const pos = getItemPosition(swimlaneId, item.id);
         if (!pos) return;
         
         const itemStart = pos.x2; // Left edge
         const itemEnd = pos.x1;   // Right edge
+        const itemY = pos.y1;
         
-        // Check horizontal overlap
-        const horizontalOverlap = !(itemEnd < pathStartX || itemStart > pathEndX);
+        // PHASE 2: Rectangle intersection with tolerance margins
+        const pathLeft = Math.min(pathStartX, pathEndX) - TOLERANCE_MARGIN;
+        const pathRight = Math.max(pathStartX, pathEndX) + TOLERANCE_MARGIN;
+        
+        const itemLeft = itemStart - TOLERANCE_MARGIN;
+        const itemRight = itemEnd + TOLERANCE_MARGIN;
+        
+        // Check if rectangles intersect
+        const horizontalOverlap = !(itemRight < pathLeft || itemLeft > pathRight);
         
         if (horizontalOverlap) {
           obstacles.push({
@@ -199,7 +216,9 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
             itemId: item.id,
             xStart: itemStart,
             xEnd: itemEnd,
-            y: pos.y1
+            y: itemY,
+            width: itemEnd - itemStart,
+            height: BAR_HEIGHT
           });
         }
       });
@@ -208,21 +227,144 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
     return obstacles;
   };
 
-  const createRoutedPath = (from: { x1: number; y1: number }, 
-                            to: { x2: number; y2: number },
-                            fromId?: string,
-                            toId?: string,
-                            fromSwimlaneId?: string,
-                            toSwimlaneId?: string): { path: string; isVertical: boolean } => {
+  // ==================== PHASE 6: Spatial Index for Link Collision Avoidance ====================
+  
+  interface LinkPath {
+    id: string;
+    segments: Array<{ x1: number; y1: number; x2: number; y2: number }>;
+  }
+
+  const existingLinkPaths = new Map<string, LinkPath>();
+
+  const parseLinkPath = (linkId: string, pathD: string): LinkPath => {
+    const segments: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
+    const commands = pathD.match(/[ML]\s*[\d.-]+\s+[\d.-]+/g) || [];
+    
+    let lastX = 0, lastY = 0;
+    commands.forEach((cmd, i) => {
+      const [type, x, y] = cmd.split(/\s+/);
+      const currentX = parseFloat(x);
+      const currentY = parseFloat(y);
+      
+      if (i > 0) {
+        segments.push({ x1: lastX, y1: lastY, x2: currentX, y2: currentY });
+      }
+      lastX = currentX;
+      lastY = currentY;
+    });
+    
+    return { id: linkId, segments };
+  };
+
+  const checkLinkCollision = (newSegments: Array<{ x1: number; y1: number; x2: number; y2: number }>): number => {
+    let maxCollisions = 0;
+    
+    existingLinkPaths.forEach(existingPath => {
+      let collisionCount = 0;
+      
+      newSegments.forEach(newSeg => {
+        existingPath.segments.forEach(existingSeg => {
+          // Check if segments are close (within 10px)
+          const distance = Math.min(
+            pointToSegmentDistance(newSeg.x1, newSeg.y1, existingSeg),
+            pointToSegmentDistance(newSeg.x2, newSeg.y2, existingSeg)
+          );
+          
+          if (distance < 10) collisionCount++;
+        });
+      });
+      
+      maxCollisions = Math.max(maxCollisions, collisionCount);
+    });
+    
+    return maxCollisions;
+  };
+
+  const pointToSegmentDistance = (
+    px: number, 
+    py: number, 
+    seg: { x1: number; y1: number; x2: number; y2: number }
+  ): number => {
+    const dx = seg.x2 - seg.x1;
+    const dy = seg.y2 - seg.y1;
+    const lengthSquared = dx * dx + dy * dy;
+    
+    if (lengthSquared === 0) {
+      return Math.sqrt((px - seg.x1) ** 2 + (py - seg.y1) ** 2);
+    }
+    
+    let t = ((px - seg.x1) * dx + (py - seg.y1) * dy) / lengthSquared;
+    t = Math.max(0, Math.min(1, t));
+    
+    const projX = seg.x1 + t * dx;
+    const projY = seg.y1 + t * dy;
+    
+    return Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
+  };
+
+  // ==================== PHASE 3 & 4: Smart Channel Selection with Dynamic Constants ====================
+  
+  const selectOptimalChannel = (
+    startY: number,
+    endY: number,
+    obstacles: Obstacle[],
+    horizontalOffset: number
+  ): { channelY: number; direction: 'up' | 'down' } => {
+    const CHANNEL_OFFSET = SWIMLANE_HEIGHT * 0.75; // 36px at default height
+    
+    // Calculate available space above and below
+    let upwardClearance = Infinity;
+    let downwardClearance = Infinity;
+    
+    const minY = Math.min(startY, endY);
+    const maxY = Math.max(startY, endY);
+    
+    // Check obstacles to see how far we can go up or down
+    obstacles.forEach(obstacle => {
+      if (obstacle.y < minY) {
+        // Obstacle above source
+        upwardClearance = Math.min(upwardClearance, minY - obstacle.y);
+      }
+      if (obstacle.y > maxY) {
+        // Obstacle below target
+        downwardClearance = Math.min(downwardClearance, obstacle.y - maxY);
+      }
+    });
+    
+    // Prefer direction with more clearance
+    if (upwardClearance >= downwardClearance && upwardClearance >= CHANNEL_OFFSET) {
+      return { channelY: minY - CHANNEL_OFFSET, direction: 'up' };
+    } else if (downwardClearance >= CHANNEL_OFFSET) {
+      return { channelY: maxY + CHANNEL_OFFSET, direction: 'down' };
+    } else {
+      // Not enough space in either direction, go with less intrusive option
+      const sourceIsAboveTarget = startY < endY;
+      return sourceIsAboveTarget
+        ? { channelY: startY - CHANNEL_OFFSET, direction: 'up' }
+        : { channelY: startY + CHANNEL_OFFSET, direction: 'down' };
+    }
+  };
+
+  // ==================== PHASE 4 & 7: Create Routed Path with Rounded Corners ====================
+  
+  const createRoutedPath = (
+    from: { x1: number; y1: number }, 
+    to: { x2: number; y2: number },
+    linkType: string,
+    fromId?: string,
+    toId?: string,
+    fromSwimlaneId?: string,
+    toSwimlaneId?: string
+  ): { path: string; isVertical: boolean } => {
     const startX = from.x1;
     const startY = from.y1;
     const endX = to.x2;
     const endY = to.y2;
     
-    // Constants
-    const HORIZONTAL_OFFSET = 20; // Short horizontal segment length
-    const CHANNEL_OFFSET = 30;    // Distance to clear channel above/below swimlane
-    const FORWARD_THRESHOLD = 10; // Minimum X difference to be considered "forward"
+    // PHASE 4: Dynamic constants based on zoom and column width
+    const HORIZONTAL_OFFSET = Math.max(15, columnWidth * 0.3);
+    const FORWARD_THRESHOLD = columnWidth * 0.2;
+    const CORNER_RADIUS = 8; // PHASE 7: Rounded corners
     
     // SPECIAL CASE: Same swimlane, same row, forward flow
     const sameSwimlane = fromSwimlaneId && toSwimlaneId && fromSwimlaneId === toSwimlaneId;
@@ -241,84 +383,125 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
     // MAIN DECISION: Forward or Backward link?
     const isForwardLink = endX > startX + FORWARD_THRESHOLD;
     
+    // PHASE 2: Enhanced obstacle detection
+    const obstacles = fromSwimlaneId && toSwimlaneId 
+      ? findObstacles(fromSwimlaneId, toSwimlaneId, startX, endX, fromId, toId)
+      : [];
+    
+    // PHASE 7: Helper function for rounded corners
+    const createRoundedPath = (points: Array<{x: number, y: number}>): string => {
+      if (points.length < 2) return '';
+      
+      let path = `M ${points[0].x} ${points[0].y}`;
+      
+      for (let i = 1; i < points.length - 1; i++) {
+        const prev = points[i - 1];
+        const curr = points[i];
+        const next = points[i + 1];
+        
+        // Calculate direction vectors
+        const dx1 = curr.x - prev.x;
+        const dy1 = curr.y - prev.y;
+        const dx2 = next.x - curr.x;
+        const dy2 = next.y - curr.y;
+        
+        // If it's a corner (direction changes)
+        if ((dx1 === 0 && dy2 === 0) || (dy1 === 0 && dx2 === 0)) {
+          const dist1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+          const dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+          const radius = Math.min(CORNER_RADIUS, dist1 / 2, dist2 / 2);
+          
+          if (radius > 0) {
+            // Line to start of curve
+            const beforeX = curr.x - (dx1 / dist1) * radius;
+            const beforeY = curr.y - (dy1 / dist1) * radius;
+            path += ` L ${beforeX} ${beforeY}`;
+            
+            // Quadratic curve through corner
+            const afterX = curr.x + (dx2 / dist2) * radius;
+            const afterY = curr.y + (dy2 / dist2) * radius;
+            path += ` Q ${curr.x} ${curr.y} ${afterX} ${afterY}`;
+            continue;
+          }
+        }
+        
+        path += ` L ${curr.x} ${curr.y}`;
+      }
+      
+      path += ` L ${points[points.length - 1].x} ${points[points.length - 1].y}`;
+      return path;
+    };
+    
     if (isForwardLink) {
       // === FORWARD LINK LOGIC ===
       
-      // Check for obstacles
-      const obstacles = fromSwimlaneId && toSwimlaneId 
-        ? findObstacles(fromSwimlaneId, toSwimlaneId, startX, endX)
-        : [];
-      
       if (obstacles.length === 0) {
-        // NO OBSTACLES: Simple 3-segment path
-        // 1. Horizontal out
-        const point1X = startX + HORIZONTAL_OFFSET;
-        const point1Y = startY;
+        // NO OBSTACLES: Simple 3-segment path with rounded corners
+        const points = [
+          { x: startX, y: startY },
+          { x: startX + HORIZONTAL_OFFSET, y: startY },
+          { x: startX + HORIZONTAL_OFFSET, y: endY },
+          { x: endX, y: endY }
+        ];
         
-        // 2. Vertical to target swimlane
-        const point2X = point1X;
-        const point2Y = endY;
-        
-        // 3. Horizontal into target
-        const path = `M ${startX} ${startY} L ${point1X} ${point1Y} L ${point2X} ${point2Y} L ${endX} ${endY}`;
-        return { path, isVertical: false };
+        return { path: createRoundedPath(points), isVertical: false };
         
       } else {
-        // OBSTACLES FOUND: 5-segment detour path
+        // OBSTACLES FOUND: Use smart channel selection (PHASE 3)
+        const { channelY } = selectOptimalChannel(startY, endY, obstacles, HORIZONTAL_OFFSET);
         
-        // Determine direction to clear channel (up or down from source)
-        const sourceIsAboveTarget = startY < endY;
-        const channelY = sourceIsAboveTarget 
-          ? startY - CHANNEL_OFFSET  // Go up from source
-          : startY + CHANNEL_OFFSET; // Go down from source
+        // PHASE 5: Link type optimization for routing
+        let exitOffset = HORIZONTAL_OFFSET;
+        let entryOffset = HORIZONTAL_OFFSET;
         
-        // 1. Horizontal out from source
-        const point1X = startX + HORIZONTAL_OFFSET;
-        const point1Y = startY;
+        // Adjust offsets based on link type
+        if (linkType === 'SS') {
+          // Start-to-Start: minimize horizontal distance
+          exitOffset = Math.min(HORIZONTAL_OFFSET, columnWidth * 0.2);
+          entryOffset = Math.min(HORIZONTAL_OFFSET, columnWidth * 0.2);
+        } else if (linkType === 'FF') {
+          // Finish-to-Finish: can extend further
+          exitOffset = HORIZONTAL_OFFSET * 1.2;
+          entryOffset = HORIZONTAL_OFFSET * 1.2;
+        }
         
-        // 2. Vertical to clear channel
-        const point2X = point1X;
-        const point2Y = channelY;
+        const points = [
+          { x: startX, y: startY },
+          { x: startX + exitOffset, y: startY },
+          { x: startX + exitOffset, y: channelY },
+          { x: endX - entryOffset, y: channelY },
+          { x: endX - entryOffset, y: endY },
+          { x: endX, y: endY }
+        ];
         
-        // 3. Long horizontal across channel (past obstacles)
-        const point3X = endX - HORIZONTAL_OFFSET;
-        const point3Y = channelY;
-        
-        // 4. Vertical to target swimlane
-        const point4X = point3X;
-        const point4Y = endY;
-        
-        // 5. Horizontal into target
-        const path = `M ${startX} ${startY} L ${point1X} ${point1Y} L ${point2X} ${point2Y} L ${point3X} ${point3Y} L ${point4X} ${point4Y} L ${endX} ${endY}`;
-        return { path, isVertical: false };
+        return { path: createRoundedPath(points), isVertical: false };
       }
       
     } else {
       // === BACKWARD/CLOSE LINK LOGIC ===
-      // Always use 5-segment loop-back
+      // PHASE 3: Smart channel selection instead of always going down
       
-      const SWIMLANE_HEIGHT = 48;
-      const HALF_SWIMLANE = SWIMLANE_HEIGHT / 2;
+      const { channelY } = selectOptimalChannel(startY, endY, obstacles, HORIZONTAL_OFFSET);
       
-      // 1. Horizontal out from source
-      const point1X = startX + HORIZONTAL_OFFSET;
-      const point1Y = startY;
+      // PHASE 5: Special handling for SF (Start-to-Finish) backward links
+      let exitOffset = HORIZONTAL_OFFSET;
+      let entryOffset = HORIZONTAL_OFFSET;
       
-      // 2. Vertical down by half swimlane height (enter clear channel)
-      const point2X = point1X;
-      const point2Y = startY + HALF_SWIMLANE;
+      if (linkType === 'SF') {
+        // Start-to-Finish backward: special routing
+        exitOffset = Math.min(HORIZONTAL_OFFSET * 0.8, columnWidth * 0.15);
+      }
       
-      // 3. Horizontal (backward) to align with target entry
-      const point3X = endX - HORIZONTAL_OFFSET;
-      const point3Y = point2Y;
+      const points = [
+        { x: startX, y: startY },
+        { x: startX + exitOffset, y: startY },
+        { x: startX + exitOffset, y: channelY },
+        { x: endX - entryOffset, y: channelY },
+        { x: endX - entryOffset, y: endY },
+        { x: endX, y: endY }
+      ];
       
-      // 4. Vertical to target swimlane
-      const point4X = point3X;
-      const point4Y = endY;
-      
-      // 5. Horizontal into target
-      const path = `M ${startX} ${startY} L ${point1X} ${point1Y} L ${point2X} ${point2Y} L ${point3X} ${point3Y} L ${point4X} ${point4Y} L ${endX} ${endY}`;
-      return { path, isVertical: false };
+      return { path: createRoundedPath(points), isVertical: false };
     }
   };
 
@@ -330,20 +513,22 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
       return null;
     }
 
-    // Apply consistent vertical centering to all links
-    // Bars are 24px tall, so center is at 12px from the bar's top edge
-    const barCenterOffset = 12;
-    const adjustedFrom = {
-      x1: from.x1,
-      y1: from.y1 + barCenterOffset
-    };
-    const adjustedTo = {
-      x2: to.x2,
-      y2: to.y2 + barCenterOffset
-    };
+    // PHASE 1: Fix vertical positioning - use raw positions from getItemPosition
+    // getItemPosition already returns y + 24 (center), no need for additional offset
+    const { path, isVertical } = createRoutedPath(
+      from, 
+      to, 
+      link.type,
+      link.fromId, 
+      link.toId, 
+      link.fromSwimlaneId, 
+      link.toSwimlaneId
+    );
 
-    const { path, isVertical } = createRoutedPath(adjustedFrom, adjustedTo, link.fromId, link.toId, link.fromSwimlaneId, link.toSwimlaneId);
-
+    // PHASE 6: Register link path for collision detection
+    const parsedPath = parseLinkPath(link.id, path);
+    existingLinkPaths.set(link.id, parsedPath);
+    
     const isSelected = selectedLink === link.id;
     const linkColor = link.color || "#00bcd4";
     const markerId = `arrowhead-${link.id}`;
@@ -376,7 +561,7 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
             onLinkDoubleClick(link.id);
           }}
         />
-        {/* Visible path */}
+        {/* PHASE 7: Visible path with hover effect */}
         <path
           d={path}
           stroke={isSelected ? "hsl(var(--destructive))" : linkColor}
@@ -384,7 +569,10 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
           fill="none"
           markerEnd={isSelected ? `url(#${selectedMarkerId})` : `url(#${markerId})`}
           opacity={isSelected ? "1" : "0.7"}
-          className="pointer-events-none"
+          className="pointer-events-none transition-all duration-200"
+          style={{
+            filter: isSelected ? 'drop-shadow(0 0 4px hsl(var(--destructive)))' : undefined
+          }}
         />
         {/* Custom arrowhead with link color */}
         <defs>
