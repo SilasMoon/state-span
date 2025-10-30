@@ -12,6 +12,13 @@ interface GanttLinksProps {
 }
 
 export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selectedLink, onLinkSelect, onLinkDoubleClick }: GanttLinksProps) => {
+  console.log('[GanttLinks] Component render:', {
+    linkCount: data.links.length,
+    links: data.links.map(l => ({ id: l.id, from: `${l.fromSwimlaneId}/${l.fromId}`, to: `${l.toSwimlaneId}/${l.toId}` })),
+    swimlaneCount: Object.keys(data.swimlanes).length,
+    rootIds: data.rootIds
+  });
+  
   const getItemPosition = (swimlaneId: string, itemId: string, linkForLogging?: GanttLink) => {
     const swimlane = data.swimlanes[swimlaneId];
     if (!swimlane) {
