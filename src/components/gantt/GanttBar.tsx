@@ -13,6 +13,7 @@ interface GanttBarProps {
   onMove: (toSwimlaneId: string, newStart: number) => void;
   onResize: (newStart: number, newDuration: number) => void;
   checkOverlap: (swimlaneId: string, itemId: string, start: number, duration: number) => boolean;
+  onDragStateChange?: (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number) => void;
 }
 
 export const GanttBar = ({
@@ -26,6 +27,7 @@ export const GanttBar = ({
   onMove,
   onResize,
   checkOverlap,
+  onDragStateChange,
 }: GanttBarProps) => {
   const [isDragging, setIsDragging] = useState<'start' | 'end' | 'move' | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialSwimlaneId: swimlaneId });
@@ -95,6 +97,8 @@ export const GanttBar = ({
           if (canPlace) {
             setTempStart(newStart);
           }
+          // Notify parent of drag state change
+          onDragStateChange?.(true, newSwimlaneId !== swimlaneId ? newSwimlaneId : null, newStart, tempDuration);
         }
       }
     } else if (isDragging === 'start') {
@@ -132,6 +136,8 @@ export const GanttBar = ({
       }
       setIsDragging(null);
       setTargetSwimlaneId(swimlaneId);
+      // Notify parent that dragging stopped
+      onDragStateChange?.(false, null, item.start, item.duration);
     }
   };
 
@@ -154,7 +160,7 @@ export const GanttBar = ({
           <div
             className={`absolute h-6 rounded ${isDragging === 'move' ? 'cursor-grabbing' : 'cursor-grab'} group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
               isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
-            }`}
+            } ${isDragging === 'move' && targetSwimlaneId !== swimlaneId ? 'opacity-50' : ''}`}
             style={{
               left: `${left}px`,
               width: `${width}px`,

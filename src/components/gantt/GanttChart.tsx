@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { GanttToolbar } from "./GanttToolbar";
 import { GanttTimeline } from "./GanttTimeline";
 import { GanttRow } from "./GanttRow";
@@ -61,6 +62,15 @@ export const GanttChart = () => {
   } | null>(null);
 
   const [selectedLink, setSelectedLink] = useState<string | null>(null);
+
+  const [dragPreview, setDragPreview] = useState<{
+    itemId: string;
+    swimlaneId: string;
+    targetSwimlaneId: string;
+    tempStart: number;
+    tempDuration: number;
+    color: string;
+  } | null>(null);
 
   // Calculate total hours dynamically based on content
   const calculateTotalHours = () => {
@@ -401,6 +411,26 @@ export const GanttChart = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selected, selectedLink, deleteSwimlane, deleteActivity, deleteState, deleteLink]);
 
+  const handleDragStateChange = (itemId: string, swimlaneId: string) => 
+    (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number) => {
+      if (isDragging && targetSwimlaneId) {
+        const swimlane = data.swimlanes[swimlaneId];
+        const item = swimlane?.activities?.find(a => a.id === itemId) || swimlane?.states?.find(s => s.id === itemId);
+        if (item) {
+          setDragPreview({
+            itemId,
+            swimlaneId,
+            targetSwimlaneId,
+            tempStart,
+            tempDuration,
+            color: item.color,
+          });
+        }
+      } else {
+        setDragPreview(null);
+      }
+    };
+
   const renderSwimlanes = (ids: string[], level: number = 0): JSX.Element[] => {
     const elements: JSX.Element[] = [];
 
@@ -430,6 +460,7 @@ export const GanttChart = () => {
           onStateResize={handleStateResize}
           onSwimlaneNameChange={(id, name) => updateSwimlane(id, { name })}
           checkOverlap={checkOverlap}
+          onDragStateChange={handleDragStateChange}
         />
       );
 
@@ -505,6 +536,43 @@ export const GanttChart = () => {
             }
           }}
         />
+
+        {/* Drag preview ghost bar */}
+        {dragPreview && (() => {
+          const targetRow = document.querySelector(`[data-swimlane-id="${dragPreview.targetSwimlaneId}"]`);
+          if (!targetRow) return null;
+          
+          const scrollContainer = document.querySelector('.overflow-auto');
+          const scrollLeft = scrollContainer?.scrollLeft || 0;
+          const scrollTop = scrollContainer?.scrollTop || 0;
+          
+          const targetRect = targetRow.getBoundingClientRect();
+          const containerRect = scrollContainer?.getBoundingClientRect();
+          
+          if (!containerRect) return null;
+          
+          const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
+          const left = (dragPreview.tempStart / zoom) * columnWidth + 280; // 280 is swimlane name column width
+          const width = (dragPreview.tempDuration / zoom) * columnWidth;
+          const top = targetRect.top - containerRect.top + scrollTop + (targetRect.height / 2) - 12; // 12 is half of bar height (24px)
+          
+          return createPortal(
+            <div
+              className="absolute h-6 rounded flex items-center justify-center text-xs font-medium pointer-events-none border-2 border-dashed"
+              style={{
+                left: `${left}px`,
+                width: `${width}px`,
+                top: `${top}px`,
+                backgroundColor: dragPreview.color,
+                opacity: 0.7,
+                color: "#fff",
+                zIndex: 50,
+                borderColor: "#fff",
+              }}
+            />,
+            document.body
+          );
+        })()}
 
         {/* Link creation visual feedback */}
         {linkDragStart && linkDragCurrent && (() => {

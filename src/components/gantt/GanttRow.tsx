@@ -29,6 +29,7 @@ interface GanttRowProps {
   onStateResize: (swimlaneId: string, stateId: string, newStart: number, newDuration: number) => void;
   onSwimlaneNameChange: (id: string, name: string) => void;
   checkOverlap: (swimlaneId: string, itemId: string, start: number, duration: number) => boolean;
+  onDragStateChange: (itemId: string, swimlaneId: string) => (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number) => void;
 }
 
 export const GanttRow = ({
@@ -51,6 +52,7 @@ export const GanttRow = ({
   onStateResize,
   onSwimlaneNameChange,
   checkOverlap,
+  onDragStateChange,
 }: GanttRowProps) => {
   const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
   const columns = Math.ceil(totalHours / zoom);
@@ -172,6 +174,7 @@ export const GanttRow = ({
                 onMove={(toSwimlaneId, newStart) => onActivityMove(swimlane.id, activity.id, toSwimlaneId, newStart)}
                 onResize={(newStart, newDuration) => onActivityResize(swimlane.id, activity.id, newStart, newDuration)}
                 checkOverlap={checkOverlap}
+                onDragStateChange={onDragStateChange(activity.id, swimlane.id)}
               />
             ))}
           {swimlane.type === "state" &&
@@ -188,6 +191,7 @@ export const GanttRow = ({
                 onMove={(toSwimlaneId, newStart) => onStateMove(swimlane.id, state.id, toSwimlaneId, newStart)}
                 onResize={(newStart, newDuration) => onStateResize(swimlane.id, state.id, newStart, newDuration)}
                 checkOverlap={checkOverlap}
+                onDragStateChange={onDragStateChange(state.id, swimlane.id)}
               />
             ))}
         </div>
