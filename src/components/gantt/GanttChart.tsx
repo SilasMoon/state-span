@@ -110,7 +110,7 @@ export const GanttChart = () => {
     labelColor: string;
   } | null>(null);
 
-  const [chartTitle, setChartTitle] = useState<string>("Gantt Chart");
+  const [chartTitle, setChartTitle] = useState<string>("Software Development Project");
 
   // Ref for the main container to handle keyboard events
   const containerRef = React.useRef<HTMLDivElement>(null);

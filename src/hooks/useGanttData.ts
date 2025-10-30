@@ -5,39 +5,165 @@ let nextId = 1;
 const generateId = () => `item-${nextId++}`;
 
 const createDefaultData = (): GanttData => {
-  const activityLane: GanttSwimlane = {
+  // Create parent swimlanes
+  const developmentPhase: GanttSwimlane = {
     id: generateId(),
-    name: "Planning Phase",
+    name: "Development Phase",
+    type: "activity",
+    parentId: undefined,
+    children: [],
+    expanded: true,
+  };
+
+  const designSwimlane: GanttSwimlane = {
+    id: generateId(),
+    name: "Design",
+    type: "activity",
+    parentId: developmentPhase.id,
+    children: [],
+    expanded: true,
+    activities: [
+      { id: generateId(), start: 0, duration: 16, color: "#00bcd4", label: "Wireframes", labelColor: "#ffffff", description: "Create initial wireframes" },
+      { id: generateId(), start: 16, duration: 24, color: "#4caf50", label: "UI Design", labelColor: "#ffffff", description: "Design user interface" },
+    ],
+  };
+
+  const backendSwimlane: GanttSwimlane = {
+    id: generateId(),
+    name: "Backend Development",
+    type: "activity",
+    parentId: developmentPhase.id,
+    children: [],
+    expanded: true,
+    activities: [
+      { id: generateId(), start: 40, duration: 32, color: "#ff9800", label: "API Development", labelColor: "#ffffff", description: "Build REST APIs" },
+      { id: generateId(), start: 72, duration: 24, color: "#f44336", label: "Database Setup", labelColor: "#ffffff", description: "Configure database" },
+    ],
+  };
+
+  const frontendSwimlane: GanttSwimlane = {
+    id: generateId(),
+    name: "Frontend Development",
+    type: "activity",
+    parentId: developmentPhase.id,
+    children: [],
+    expanded: true,
+    activities: [
+      { id: generateId(), start: 40, duration: 40, color: "#9c27b0", label: "Components", labelColor: "#ffffff", description: "Build React components" },
+      { id: generateId(), start: 80, duration: 16, color: "#3f51b5", label: "Integration", labelColor: "#ffffff", description: "Integrate with API" },
+    ],
+  };
+
+  developmentPhase.children = [designSwimlane.id, backendSwimlane.id, frontendSwimlane.id];
+
+  const testingPhase: GanttSwimlane = {
+    id: generateId(),
+    name: "Testing & QA",
     type: "activity",
     parentId: undefined,
     children: [],
     expanded: true,
     activities: [
-      { id: generateId(), start: 8, duration: 16, color: "#00bcd4", label: "Planning", labelColor: "#000000", description: "Initial planning" },
-      { id: generateId(), start: 32, duration: 24, color: "#4caf50", label: "Design", labelColor: "#000000", description: "Design phase" },
+      { id: generateId(), start: 96, duration: 24, color: "#e91e63", label: "Unit Tests", labelColor: "#ffffff", description: "Write unit tests" },
+      { id: generateId(), start: 120, duration: 16, color: "#673ab7", label: "Integration Tests", labelColor: "#ffffff", description: "Test integrations" },
     ],
   };
 
-  const stateLane: GanttSwimlane = {
+  // State swimlanes
+  const projectStatusParent: GanttSwimlane = {
     id: generateId(),
     name: "Project Status",
     type: "state",
     parentId: undefined,
     children: [],
     expanded: true,
+  };
+
+  const approvalStatus: GanttSwimlane = {
+    id: generateId(),
+    name: "Approval Status",
+    type: "state",
+    parentId: projectStatusParent.id,
+    children: [],
+    expanded: true,
     states: [
-      { id: generateId(), start: 0, duration: 24, color: "#ff9800", label: "Review", labelColor: "#000000", description: "In Review" },
-      { id: generateId(), start: 24, duration: 40, color: "#4caf50", label: "Approved", labelColor: "#000000", description: "Approved" },
+      { id: generateId(), start: 0, duration: 40, color: "#ff9800", label: "In Review", labelColor: "#ffffff", description: "Awaiting design review" },
+      { id: generateId(), start: 40, duration: 96, color: "#4caf50", label: "Approved", labelColor: "#ffffff", description: "Design approved" },
     ],
   };
 
+  const deploymentStatus: GanttSwimlane = {
+    id: generateId(),
+    name: "Deployment Status",
+    type: "state",
+    parentId: projectStatusParent.id,
+    children: [],
+    expanded: true,
+    states: [
+      { id: generateId(), start: 96, duration: 20, color: "#2196f3", label: "Staging", labelColor: "#ffffff", description: "Deployed to staging" },
+      { id: generateId(), start: 116, duration: 20, color: "#00bcd4", label: "Production", labelColor: "#ffffff", description: "Deployed to production" },
+    ],
+  };
+
+  projectStatusParent.children = [approvalStatus.id, deploymentStatus.id];
+
+  // Create links between activities
+  const links: GanttLink[] = [
+    // Design to Backend (Finish-to-Start)
+    {
+      id: generateId(),
+      fromSwimlaneId: designSwimlane.id,
+      fromId: designSwimlane.activities![1].id,
+      toSwimlaneId: backendSwimlane.id,
+      toId: backendSwimlane.activities![0].id,
+      type: "FS",
+      lag: 0,
+    },
+    // Design to Frontend (Finish-to-Start)
+    {
+      id: generateId(),
+      fromSwimlaneId: designSwimlane.id,
+      fromId: designSwimlane.activities![1].id,
+      toSwimlaneId: frontendSwimlane.id,
+      toId: frontendSwimlane.activities![0].id,
+      type: "FS",
+      lag: 0,
+    },
+    // Backend to Testing (Finish-to-Start)
+    {
+      id: generateId(),
+      fromSwimlaneId: backendSwimlane.id,
+      fromId: backendSwimlane.activities![1].id,
+      toSwimlaneId: testingPhase.id,
+      toId: testingPhase.activities![0].id,
+      type: "FS",
+      lag: 0,
+    },
+    // Frontend to Testing (Finish-to-Start)
+    {
+      id: generateId(),
+      fromSwimlaneId: frontendSwimlane.id,
+      fromId: frontendSwimlane.activities![1].id,
+      toSwimlaneId: testingPhase.id,
+      toId: testingPhase.activities![1].id,
+      type: "FS",
+      lag: 0,
+    },
+  ];
+
   return {
     swimlanes: {
-      [activityLane.id]: activityLane,
-      [stateLane.id]: stateLane,
+      [developmentPhase.id]: developmentPhase,
+      [designSwimlane.id]: designSwimlane,
+      [backendSwimlane.id]: backendSwimlane,
+      [frontendSwimlane.id]: frontendSwimlane,
+      [testingPhase.id]: testingPhase,
+      [projectStatusParent.id]: projectStatusParent,
+      [approvalStatus.id]: approvalStatus,
+      [deploymentStatus.id]: deploymentStatus,
     },
-    rootIds: [activityLane.id, stateLane.id],
-    links: [],
+    rootIds: [developmentPhase.id, testingPhase.id, projectStatusParent.id],
+    links,
   };
 };
 
