@@ -56,6 +56,14 @@ export const GanttLinks = ({
     const rowTop = findYPosition(effectiveSwimlaneId);
     if (rowTop === null) return null;
     
+    console.log('[GanttLinks] getItemPosition', {
+      itemId,
+      swimlaneId: effectiveSwimlaneId,
+      rowTop,
+      SWIMLANE_HEIGHT,
+      calculatedCenter: rowTop + SWIMLANE_HEIGHT / 2
+    });
+    
     const x = (itemStart / zoom) * columnWidth + swimlaneColumnWidth;
     const width = (itemDuration / zoom) * columnWidth;
     
