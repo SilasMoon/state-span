@@ -64,6 +64,7 @@ export const GanttRow = ({
   const [dragCreation, setDragCreation] = useState<{
     startHour: number;
     currentHour: number;
+    hasMoved: boolean;
   } | null>(null);
 
   const renderGrid = () => {
@@ -109,7 +110,7 @@ export const GanttRow = ({
             e.stopPropagation();
             console.log('[GanttRow] Starting drag creation');
             const hour = i * zoom;
-            setDragCreation({ startHour: hour, currentHour: hour });
+            setDragCreation({ startHour: hour, currentHour: hour, hasMoved: false });
           }}
         />
       );
@@ -127,21 +128,28 @@ export const GanttRow = ({
       if (cell) {
         const cellIndex = parseInt(cell.getAttribute('data-cell-index') || '0');
         const currentHour = cellIndex * zoom;
-        setDragCreation(prev => prev ? { ...prev, currentHour } : null);
+        setDragCreation(prev => {
+          if (!prev) return null;
+          const hasMoved = prev.startHour !== currentHour;
+          return { ...prev, currentHour, hasMoved };
+        });
       }
     };
 
     const handleMouseUp = () => {
       if (dragCreation) {
-        const start = Math.min(dragCreation.startHour, dragCreation.currentHour);
-        const end = Math.max(dragCreation.startHour, dragCreation.currentHour);
-        const duration = Math.max(zoom, end - start + zoom); // Minimum 1 column
+        // Only create if the user actually dragged to a different cell
+        if (dragCreation.hasMoved) {
+          const start = Math.min(dragCreation.startHour, dragCreation.currentHour);
+          const end = Math.max(dragCreation.startHour, dragCreation.currentHour);
+          const duration = Math.max(zoom, end - start + zoom); // Minimum 1 column
 
-        // Check for overlap before creating
-        if (!checkOverlap(swimlane.id, 'temp-creation', start, duration)) {
-          onCreateByDrag(swimlane.id, start, duration);
-        } else {
-          toast.error("Cannot create: overlaps with existing item");
+          // Check for overlap before creating
+          if (!checkOverlap(swimlane.id, 'temp-creation', start, duration)) {
+            onCreateByDrag(swimlane.id, start, duration);
+          } else {
+            toast.error("Cannot create: overlaps with existing item");
+          }
         }
 
         setDragCreation(null);
