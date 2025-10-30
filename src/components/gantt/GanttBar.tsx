@@ -194,7 +194,7 @@ export const GanttBar = ({
   }, [isDragging, tempStart, tempDuration, targetSwimlaneId]);
 
   return (
-    <div className="relative">
+    <>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -251,7 +251,7 @@ export const GanttBar = ({
         </Tooltip>
       </TooltipProvider>
 
-      {/* Link creation handles - OUTSIDE tooltip, always clickable */}
+      {/* Link creation handles - positioned absolutely at bar edges */}
       {isModifierPressed && (
         <>
           {/* Left handle (start) */}
@@ -259,7 +259,7 @@ export const GanttBar = ({
             className="absolute w-5 h-5 rounded-full bg-blue-500 border-2 border-white transition-all cursor-crosshair z-[100] hover:scale-125 pointer-events-auto"
             style={{
               left: `${left - 12}px`,
-              top: isState ? '50%' : '50%',
+              ...(isState ? { top: '50%' } : { top: '50%' }),
               transform: 'translateY(-50%)',
             }}
             data-handle-type="start"
@@ -282,7 +282,7 @@ export const GanttBar = ({
             className="absolute w-5 h-5 rounded-full bg-green-500 border-2 border-white transition-all cursor-crosshair z-[100] hover:scale-125 pointer-events-auto"
             style={{
               left: `${left + width - 12}px`,
-              top: isState ? '50%' : '50%',
+              ...(isState ? { top: '50%' } : { top: '50%' }),
               transform: 'translateY(-50%)',
             }}
             data-handle-type="finish"
@@ -301,6 +301,6 @@ export const GanttBar = ({
           />
         </>
       )}
-    </div>
+    </>
   );
 };
