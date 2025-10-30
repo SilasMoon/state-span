@@ -182,7 +182,7 @@ export const GanttRow = ({
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0"
+            className="h-6 w-6 p-0 flex-shrink-0"
             onClick={() => onToggleExpand(swimlane.id)}
           >
             {swimlane.expanded ? (
@@ -192,17 +192,17 @@ export const GanttRow = ({
             )}
           </Button>
         )}
-        {!hasChildren && <div className="w-6" />}
+        {!hasChildren && <div className="w-6 flex-shrink-0" />}
         
         <input
           type="text"
           value={swimlane.name}
           onChange={(e) => onSwimlaneNameChange(swimlane.id, e.target.value)}
-          className="bg-transparent border-none outline-none text-sm text-foreground cursor-pointer min-w-0"
+          className="bg-transparent border-none outline-none text-sm text-foreground cursor-text min-w-0 flex-1 mr-3 focus:ring-1 focus:ring-primary/30 rounded px-1"
           onClick={() => onSelect('swimlane', swimlane.id)}
         />
         
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <span
             className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
               swimlane.type === "activity"
