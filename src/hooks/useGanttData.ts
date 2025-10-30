@@ -192,7 +192,14 @@ export const useGanttData = () => {
       const swimlane = prev.swimlanes[swimlaneId];
       if (!swimlane || !swimlane.activities) return prev;
 
-      return {
+      // Get the old activity to calculate duration delta
+      const oldActivity = swimlane.activities.find((act) => act.id === activityId);
+      if (!oldActivity) return prev;
+
+      const durationDelta = updates.duration !== undefined ? updates.duration - oldActivity.duration : 0;
+
+      // Update the activity
+      let newData = {
         ...prev,
         swimlanes: {
           ...prev.swimlanes,
@@ -204,7 +211,61 @@ export const useGanttData = () => {
           },
         },
       };
+
+      // If duration changed, propagate to linked activities
+      if (durationDelta !== 0) {
+        newData = propagateDurationChange(newData, swimlaneId, activityId, durationDelta);
+      }
+
+      return newData;
     });
+  };
+
+  // Helper function to propagate duration changes through links
+  const propagateDurationChange = (data: GanttData, fromSwimlaneId: string, fromItemId: string, durationDelta: number): GanttData => {
+    // Find all links where this item is the source
+    const affectedLinks = data.links.filter(link => 
+      link.fromSwimlaneId === fromSwimlaneId && link.fromId === fromItemId
+    );
+
+    let newData = { ...data };
+
+    affectedLinks.forEach(link => {
+      // Only FS (Finish-to-Start) and FF (Finish-to-Finish) are affected by duration changes
+      if (link.type === "FS" || link.type === "FF") {
+        const toSwimlane = newData.swimlanes[link.toSwimlaneId];
+        if (!toSwimlane) return;
+
+        // Update the target activity/state
+        if (toSwimlane.activities) {
+          newData.swimlanes[link.toSwimlaneId] = {
+            ...toSwimlane,
+            activities: toSwimlane.activities.map(act => 
+              act.id === link.toId 
+                ? { ...act, start: act.start + durationDelta }
+                : act
+            ),
+          };
+
+          // Recursively propagate to activities linked from this one
+          newData = propagateDurationChange(newData, link.toSwimlaneId, link.toId, durationDelta);
+        } else if (toSwimlane.states) {
+          newData.swimlanes[link.toSwimlaneId] = {
+            ...toSwimlane,
+            states: toSwimlane.states.map(state => 
+              state.id === link.toId 
+                ? { ...state, start: state.start + durationDelta }
+                : state
+            ),
+          };
+
+          // Recursively propagate to states linked from this one
+          newData = propagateDurationChange(newData, link.toSwimlaneId, link.toId, durationDelta);
+        }
+      }
+    });
+
+    return newData;
   };
 
   const updateState = (swimlaneId: string, stateId: string, updates: Partial<GanttState>) => {
@@ -212,7 +273,14 @@ export const useGanttData = () => {
       const swimlane = prev.swimlanes[swimlaneId];
       if (!swimlane || !swimlane.states) return prev;
 
-      return {
+      // Get the old state to calculate duration delta
+      const oldState = swimlane.states.find((st) => st.id === stateId);
+      if (!oldState) return prev;
+
+      const durationDelta = updates.duration !== undefined ? updates.duration - oldState.duration : 0;
+
+      // Update the state
+      let newData = {
         ...prev,
         swimlanes: {
           ...prev.swimlanes,
@@ -224,6 +292,13 @@ export const useGanttData = () => {
           },
         },
       };
+
+      // If duration changed, propagate to linked items
+      if (durationDelta !== 0) {
+        newData = propagateDurationChange(newData, swimlaneId, stateId, durationDelta);
+      }
+
+      return newData;
     });
   };
 

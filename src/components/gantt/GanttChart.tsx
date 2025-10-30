@@ -97,6 +97,33 @@ export const GanttChart = () => {
     }
   };
 
+  const handleZoomToFit = () => {
+    // Get the scrollable container element
+    const scrollContainer = document.querySelector('.overflow-auto');
+    if (!scrollContainer) return;
+
+    const viewportWidth = scrollContainer.clientWidth - 280; // Subtract swimlane name column width
+    
+    // Calculate best zoom level to fit the timeline
+    const levels: ZoomLevel[] = [24, 12, 8, 4, 2, 1];
+    const columnWidths = { 1: 30, 2: 40, 4: 50, 8: 60, 12: 70, 24: 80 };
+    
+    for (const level of levels) {
+      const columnWidth = columnWidths[level];
+      const columns = Math.ceil(totalHours / level);
+      const requiredWidth = columns * columnWidth;
+      
+      if (requiredWidth <= viewportWidth) {
+        setZoom(level);
+        return;
+      }
+    }
+    
+    // If nothing fits, use the smallest zoom
+    setZoom(24);
+    toast.info("Timeline zoomed to fit");
+  };
+
   const handleAddActivityLane = () => {
     addSwimlane("activity");
     toast.success("Activity swimlane added");
@@ -384,6 +411,7 @@ export const GanttChart = () => {
         zoom={zoom}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
+        onZoomToFit={handleZoomToFit}
         onAddActivityLane={handleAddActivityLane}
         onAddStateLane={handleAddStateLane}
         onExport={handleExport}

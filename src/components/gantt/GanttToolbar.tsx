@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2 } from "lucide-react";
+import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ interface GanttToolbarProps {
   zoom: ZoomLevel;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  onZoomToFit: () => void;
   onAddActivityLane: () => void;
   onAddStateLane: () => void;
   onExport: () => void;
@@ -24,6 +25,7 @@ export const GanttToolbar = ({
   zoom,
   onZoomIn,
   onZoomOut,
+  onZoomToFit,
   onAddActivityLane,
   onAddStateLane,
   onExport,
@@ -99,6 +101,14 @@ export const GanttToolbar = ({
       <div className="flex-1" />
 
       <span className="text-sm text-muted-foreground">Zoom: {getZoomLabel()}</span>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onZoomToFit}
+        title="Zoom to fit entire timeline"
+      >
+        <Maximize2 className="w-4 h-4" />
+      </Button>
       <Button
         variant="outline"
         size="sm"
