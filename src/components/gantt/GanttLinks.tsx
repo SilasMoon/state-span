@@ -70,6 +70,18 @@ export const GanttLinks = ({
     //
     // Therefore: barCenterY = rowTop + (SWIMLANE_HEIGHT / 2)
     const barCenterY = rowTop + (SWIMLANE_HEIGHT / 2);
+    
+    console.log('[GanttLinks] Position calc', {
+      itemId,
+      itemStart,
+      itemDuration,
+      columnWidth,
+      swimlaneColumnWidth,
+      calculatedX: x,
+      calculatedWidth: width,
+      rowTop,
+      barCenterY
+    });
 
     return {
       x,

@@ -331,6 +331,21 @@ export const GanttBar = ({
             data-handle-type="start"
             data-swimlane-id={swimlaneId}
             data-item-id={item.id}
+            ref={(el) => {
+              if (el && isModifierPressed) {
+                const rect = el.getBoundingClientRect();
+                const parentRect = el.parentElement?.getBoundingClientRect();
+                console.log('[GanttBar] START handle', {
+                  itemId: item.id,
+                  barLeft: left,
+                  handleStyleLeft: left - 12,
+                  handleAbsLeft: rect.left,
+                  handleCenterX: rect.left + rect.width / 2,
+                  parentLeft: parentRect?.left,
+                  relativeToParent: rect.left - (parentRect?.left || 0) + rect.width / 2
+                });
+              }
+            }}
             onMouseDown={(e) => {
               e.stopPropagation();
               e.preventDefault();
