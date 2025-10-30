@@ -595,30 +595,24 @@ export const GanttChart = () => {
       return;
     }
 
-    // Create the new item
+    // Create the new item with the copied properties
     if (copiedItem.type === 'activity') {
-      addActivity(targetSwimlaneId, start, copiedItem.duration);
-      const newActivity = targetSwimlane.activities?.[targetSwimlane.activities.length - 1];
-      if (newActivity) {
-        updateActivity(targetSwimlaneId, newActivity.id, {
-          color: copiedItem.color,
-          label: copiedItem.label,
-          labelColor: copiedItem.labelColor,
-          description: copiedItem.description,
-        });
-      }
+      const newActivityId = addActivity(targetSwimlaneId, start, copiedItem.duration);
+      updateActivity(targetSwimlaneId, newActivityId, {
+        color: copiedItem.color,
+        label: copiedItem.label,
+        labelColor: copiedItem.labelColor,
+        description: copiedItem.description,
+      });
       toast.success("Activity pasted");
     } else {
-      addState(targetSwimlaneId, start, copiedItem.duration);
-      const newState = targetSwimlane.states?.[targetSwimlane.states.length - 1];
-      if (newState) {
-        updateState(targetSwimlaneId, newState.id, {
-          color: copiedItem.color,
-          label: copiedItem.label,
-          labelColor: copiedItem.labelColor,
-          description: copiedItem.description,
-        });
-      }
+      const newStateId = addState(targetSwimlaneId, start, copiedItem.duration);
+      updateState(targetSwimlaneId, newStateId, {
+        color: copiedItem.color,
+        label: copiedItem.label,
+        labelColor: copiedItem.labelColor,
+        description: copiedItem.description,
+      });
       toast.success("State pasted");
     }
 
