@@ -176,28 +176,32 @@ export const GanttLinks = ({
 
     if (!fromPos || !toPos) return null;
 
-    // CRITICAL: Attachment points must be at the EXACT middle of the bar side
-    // Determine horizontal attachment points (left or right edge of bar)
-    let startX = fromPos.x + fromPos.width; // Default: finish (right edge)
-    let endX = toPos.x; // Default: start (left edge)
+    // CRITICAL: Match EXACT handle center positions from GanttBar.tsx
+    // Handles are w-5 (20px) with left edge at:
+    //   - Start: left - 12px  → center at: left - 12 + 10 = left - 2
+    //   - Finish: left + width - 12px  → center at: left + width - 12 + 10 = left + width - 2
+    const HANDLE_OFFSET = 2; // Handles are 2px inward from bar edges
+    
+    let startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Default: finish handle center
+    let endX = toPos.x - HANDLE_OFFSET; // Default: start handle center
 
     switch (link.type) {
       case 'SS': // Start-to-Start
-        startX = fromPos.x; // Left edge of from bar
-        endX = toPos.x; // Left edge of to bar
+        startX = fromPos.x - HANDLE_OFFSET; // Start handle center of from bar
+        endX = toPos.x - HANDLE_OFFSET; // Start handle center of to bar
         break;
       case 'SF': // Start-to-Finish
-        startX = fromPos.x; // Left edge of from bar
-        endX = toPos.x + toPos.width; // Right edge of to bar
+        startX = fromPos.x - HANDLE_OFFSET; // Start handle center of from bar
+        endX = toPos.x + toPos.width - HANDLE_OFFSET; // Finish handle center of to bar
         break;
       case 'FF': // Finish-to-Finish
-        startX = fromPos.x + fromPos.width; // Right edge of from bar
-        endX = toPos.x + toPos.width; // Right edge of to bar
+        startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Finish handle center of from bar
+        endX = toPos.x + toPos.width - HANDLE_OFFSET; // Finish handle center of to bar
         break;
       case 'FS': // Finish-to-Start (default)
       default:
-        startX = fromPos.x + fromPos.width; // Right edge of from bar
-        endX = toPos.x; // Left edge of to bar
+        startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Finish handle center of from bar
+        endX = toPos.x - HANDLE_OFFSET; // Start handle center of to bar
         break;
     }
 
@@ -349,21 +353,23 @@ export const GanttLinks = ({
         if (!fromPos || !toPos) return null;
 
         // Calculate exact attachment X coordinates (matching handle centers)
-        let startX = fromPos.x + fromPos.width; // Right edge (finish)
-        let endX = toPos.x; // Left edge (start)
+        const HANDLE_OFFSET = 2; // Handles are 2px inward from bar edges
+        
+        let startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Finish handle center
+        let endX = toPos.x - HANDLE_OFFSET; // Start handle center
 
         switch (link.type) {
           case 'SS':
-            startX = fromPos.x;
-            endX = toPos.x;
+            startX = fromPos.x - HANDLE_OFFSET;
+            endX = toPos.x - HANDLE_OFFSET;
             break;
           case 'SF':
-            startX = fromPos.x;
-            endX = toPos.x + toPos.width;
+            startX = fromPos.x - HANDLE_OFFSET;
+            endX = toPos.x + toPos.width - HANDLE_OFFSET;
             break;
           case 'FF':
-            startX = fromPos.x + fromPos.width;
-            endX = toPos.x + toPos.width;
+            startX = fromPos.x + fromPos.width - HANDLE_OFFSET;
+            endX = toPos.x + toPos.width - HANDLE_OFFSET;
             break;
         }
         
