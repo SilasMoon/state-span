@@ -130,7 +130,7 @@ export const GanttChart = () => {
     const actualContentDuration = maxEnd - minStart;
     
     // Calculate best zoom level to fit the actual content
-    const levels: ZoomLevel[] = [24, 12, 8, 4, 2, 1];
+    const levels: ZoomLevel[] = [1, 2, 4, 8, 12, 24];
     const columnWidths: Record<ZoomLevel, number> = { 1: 30, 2: 40, 4: 50, 8: 60, 12: 70, 24: 80 };
     
     let bestZoom: ZoomLevel = 24;
