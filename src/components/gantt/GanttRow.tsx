@@ -76,10 +76,10 @@ export const GanttRow = ({
           onMouseDown={(e) => {
             if (e.button !== 0) return; // Only left click
             
-            // Check if clicking on a bar or bar handle - if so, don't start drag creation
-            const target = e.target as HTMLElement;
-            const clickedOnBar = target.closest('[data-item-id]');
-            const clickedOnHandle = target.closest('[data-handle-type]');
+            // Check if there's a bar or handle at the click position
+            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+            const clickedOnBar = elementsAtPoint.some(el => el.hasAttribute('data-item-id'));
+            const clickedOnHandle = elementsAtPoint.some(el => el.hasAttribute('data-handle-type'));
             
             if (clickedOnBar || clickedOnHandle) {
               // Let the bar handle its own events
