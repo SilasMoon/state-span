@@ -548,18 +548,11 @@ export const GanttChart = () => {
 
         {/* Drag preview ghost bar */}
         {dragPreview && (() => {
-          const scrollContainer = document.querySelector('.overflow-auto');
-          const scrollLeft = scrollContainer?.scrollLeft || 0;
-          const scrollTop = scrollContainer?.scrollTop || 0;
-          const containerRect = scrollContainer?.getBoundingClientRect();
-          
-          if (!containerRect) return null;
-          
           const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
           
-          // Calculate position based on actual mouse coordinates, adjusted by initial offset
-          const left = dragPreview.mouseX - containerRect.left + scrollLeft - dragPreview.offsetX;
-          const top = dragPreview.mouseY - containerRect.top + scrollTop - dragPreview.offsetY;
+          // Calculate position - ghost is portaled to body, so use viewport coordinates
+          const left = dragPreview.mouseX - dragPreview.offsetX;
+          const top = dragPreview.mouseY - dragPreview.offsetY;
           const width = (dragPreview.tempDuration / zoom) * columnWidth;
           
           return createPortal(
