@@ -104,26 +104,46 @@ export const GanttChart = () => {
 
     const viewportWidth = scrollContainer.clientWidth - 280; // Subtract swimlane name column width
     
-    // Calculate best zoom level to fit the timeline
+    // Calculate actual timeline extent (no buffer)
+    let minStart = Infinity;
+    let maxEnd = 0;
+    
+    Object.values(data.swimlanes).forEach((swimlane) => {
+      swimlane.activities?.forEach((activity) => {
+        if (activity.start < minStart) minStart = activity.start;
+        const end = activity.start + activity.duration;
+        if (end > maxEnd) maxEnd = end;
+      });
+      swimlane.states?.forEach((state) => {
+        if (state.start < minStart) minStart = state.start;
+        const end = state.start + state.duration;
+        if (end > maxEnd) maxEnd = end;
+      });
+    });
+    
+    // If no content, use default
+    if (minStart === Infinity) {
+      setZoom(24);
+      toast.info("Timeline zoomed to fit");
+      return;
+    }
+    
+    const actualTimelineHours = maxEnd - minStart;
+    
+    // Calculate best zoom level to fit the actual timeline
     const levels: ZoomLevel[] = [24, 12, 8, 4, 2, 1];
     const columnWidths: Record<ZoomLevel, number> = { 1: 30, 2: 40, 4: 50, 8: 60, 12: 70, 24: 80 };
     
     let bestZoom: ZoomLevel = 24;
-    let smallestOverflow = Infinity;
     
     for (const level of levels) {
       const columnWidth = columnWidths[level];
-      const columns = Math.ceil(totalHours / level);
+      const columns = Math.ceil(actualTimelineHours / level);
       const requiredWidth = columns * columnWidth;
-      const overflow = requiredWidth - viewportWidth;
       
-      // If it fits perfectly or has the smallest overflow
-      if (overflow <= 0) {
+      if (requiredWidth <= viewportWidth) {
         bestZoom = level;
         break;
-      } else if (overflow < smallestOverflow) {
-        smallestOverflow = overflow;
-        bestZoom = level;
       }
     }
     
