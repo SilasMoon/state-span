@@ -330,10 +330,19 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
       return null;
     }
 
-    // Use exact edge positions without vertical adjustment
-    // Links should connect at the horizontal edges at the vertical center of bars
+    // Apply consistent vertical centering to all links
+    // Bars are 24px tall, so center is at 12px from the bar's top edge
+    const barCenterOffset = 12;
+    const adjustedFrom = {
+      x1: from.x1,
+      y1: from.y1 + barCenterOffset
+    };
+    const adjustedTo = {
+      x2: to.x2,
+      y2: to.y2 + barCenterOffset
+    };
 
-    const { path, isVertical } = createRoutedPath(from, to, link.fromId, link.toId, link.fromSwimlaneId, link.toSwimlaneId);
+    const { path, isVertical } = createRoutedPath(adjustedFrom, adjustedTo, link.fromId, link.toId, link.fromSwimlaneId, link.toSwimlaneId);
 
     const isSelected = selectedLink === link.id;
     const linkColor = link.color || "#00bcd4";

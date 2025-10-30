@@ -84,6 +84,7 @@ export const LinkEditDialog = ({
               id="label"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
               placeholder="Optional label..."
               className="mt-2"
             />
@@ -96,6 +97,7 @@ export const LinkEditDialog = ({
               type="number"
               value={lag}
               onChange={(e) => setLag(Number(e.target.value))}
+              onKeyDown={(e) => e.stopPropagation()}
               className="mt-2"
             />
           </div>
