@@ -257,7 +257,7 @@ export const GanttRow = ({
       onDrop={handleDrop}
     >
       <div
-        className={`sticky left-0 z-10 bg-card border-r border-border flex items-center gap-2 px-3 py-2 group cursor-move ${
+        className={`sticky left-0 z-30 bg-card border-r border-border flex items-center gap-2 px-3 py-2 group cursor-move ${
           isRowSelected ? 'bg-primary/10 ring-2 ring-primary ring-inset' : ''
         }`}
         style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px`, paddingLeft: `${level * 20 + 12}px` }}
