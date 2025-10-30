@@ -50,6 +50,11 @@ export const GanttChart = () => {
     itemId?: string;
   } | null>(null);
 
+  // Log selected state changes
+  React.useEffect(() => {
+    console.log('[GanttChart] selected state changed:', selected);
+  }, [selected]);
+
   const [linkDragStart, setLinkDragStart] = useState<{
     swimlaneId: string;
     itemId: string;
@@ -470,7 +475,11 @@ export const GanttChart = () => {
           zoom={zoom}
           totalHours={totalHours}
           selected={selected}
-          onSelect={(type, swimlaneId, itemId) => setSelected({ type, swimlaneId, itemId })}
+          onSelect={(type, swimlaneId, itemId) => {
+            console.log('[GanttChart] onSelect called', { type, swimlaneId, itemId });
+            setSelected({ type, swimlaneId, itemId });
+            console.log('[GanttChart] setSelected called with', { type, swimlaneId, itemId });
+          }}
           onToggleExpand={toggleExpanded}
           onDelete={deleteSwimlane}
           onAddChild={handleAddChild}

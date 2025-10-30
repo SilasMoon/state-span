@@ -39,15 +39,19 @@ export const GanttBar = ({
   const [targetSwimlaneId, setTargetSwimlaneId] = useState(swimlaneId);
   const [isModifierPressed, setIsModifierPressed] = useState(false);
 
+  console.log('[GanttBar] Render', { itemId: item.id, isSelected, isModifierPressed });
+
   // Track modifier key for link mode
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.shiftKey || e.ctrlKey || e.metaKey) {
+        console.log('[GanttBar] Modifier key pressed', { itemId: item.id });
         setIsModifierPressed(true);
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
       if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        console.log('[GanttBar] Modifier key released', { itemId: item.id });
         setIsModifierPressed(false);
       }
     };
@@ -58,7 +62,7 @@ export const GanttBar = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [item.id]);
 
   // Sync local state with props when item changes (but not during drag)
   React.useEffect(() => {
@@ -214,11 +218,11 @@ export const GanttBar = ({
                 e.stopPropagation();
                 onDoubleClick();
               }}
-              onClick={(e) => {
-                e.stopPropagation();
-                console.log('[GanttBar] onClick called', { itemId: item.id });
-                onSelect();
-              }}
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log('[GanttBar] onClick called, calling onSelect', { itemId: item.id });
+              onSelect();
+            }}
               data-swimlane-id={swimlaneId}
               data-item-id={item.id}
             >
@@ -254,6 +258,9 @@ export const GanttBar = ({
       {/* Link creation handles - positioned absolutely at bar edges */}
       {isModifierPressed && (
         <>
+          <div style={{ position: 'absolute', left: 0, top: -30, color: 'red', fontSize: '10px', zIndex: 999 }}>
+            HANDLES VISIBLE itemId:{item.id}
+          </div>
           {/* Left handle (start) */}
           <div
             className="absolute w-5 h-5 rounded-full bg-blue-500 border-2 border-white transition-all cursor-crosshair z-[100] hover:scale-125 pointer-events-auto"

@@ -268,7 +268,10 @@ export const GanttRow = ({
                 columnWidth={columnWidth}
                 isSelected={selected?.type === 'activity' && selected.swimlaneId === swimlane.id && selected.itemId === activity.id}
                 onDoubleClick={() => onActivityDoubleClick(swimlane.id, activity.id)}
-                onSelect={() => onSelect('activity', swimlane.id, activity.id)}
+                onSelect={() => {
+                  console.log('[GanttRow] Activity onSelect callback', { swimlaneId: swimlane.id, activityId: activity.id });
+                  onSelect('activity', swimlane.id, activity.id);
+                }}
                 onMove={(toSwimlaneId, newStart) => onActivityMove(swimlane.id, activity.id, toSwimlaneId, newStart)}
                 onResize={(newStart, newDuration) => onActivityResize(swimlane.id, activity.id, newStart, newDuration)}
                 checkOverlap={checkOverlap}
@@ -286,7 +289,10 @@ export const GanttRow = ({
                 columnWidth={columnWidth}
                 isSelected={selected?.type === 'state' && selected.swimlaneId === swimlane.id && selected.itemId === state.id}
                 onDoubleClick={() => onStateDoubleClick(swimlane.id, state.id)}
-                onSelect={() => onSelect('state', swimlane.id, state.id)}
+                onSelect={() => {
+                  console.log('[GanttRow] State onSelect callback', { swimlaneId: swimlane.id, stateId: state.id });
+                  onSelect('state', swimlane.id, state.id);
+                }}
                 onMove={(toSwimlaneId, newStart) => onStateMove(swimlane.id, state.id, toSwimlaneId, newStart)}
                 onResize={(newStart, newDuration) => onStateResize(swimlane.id, state.id, newStart, newDuration)}
                 checkOverlap={checkOverlap}
