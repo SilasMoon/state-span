@@ -39,25 +39,15 @@ export const GanttLinks = ({
 
   // Get item position with support for temp positions during drag
   const getItemPosition = (swimlaneId: string, itemId: string): ItemPosition | null => {
-    console.log('[GanttLinks] getItemPosition START', { swimlaneId, itemId });
-    
     const tempPos = itemTempPositions[itemId];
     const effectiveSwimlaneId = tempPos?.swimlaneId || swimlaneId;
     
     const swimlane = data.swimlanes[effectiveSwimlaneId];
-    if (!swimlane) {
-      console.error('[GanttLinks] Swimlane not found!', { effectiveSwimlaneId });
-      return null;
-    }
+    if (!swimlane) return null;
 
     const item = swimlane.activities?.find((a) => a.id === itemId) || 
                  swimlane.states?.find((s) => s.id === itemId);
-    if (!item) {
-      console.error('[GanttLinks] Item not found in swimlane!', { itemId, swimlaneId: effectiveSwimlaneId, activities: swimlane.activities?.map(a => a.id), states: swimlane.states?.map(s => s.id) });
-      return null;
-    }
-    
-    console.log('[GanttLinks] Found item', { itemId, itemStart: item.start, itemDuration: item.duration });
+    if (!item) return null;
     
     const itemStart = tempPos?.start ?? item.start;
     const itemDuration = tempPos?.duration ?? item.duration;
@@ -210,14 +200,6 @@ export const GanttLinks = ({
     //   - Finish: left + width - 12px  → center at: left + width - 12 + 10 = left + width - 2
     const HANDLE_OFFSET = 2; // Handles are 2px inward from bar edges
     
-    console.log('[GanttLinks] Before calc', link.id, {
-      fromPosX: fromPos.x,
-      fromPosWidth: fromPos.width,
-      toPosX: toPos.x,
-      toPosWidth: toPos.width,
-      linkType: link.type
-    });
-    
     let startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Default: finish handle center
     let endX = toPos.x - HANDLE_OFFSET; // Default: start handle center
 
@@ -244,16 +226,6 @@ export const GanttLinks = ({
     // Use barCenterY for exact vertical center attachment
     const start = { x: startX, y: fromPos.barCenterY };
     const end = { x: endX, y: toPos.barCenterY };
-
-    console.log('[GanttLinks] renderLink', link.id, {
-      from: { itemId: link.fromId, swimlaneId: link.fromSwimlaneId, barCenterY: fromPos.barCenterY, x: fromPos.x, width: fromPos.width },
-      to: { itemId: link.toId, swimlaneId: link.toSwimlaneId, barCenterY: toPos.barCenterY, x: toPos.x, width: toPos.width },
-      linkType: link.type,
-      calculatedStartX: startX,
-      calculatedEndX: endX,
-      start,
-      end
-    });
 
     // Special case: same position
     if (Math.abs(start.x - end.x) < 5 && Math.abs(start.y - end.y) < 5) {
