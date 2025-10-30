@@ -241,6 +241,19 @@ export const GanttChart = () => {
     toast.success("State added");
   };
 
+  const handleCreateByDrag = (swimlaneId: string, start: number, duration: number) => {
+    const swimlane = data.swimlanes[swimlaneId];
+    if (!swimlane) return;
+
+    if (swimlane.type === 'activity') {
+      addActivity(swimlaneId, start, duration);
+      toast.success("Activity created");
+    } else {
+      addState(swimlaneId, start, duration);
+      toast.success("State created");
+    }
+  };
+
   const handleExport = () => {
     const jsonData = exportData();
     const blob = new Blob([jsonData], { type: "application/json" });
@@ -459,8 +472,7 @@ export const GanttChart = () => {
           onToggleExpand={toggleExpanded}
           onDelete={deleteSwimlane}
           onAddChild={handleAddChild}
-          onAddActivity={handleAddActivity}
-          onAddState={handleAddState}
+          onCreateByDrag={handleCreateByDrag}
           onActivityDoubleClick={handleActivityDoubleClick}
           onStateDoubleClick={handleStateDoubleClick}
           onActivityMove={handleActivityMove}

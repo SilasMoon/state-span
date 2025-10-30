@@ -1,7 +1,9 @@
+import React, { useState } from "react";
 import { GanttSwimlane, ZoomLevel } from "@/types/gantt";
 import { ChevronRight, ChevronDown, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GanttBar } from "./GanttBar";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,8 +21,7 @@ interface GanttRowProps {
   onToggleExpand: (id: string) => void;
   onDelete: (id: string) => void;
   onAddChild: (parentId: string, type: "activity" | "state") => void;
-  onAddActivity: (swimlaneId: string, start: number) => void;
-  onAddState: (swimlaneId: string, start: number) => void;
+  onCreateByDrag: (swimlaneId: string, start: number, duration: number) => void;
   onActivityDoubleClick: (swimlaneId: string, activityId: string) => void;
   onStateDoubleClick: (swimlaneId: string, stateId: string) => void;
   onActivityMove: (fromSwimlaneId: string, activityId: string, toSwimlaneId: string, newStart: number) => void;
@@ -42,8 +43,7 @@ export const GanttRow = ({
   onToggleExpand,
   onDelete,
   onAddChild,
-  onAddActivity,
-  onAddState,
+  onCreateByDrag,
   onActivityDoubleClick,
   onStateDoubleClick,
   onActivityMove,
@@ -59,28 +59,72 @@ export const GanttRow = ({
 
   const hasChildren = swimlane.children.length > 0;
 
+  const [dragCreation, setDragCreation] = useState<{
+    startHour: number;
+    currentHour: number;
+  } | null>(null);
+
   const renderGrid = () => {
     const cells = [];
     for (let i = 0; i < columns; i++) {
       cells.push(
         <div
           key={i}
-          className="border-r border-gantt-grid h-full cursor-pointer"
+          data-cell-index={i}
+          className="border-r border-gantt-grid h-full cursor-crosshair"
           style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
-          onClick={(e) => {
-            if (e.detail === 2) return; // ignore double clicks
+          onMouseDown={(e) => {
+            if (e.button !== 0) return; // Only left click
+            e.preventDefault();
+            e.stopPropagation();
             const hour = i * zoom;
-            if (swimlane.type === "activity") {
-              onAddActivity(swimlane.id, hour);
-            } else {
-              onAddState(swimlane.id, hour);
-            }
+            setDragCreation({ startHour: hour, currentHour: hour });
           }}
         />
       );
     }
     return cells;
   };
+
+  // Handle drag creation
+  React.useEffect(() => {
+    if (!dragCreation) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      const cell = target?.closest('[data-cell-index]');
+      if (cell) {
+        const cellIndex = parseInt(cell.getAttribute('data-cell-index') || '0');
+        const currentHour = cellIndex * zoom;
+        setDragCreation(prev => prev ? { ...prev, currentHour } : null);
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (dragCreation) {
+        const start = Math.min(dragCreation.startHour, dragCreation.currentHour);
+        const end = Math.max(dragCreation.startHour, dragCreation.currentHour);
+        const duration = Math.max(zoom, end - start + zoom); // Minimum 1 column
+
+        // Check for overlap before creating
+        if (!checkOverlap(swimlane.id, 'temp-creation', start, duration)) {
+          onCreateByDrag(swimlane.id, start, duration);
+        } else {
+          toast.error("Cannot create: overlaps with existing item");
+        }
+
+        setDragCreation(null);
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragCreation, zoom, swimlane.id, onCreateByDrag, checkOverlap]);
 
   const isRowSelected = selected?.type === 'swimlane' && selected.swimlaneId === swimlane.id;
 
@@ -159,6 +203,35 @@ export const GanttRow = ({
 
       <div className="relative flex h-12" style={{ minWidth: `${columns * columnWidth}px` }}>
         <div className="absolute inset-0 flex">{renderGrid()}</div>
+        
+        {/* Drag creation preview */}
+        {dragCreation && (() => {
+          const start = Math.min(dragCreation.startHour, dragCreation.currentHour);
+          const end = Math.max(dragCreation.startHour, dragCreation.currentHour);
+          const duration = end - start + zoom;
+          
+          const left = (start / zoom) * columnWidth;
+          const width = (duration / zoom) * columnWidth;
+          const isActivityLane = swimlane.type === 'activity';
+          const wouldOverlap = checkOverlap(swimlane.id, 'temp-creation', start, duration);
+          
+          return (
+            <div
+              className={`absolute ${isActivityLane ? 'h-6 rounded top-1/2 -translate-y-1/2' : 'h-full top-0'} border-2 border-dashed pointer-events-none z-30`}
+              style={{
+                left: `${left}px`,
+                width: `${width}px`,
+                backgroundColor: wouldOverlap 
+                  ? 'rgba(239, 68, 68, 0.3)' 
+                  : (isActivityLane ? 'rgba(59, 130, 246, 0.3)' : 'rgba(168, 85, 247, 0.3)'),
+                borderColor: wouldOverlap 
+                  ? 'rgb(239, 68, 68)' 
+                  : (isActivityLane ? 'rgb(59, 130, 246)' : 'rgb(168, 85, 247)'),
+              }}
+            />
+          );
+        })()}
+        
         <div className="absolute inset-0 pointer-events-none">
           {swimlane.type === "activity" &&
             swimlane.activities?.map((activity) => (
