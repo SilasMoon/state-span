@@ -13,7 +13,7 @@ interface GanttBarProps {
   onMove: (toSwimlaneId: string, newStart: number) => void;
   onResize: (newStart: number, newDuration: number) => void;
   checkOverlap: (swimlaneId: string, itemId: string, start: number, duration: number) => boolean;
-  onDragStateChange?: (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number) => void;
+  onDragStateChange?: (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => void;
 }
 
 export const GanttBar = ({
@@ -30,7 +30,7 @@ export const GanttBar = ({
   onDragStateChange,
 }: GanttBarProps) => {
   const [isDragging, setIsDragging] = useState<'start' | 'end' | 'move' | null>(null);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialSwimlaneId: swimlaneId });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialSwimlaneId: swimlaneId, offsetX: 0, offsetY: 0 });
   const [tempStart, setTempStart] = useState(item.start);
   const [tempDuration, setTempDuration] = useState(item.duration);
   const [targetSwimlaneId, setTargetSwimlaneId] = useState(swimlaneId);
@@ -55,7 +55,7 @@ export const GanttBar = ({
     e.preventDefault();
     document.body.style.cursor = 'ew-resize';
     setIsDragging(handle);
-    setDragStart({ x: e.clientX, y: e.clientY, initialSwimlaneId: swimlaneId });
+    setDragStart({ x: e.clientX, y: e.clientY, initialSwimlaneId: swimlaneId, offsetX: 0, offsetY: 0 });
     setTempStart(item.start);
     setTempDuration(item.duration);
     setTargetSwimlaneId(swimlaneId);
@@ -70,10 +70,20 @@ export const GanttBar = ({
     document.body.style.cursor = 'grabbing';
     onSelect();
     setIsDragging('move');
-    setDragStart({ x: e.clientX, y: e.clientY, initialSwimlaneId: swimlaneId });
+    
+    // Calculate offset from cursor to bar's top-left corner
+    const barElement = (e.currentTarget as HTMLElement);
+    const barRect = barElement.getBoundingClientRect();
+    const offsetX = e.clientX - barRect.left;
+    const offsetY = e.clientY - barRect.top;
+    
+    setDragStart({ x: e.clientX, y: e.clientY, initialSwimlaneId: swimlaneId, offsetX, offsetY });
     setTempStart(item.start);
     setTempDuration(item.duration);
     setTargetSwimlaneId(swimlaneId);
+    
+    // Notify parent with initial offset
+    onDragStateChange?.(true, null, item.start, item.duration, e.clientX, e.clientY, offsetX, offsetY);
   };
 
   const handleMouseMove = (e: MouseEvent) => {
@@ -98,7 +108,7 @@ export const GanttBar = ({
             setTempStart(newStart);
           }
           // Always notify parent with current mouse position for smooth ghost tracking
-          onDragStateChange?.(true, newSwimlaneId !== swimlaneId ? newSwimlaneId : null, newStart, tempDuration, e.clientX, e.clientY);
+          onDragStateChange?.(true, newSwimlaneId !== swimlaneId ? newSwimlaneId : null, newStart, tempDuration, e.clientX, e.clientY, dragStart.offsetX, dragStart.offsetY);
         }
       }
     } else if (isDragging === 'start') {
@@ -137,7 +147,7 @@ export const GanttBar = ({
       setIsDragging(null);
       setTargetSwimlaneId(swimlaneId);
       // Notify parent that dragging stopped
-      onDragStateChange?.(false, null, item.start, item.duration, 0, 0);
+      onDragStateChange?.(false, null, item.start, item.duration, 0, 0, 0, 0);
     }
   };
 

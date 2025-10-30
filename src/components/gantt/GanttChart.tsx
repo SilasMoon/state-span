@@ -72,6 +72,8 @@ export const GanttChart = () => {
     color: string;
     mouseX: number;
     mouseY: number;
+    offsetX: number;
+    offsetY: number;
   } | null>(null);
 
   // Calculate total hours dynamically based on content
@@ -414,12 +416,12 @@ export const GanttChart = () => {
   }, [selected, selectedLink, deleteSwimlane, deleteActivity, deleteState, deleteLink]);
 
   const handleDragStateChange = (itemId: string, swimlaneId: string) => 
-    (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number) => {
+    (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => {
       if (isDragging && targetSwimlaneId) {
         const swimlane = data.swimlanes[swimlaneId];
         const item = swimlane?.activities?.find(a => a.id === itemId) || swimlane?.states?.find(s => s.id === itemId);
         if (item) {
-          setDragPreview({
+          setDragPreview(prev => ({
             itemId,
             swimlaneId,
             targetSwimlaneId,
@@ -428,7 +430,10 @@ export const GanttChart = () => {
             color: item.color,
             mouseX,
             mouseY,
-          });
+            // Use existing offset if not provided (during drag move), or new offset (drag start)
+            offsetX: offsetX !== undefined ? offsetX : (prev?.offsetX || 0),
+            offsetY: offsetY !== undefined ? offsetY : (prev?.offsetY || 0),
+          }));
         }
       } else {
         setDragPreview(null);
@@ -552,9 +557,9 @@ export const GanttChart = () => {
           
           const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
           
-          // Calculate position based on actual mouse coordinates
-          const left = dragPreview.mouseX - containerRect.left + scrollLeft;
-          const top = dragPreview.mouseY - containerRect.top + scrollTop - 12; // 12 is half of bar height
+          // Calculate position based on actual mouse coordinates, adjusted by initial offset
+          const left = dragPreview.mouseX - containerRect.left + scrollLeft - dragPreview.offsetX;
+          const top = dragPreview.mouseY - containerRect.top + scrollTop - dragPreview.offsetY;
           const width = (dragPreview.tempDuration / zoom) * columnWidth;
           
           return createPortal(

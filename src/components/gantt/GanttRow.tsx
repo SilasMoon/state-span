@@ -29,7 +29,7 @@ interface GanttRowProps {
   onStateResize: (swimlaneId: string, stateId: string, newStart: number, newDuration: number) => void;
   onSwimlaneNameChange: (id: string, name: string) => void;
   checkOverlap: (swimlaneId: string, itemId: string, start: number, duration: number) => boolean;
-  onDragStateChange: (itemId: string, swimlaneId: string) => (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number) => void;
+  onDragStateChange: (itemId: string, swimlaneId: string) => (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => void;
 }
 
 export const GanttRow = ({
