@@ -83,6 +83,25 @@ export const GanttBar = ({
   const left = (tempStart / zoom) * columnWidth;
   const width = (tempDuration / zoom) * columnWidth;
 
+  // Log bar position on mount and when position changes (for debugging coordinate system)
+  const barRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (barRef.current) {
+      const rect = barRef.current.getBoundingClientRect();
+      const parent = barRef.current.parentElement?.getBoundingClientRect();
+      console.log('[GanttBar] Position', {
+        itemId: item.id,
+        calculatedLeft: left,
+        calculatedWidth: width,
+        rectLeft: rect.left,
+        rectWidth: rect.width,
+        parentLeft: parent?.left,
+        offsetFromParent: rect.left - (parent?.left || 0),
+        note: 'Check if calculatedLeft matches the actual offset from parent'
+      });
+    }
+  }, [left, width, item.id]);
+
   const snapToGrid = (value: number) => {
     return Math.round(value / zoom) * zoom;
   };
@@ -214,6 +233,7 @@ export const GanttBar = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <div
+              ref={barRef}
               className={`absolute ${isSummary ? 'h-0.5' : isState ? 'h-full' : 'h-6 rounded'} ${isSummary ? 'cursor-default' : isDragging === 'move' ? 'cursor-grabbing' : isModifierPressed ? 'cursor-crosshair' : 'cursor-grab'} group flex items-center justify-center text-xs font-medium ${isSummary ? '' : 'shadow-lg hover:shadow-xl'} transition-all pointer-events-auto ${
                 isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
               } ${isDragging === 'move' && targetSwimlaneId !== swimlaneId ? 'opacity-50' : ''} ${isModifierPressed && !isSummary ? 'ring-2 ring-blue-400/50' : ''}`}

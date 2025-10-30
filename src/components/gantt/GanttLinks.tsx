@@ -342,6 +342,15 @@ export const GanttLinks = ({
     );
   };
 
+  // Log coordinate system info on mount and when swimlaneColumnWidth changes
+  React.useEffect(() => {
+    console.log('[GanttLinks] SVG coordinate system', {
+      swimlaneColumnWidth,
+      svgLeftOffset: swimlaneColumnWidth,
+      note: 'SVG x=0 should align with chart area left edge (after swimlane column)'
+    });
+  }, [swimlaneColumnWidth]);
+
   return (
     <svg
       className="absolute pointer-events-none"
