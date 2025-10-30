@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Bug, Image } from "lucide-react";
+import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,8 +24,6 @@ interface GanttToolbarProps {
   onRedo: () => void;
   canUndo: boolean;
   canRedo: boolean;
-  debugMode: boolean;
-  onDebugToggle: () => void;
 }
 
 export const GanttToolbar = ({
@@ -43,8 +41,6 @@ export const GanttToolbar = ({
   onRedo,
   canUndo,
   canRedo,
-  debugMode,
-  onDebugToggle,
 }: GanttToolbarProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -139,18 +135,6 @@ export const GanttToolbar = ({
       </Button>
 
       <div className="flex-1" />
-
-      <Button
-        variant={debugMode ? "default" : "outline"}
-        size="sm"
-        onClick={onDebugToggle}
-        title="Toggle debug mode to visualize link attachment points"
-      >
-        <Bug className="w-4 h-4 mr-1" />
-        Debug
-      </Button>
-
-      <div className="h-6 w-px bg-border mx-1" />
 
       <span className="text-sm text-muted-foreground">Zoom: {getZoomLabel()}</span>
       <Button

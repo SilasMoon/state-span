@@ -11,7 +11,6 @@ interface GanttLinksProps {
   onLinkSelect: (linkId: string) => void;
   onLinkDoubleClick: (linkId: string) => void;
   itemTempPositions?: Record<string, { start: number; duration: number; swimlaneId: string }>;
-  debugMode?: boolean;
 }
 
 interface ItemPosition {
@@ -31,7 +30,6 @@ export const GanttLinks = ({
   onLinkSelect, 
   onLinkDoubleClick,
   itemTempPositions = {},
-  debugMode = false
 }: GanttLinksProps) => {
   const SWIMLANE_HEIGHT = 48;
   const BAR_HEIGHT = 24;
@@ -371,170 +369,20 @@ export const GanttLinks = ({
       className="absolute pointer-events-none"
       style={{ 
         zIndex: 40,
-        left: `${swimlaneColumnWidth}px`,
+        left: 0,
         top: 0,
-        width: `calc(100% - ${swimlaneColumnWidth}px)`,
+        width: '100%',
         height: `${calculateTotalHeight()}px`,
-        overflow: 'hidden',
-        clipPath: 'inset(0 0 0 0)'
       }}
     >
-      {data.links.map(renderLink)}
-      
-      {/* Debug mode: Show attachment points and bar boundaries with detailed info */}
-      {debugMode && data.links.map(link => {
-        const fromPos = getItemPosition(link.fromSwimlaneId, link.fromId);
-        const toPos = getItemPosition(link.toSwimlaneId, link.toId);
-        
-        if (!fromPos || !toPos) return null;
-
-        // Calculate exact attachment X coordinates (matching handle centers)
-        const HANDLE_OFFSET = 2; // Handles are 2px inward from bar edges
-        
-        let startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Finish handle center
-        let endX = toPos.x - HANDLE_OFFSET; // Start handle center
-
-        switch (link.type) {
-          case 'SS':
-            startX = fromPos.x - HANDLE_OFFSET;
-            endX = toPos.x - HANDLE_OFFSET;
-            break;
-          case 'SF':
-            startX = fromPos.x - HANDLE_OFFSET;
-            endX = toPos.x + toPos.width - HANDLE_OFFSET;
-            break;
-          case 'FF':
-            startX = fromPos.x + fromPos.width - HANDLE_OFFSET;
-            endX = toPos.x + toPos.width - HANDLE_OFFSET;
-            break;
-        }
-        
-        return (
-          <g key={`debug-${link.id}`}>
-            {/* Show FROM bar outline */}
-            <rect
-              x={fromPos.x}
-              y={fromPos.barCenterY - BAR_HEIGHT / 2}
-              width={fromPos.width}
-              height={BAR_HEIGHT}
-              fill="none"
-              stroke="#10b981"
-              strokeWidth="2"
-              strokeDasharray="4 2"
-              opacity="0.6"
-            />
-            
-            {/* Show TO bar outline */}
-            <rect
-              x={toPos.x}
-              y={toPos.barCenterY - BAR_HEIGHT / 2}
-              width={toPos.width}
-              height={BAR_HEIGHT}
-              fill="none"
-              stroke="#ef4444"
-              strokeWidth="2"
-              strokeDasharray="4 2"
-              opacity="0.6"
-            />
-            
-            {/* Crosshair at FROM attachment (should match handle center) */}
-            <line
-              x1={startX - 15}
-              y1={fromPos.barCenterY}
-              x2={startX + 15}
-              y2={fromPos.barCenterY}
-              stroke="#10b981"
-              strokeWidth="3"
-            />
-            <line
-              x1={startX}
-              y1={fromPos.barCenterY - 15}
-              x2={startX}
-              y2={fromPos.barCenterY + 15}
-              stroke="#10b981"
-              strokeWidth="3"
-            />
-            <circle
-              cx={startX}
-              cy={fromPos.barCenterY}
-              r="8"
-              fill="none"
-              stroke="#10b981"
-              strokeWidth="3"
-            />
-            
-            {/* Crosshair at TO attachment (should match handle center) */}
-            <line
-              x1={endX - 15}
-              y1={toPos.barCenterY}
-              x2={endX + 15}
-              y2={toPos.barCenterY}
-              stroke="#ef4444"
-              strokeWidth="3"
-            />
-            <line
-              x1={endX}
-              y1={toPos.barCenterY - 15}
-              x2={endX}
-              y2={toPos.barCenterY + 15}
-              stroke="#ef4444"
-              strokeWidth="3"
-            />
-            <circle
-              cx={endX}
-              cy={toPos.barCenterY}
-              r="8"
-              fill="none"
-              stroke="#ef4444"
-              strokeWidth="3"
-            />
-            
-            {/* Coordinate labels */}
-            <text
-              x={startX + 20}
-              y={fromPos.barCenterY - 20}
-              fill="#10b981"
-              fontSize="12"
-              fontWeight="bold"
-              className="pointer-events-none"
-            >
-              FROM: ({startX.toFixed(1)}, {fromPos.barCenterY.toFixed(1)})
-            </text>
-            <text
-              x={endX + 20}
-              y={toPos.barCenterY + 25}
-              fill="#ef4444"
-              fontSize="12"
-              fontWeight="bold"
-              className="pointer-events-none"
-            >
-              TO: ({endX.toFixed(1)}, {toPos.barCenterY.toFixed(1)})
-            </text>
-            
-            {/* Row center reference line */}
-            <line
-              x1={fromPos.x - 50}
-              y1={fromPos.barCenterY}
-              x2={fromPos.x + fromPos.width + 50}
-              y2={fromPos.barCenterY}
-              stroke="#10b981"
-              strokeWidth="1"
-              strokeDasharray="2 2"
-              opacity="0.3"
-            />
-            <line
-              x1={toPos.x - 50}
-              y1={toPos.barCenterY}
-              x2={toPos.x + toPos.width + 50}
-              y2={toPos.barCenterY}
-              stroke="#ef4444"
-              strokeWidth="1"
-              strokeDasharray="2 2"
-              opacity="0.3"
-            />
-          </g>
-        );
-      })}
+      <defs>
+        <clipPath id="gantt-links-clip">
+          <rect x={swimlaneColumnWidth} y="0" width={`calc(100% - ${swimlaneColumnWidth}px)`} height="100%" />
+        </clipPath>
+      </defs>
+      <g clipPath="url(#gantt-links-clip)">
+        {data.links.map(renderLink)}
+      </g>
     </svg>
   );
 };

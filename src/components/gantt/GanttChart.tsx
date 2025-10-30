@@ -97,9 +97,6 @@ export const GanttChart = () => {
     duration: number;
     swimlaneId: string;
   }>>({});
-  
-  // PHASE 5: Debug mode for visual debugging
-  const [debugMode, setDebugMode] = useState(false);
 
   const [copiedItem, setCopiedItem] = useState<{
     type: "activity" | "state";
@@ -343,19 +340,35 @@ export const GanttChart = () => {
       // Dynamically import html2canvas
       const html2canvas = await import('html2canvas').then(m => m.default);
       
-      const chartContainer = document.querySelector('.gantt-chart-container') as HTMLElement;
-      if (!chartContainer) {
+      // Get the scrollable container (the one with overflow-auto)
+      const scrollContainer = containerRef.current;
+      if (!scrollContainer) {
         toast.error("Chart container not found");
         return;
       }
 
       toast.info("Generating image...");
       
-      const canvas = await html2canvas(chartContainer, {
+      // Calculate visible dimensions
+      const visibleWidth = scrollContainer.clientWidth;
+      const visibleHeight = scrollContainer.clientHeight;
+      const scrollLeft = scrollContainer.scrollLeft;
+      const scrollTop = scrollContainer.scrollTop;
+      
+      // Capture the entire scrollable content
+      const canvas = await html2canvas(scrollContainer, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
         useCORS: true,
+        foreignObjectRendering: true,
+        allowTaint: true,
+        x: scrollLeft,
+        y: scrollTop,
+        width: visibleWidth,
+        height: visibleHeight,
+        windowWidth: scrollContainer.scrollWidth,
+        windowHeight: scrollContainer.scrollHeight,
       });
 
       canvas.toBlob((blob) => {
@@ -890,8 +903,6 @@ export const GanttChart = () => {
         onRedo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
-        debugMode={debugMode}
-        onDebugToggle={() => setDebugMode(!debugMode)}
       />
 
       <div 
@@ -961,7 +972,6 @@ export const GanttChart = () => {
             }
           }}
           itemTempPositions={itemTempPositions}
-          debugMode={debugMode}
         />
 
         {/* Drag preview ghost bar */}
