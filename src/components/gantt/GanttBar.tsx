@@ -17,6 +17,13 @@ interface GanttBarProps {
   onDragStateChange?: (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => void;
 }
 
+const formatHoursToDayTime = (hours: number): string => {
+  const day = Math.floor(hours / 24) + 1;
+  const hourOfDay = Math.floor(hours % 24);
+  const minutes = Math.round((hours % 1) * 60);
+  return `Day ${day}, ${String(hourOfDay).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+};
+
 export const GanttBar = ({
   item,
   swimlaneId,
@@ -32,6 +39,9 @@ export const GanttBar = ({
   onDragStateChange,
 }: GanttBarProps) => {
   const isState = swimlaneType === "state";
+  const endHour = item.start + item.duration;
+  const startFormatted = formatHoursToDayTime(item.start);
+  const endFormatted = formatHoursToDayTime(endHour);
   const [isDragging, setIsDragging] = useState<'start' | 'end' | 'move' | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialSwimlaneId: swimlaneId, offsetX: 0, offsetY: 0 });
   const [tempStart, setTempStart] = useState(item.start);
@@ -240,13 +250,33 @@ export const GanttBar = ({
               )}
             </div>
           </TooltipTrigger>
-          <TooltipContent>
-            {item.description && <p className="max-w-xs mb-2">{item.description}</p>}
-            {!isModifierPressed && (
-              <p className="text-xs text-muted-foreground italic">
-                Hold Shift/Ctrl to create links
-              </p>
-            )}
+          <TooltipContent className="max-w-sm">
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <div className="flex justify-between gap-4 text-sm">
+                  <span className="font-medium">Start:</span>
+                  <span>{startFormatted}</span>
+                </div>
+                <div className="flex justify-between gap-4 text-sm">
+                  <span className="font-medium">End:</span>
+                  <span>{endFormatted}</span>
+                </div>
+                <div className="flex justify-between gap-4 text-sm">
+                  <span className="font-medium">Duration:</span>
+                  <span>{item.duration} hours</span>
+                </div>
+              </div>
+              {item.description && (
+                <div className="pt-2 border-t border-border">
+                  <p className="text-sm">{item.description}</p>
+                </div>
+              )}
+              {!isModifierPressed && (
+                <p className="text-xs text-muted-foreground italic pt-2 border-t border-border">
+                  Hold Shift/Ctrl to create links
+                </p>
+              )}
+            </div>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

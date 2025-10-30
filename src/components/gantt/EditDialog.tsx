@@ -14,8 +14,17 @@ interface EditDialogProps {
   onClose: () => void;
   initialColor: string;
   initialDescription: string;
+  start: number;
+  duration: number;
   onSave: (color: string, description: string) => void;
 }
+
+const formatHoursToDayTime = (hours: number): string => {
+  const day = Math.floor(hours / 24) + 1;
+  const hourOfDay = Math.floor(hours % 24);
+  const minutes = Math.round((hours % 1) * 60);
+  return `Day ${day}, ${String(hourOfDay).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+};
 
 const PRESET_COLORS = [
   "#00bcd4", "#2196f3", "#4caf50", "#ff9800", "#f44336", 
@@ -28,10 +37,16 @@ export const EditDialog = ({
   onClose,
   initialColor,
   initialDescription,
+  start,
+  duration,
   onSave,
 }: EditDialogProps) => {
   const [color, setColor] = useState(initialColor);
   const [description, setDescription] = useState(initialDescription);
+  
+  const endHour = start + duration;
+  const startFormatted = formatHoursToDayTime(start);
+  const endFormatted = formatHoursToDayTime(endHour);
 
   const handleSave = () => {
     onSave(color, description);
@@ -45,6 +60,21 @@ export const EditDialog = ({
           <DialogTitle>Edit Item</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          <div className="space-y-2 p-3 bg-muted rounded-lg">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">Start:</span>
+              <span>{startFormatted}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">End:</span>
+              <span>{endFormatted}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">Duration:</span>
+              <span>{duration} hours</span>
+            </div>
+          </div>
+
           <div>
             <Label>Color</Label>
             <div className="grid grid-cols-5 gap-2 mt-2">

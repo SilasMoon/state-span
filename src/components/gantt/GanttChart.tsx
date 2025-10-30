@@ -42,6 +42,8 @@ export const GanttChart = () => {
     type: "activity" | "state";
     color: string;
     description: string;
+    start: number;
+    duration: number;
   } | null>(null);
 
   const [selected, setSelected] = useState<{
@@ -208,6 +210,8 @@ export const GanttChart = () => {
         type: "activity",
         color: activity.color,
         description: activity.description || "",
+        start: activity.start,
+        duration: activity.duration,
       });
     }
   };
@@ -223,6 +227,8 @@ export const GanttChart = () => {
         type: "state",
         color: state.color,
         description: state.description || "",
+        start: state.start,
+        duration: state.duration,
       });
     }
   };
@@ -694,6 +700,8 @@ export const GanttChart = () => {
           onClose={() => setEditDialog(null)}
           initialColor={editDialog.color}
           initialDescription={editDialog.description}
+          start={editDialog.start}
+          duration={editDialog.duration}
           onSave={handleEditSave}
         />
       )}
