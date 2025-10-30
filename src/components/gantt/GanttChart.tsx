@@ -384,6 +384,14 @@ export const GanttChart = () => {
         const target = document.elementFromPoint(e.clientX, e.clientY);
         const barElement = target?.closest('[data-item-id]');
         
+        console.log('[GanttChart] Link drag ended:', {
+          linkDragStart,
+          target: target?.tagName,
+          barElement: barElement?.tagName,
+          toSwimlaneId: barElement?.getAttribute('data-swimlane-id'),
+          toItemId: barElement?.getAttribute('data-item-id')
+        });
+        
         if (barElement) {
           const toSwimlaneId = barElement.getAttribute('data-swimlane-id');
           const toItemId = barElement.getAttribute('data-item-id');
@@ -408,6 +416,14 @@ export const GanttChart = () => {
             } else if (linkDragStart.handleType === 'start' && finalToHandleType === 'finish') {
               linkType = "SF";
             }
+            
+            console.log('[GanttChart] Creating link:', {
+              from: { swimlaneId: linkDragStart.swimlaneId, itemId: linkDragStart.itemId },
+              to: { swimlaneId: toSwimlaneId, itemId: toItemId },
+              linkType,
+              fromHandle: linkDragStart.handleType,
+              toHandle: finalToHandleType
+            });
             
             addLink(linkDragStart.swimlaneId, linkDragStart.itemId, toSwimlaneId, toItemId, linkType);
             toast.success(`${linkType} link created`);
