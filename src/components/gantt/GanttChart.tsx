@@ -338,6 +338,45 @@ export const GanttChart = () => {
     toast.success("Chart exported");
   };
 
+  const handleExportPNG = async () => {
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      
+      // Find the gantt chart container (includes swimlane column and timeline)
+      const ganttContainer = document.querySelector('.gantt-chart-container') as HTMLElement;
+      if (!ganttContainer) {
+        toast.error("Chart container not found");
+        return;
+      }
+
+      toast.info("Generating PNG...");
+      
+      // Capture the entire visible chart
+      const canvas = await html2canvas(ganttContainer, {
+        backgroundColor: '#ffffff',
+        scale: 2, // Higher quality
+        logging: false,
+        useCORS: true,
+      });
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `gantt-chart-${Date.now()}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast.success("Chart exported as PNG");
+        }
+      }, 'image/png');
+    } catch (error) {
+      console.error('Export PNG error:', error);
+      toast.error("Failed to export PNG");
+    }
+  };
+
   const handleImport = (jsonData: string) => {
     try {
       importData(jsonData);
@@ -846,6 +885,7 @@ export const GanttChart = () => {
         onAddActivityLane={handleAddActivityLane}
         onAddStateLane={handleAddStateLane}
         onExport={handleExport}
+        onExportPNG={handleExportPNG}
         onImport={handleImport}
         onClear={handleClear}
         onUndo={undo}
@@ -875,7 +915,7 @@ export const GanttChart = () => {
           }
         }}
       >
-        <div className="inline-block min-w-full">
+        <div className="inline-block min-w-full gantt-chart-container">
           <div className="flex">
             <div className="sticky left-0 z-30 bg-gantt-header border-r-2 border-border relative">
               <div

@@ -382,7 +382,16 @@ export const GanttLinks = ({
         overflow: 'visible'
       }}
     >
-      {data.links.map(renderLink)}
+      {/* Clip path to prevent links from showing behind swimlane column */}
+      <defs>
+        <clipPath id="gantt-links-clip">
+          <rect x="0" y="0" width="100%" height="100%" />
+        </clipPath>
+      </defs>
+      
+      <g clipPath="url(#gantt-links-clip)">
+        {data.links.map(renderLink)}
+      </g>
       
       {/* Debug mode: Show attachment points and bar boundaries with detailed info */}
       {debugMode && data.links.map(link => {
