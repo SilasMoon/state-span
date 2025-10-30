@@ -200,6 +200,14 @@ export const GanttLinks = ({
     //   - Finish: left + width - 12px  → center at: left + width - 12 + 10 = left + width - 2
     const HANDLE_OFFSET = 2; // Handles are 2px inward from bar edges
     
+    console.log('[GanttLinks] Before calc', link.id, {
+      fromPosX: fromPos.x,
+      fromPosWidth: fromPos.width,
+      toPosX: toPos.x,
+      toPosWidth: toPos.width,
+      linkType: link.type
+    });
+    
     let startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Default: finish handle center
     let endX = toPos.x - HANDLE_OFFSET; // Default: start handle center
 
