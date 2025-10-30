@@ -16,6 +16,7 @@ interface GanttRowProps {
   level: number;
   zoom: ZoomLevel;
   totalHours: number;
+  swimlaneColumnWidth: number;
   selected: { type: "swimlane" | "activity" | "state"; swimlaneId: string; itemId?: string } | null;
   onSelect: (type: "swimlane" | "activity" | "state", swimlaneId: string, itemId?: string) => void;
   onToggleExpand: (id: string) => void;
@@ -39,6 +40,7 @@ export const GanttRow = ({
   level,
   zoom,
   totalHours,
+  swimlaneColumnWidth,
   selected,
   onSelect,
   onToggleExpand,
@@ -173,40 +175,36 @@ export const GanttRow = ({
       data-swimlane-id={swimlane.id}
     >
       <div
-        className={`sticky left-0 z-10 bg-card border-r border-border flex flex-col py-1 group ${
+        className={`sticky left-0 z-10 bg-card border-r border-border flex items-center gap-2 px-3 py-2 group ${
           isRowSelected ? 'bg-primary/10 ring-2 ring-primary ring-inset' : ''
         }`}
-        style={{ width: "280px", minWidth: "280px" }}
+        style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px`, paddingLeft: `${level * 20 + 12}px` }}
       >
-        {/* First row: Chevron + Name input */}
-        <div className="flex items-center gap-2 px-3 py-1" style={{ paddingLeft: `${level * 20 + 12}px` }}>
-          {hasChildren && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0"
-              onClick={() => onToggleExpand(swimlane.id)}
-            >
-              {swimlane.expanded ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </Button>
-          )}
-          {!hasChildren && <div className="w-6" />}
-          
-          <input
-            type="text"
-            value={swimlane.name}
-            onChange={(e) => onSwimlaneNameChange(swimlane.id, e.target.value)}
-            className="bg-transparent border-none outline-none text-sm text-foreground cursor-text min-w-0 flex-1 focus:ring-1 focus:ring-primary/30 rounded px-1"
-            onClick={() => onSelect('swimlane', swimlane.id)}
-          />
-        </div>
-
-        {/* Second row: Type label + Action buttons */}
-        <div className="flex items-center justify-end gap-2 px-3 py-1">
+        {hasChildren && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 flex-shrink-0"
+            onClick={() => onToggleExpand(swimlane.id)}
+          >
+            {swimlane.expanded ? (
+              <ChevronDown className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
+          </Button>
+        )}
+        {!hasChildren && <div className="w-6 flex-shrink-0" />}
+        
+        <input
+          type="text"
+          value={swimlane.name}
+          onChange={(e) => onSwimlaneNameChange(swimlane.id, e.target.value)}
+          className="bg-transparent border-none outline-none text-sm text-foreground cursor-text min-w-0 flex-1 focus:ring-1 focus:ring-primary/30 rounded px-1"
+          onClick={() => onSelect('swimlane', swimlane.id)}
+        />
+        
+        <div className="flex items-center gap-2 flex-shrink-0">
           <span
             className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
               swimlane.type === "activity"

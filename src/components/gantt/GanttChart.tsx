@@ -112,8 +112,17 @@ export const GanttChart = () => {
 
   const [chartTitle, setChartTitle] = useState<string>("Software Development Project");
 
+  // Swimlane column width state with localStorage persistence
+  const [swimlaneColumnWidth, setSwimlaneColumnWidth] = useState<number>(() => {
+    const stored = localStorage.getItem('gantt-swimlane-width');
+    return stored ? parseInt(stored) : 280;
+  });
+
   // Ref for the main container to handle keyboard events
   const containerRef = React.useRef<HTMLDivElement>(null);
+  
+  // Ref for resize handle
+  const resizeRef = React.useRef<HTMLDivElement>(null);
 
   // Calculate total hours dynamically based on content
   const calculateTotalHours = () => {
@@ -154,7 +163,7 @@ export const GanttChart = () => {
     const scrollContainer = document.querySelector('.overflow-auto');
     if (!scrollContainer) return;
 
-    const viewportWidth = scrollContainer.clientWidth - 280; // Subtract swimlane name column width
+    const viewportWidth = scrollContainer.clientWidth - swimlaneColumnWidth; // Use dynamic width
     
     // Calculate actual timeline extent from all content
     let minStart = Infinity;
@@ -445,6 +454,49 @@ export const GanttChart = () => {
     moveState(fromSwimlaneId, toSwimlaneId, stateId, newStart);
   };
 
+  // Handle swimlane column resize
+  React.useEffect(() => {
+    const handle = resizeRef.current;
+    if (!handle) return;
+
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 0;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      isResizing = true;
+      startX = e.clientX;
+      startWidth = swimlaneColumnWidth;
+      document.body.style.cursor = 'col-resize';
+      e.preventDefault();
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      const delta = e.clientX - startX;
+      const newWidth = Math.max(200, Math.min(600, startWidth + delta)); // Min 200px, max 600px
+      setSwimlaneColumnWidth(newWidth);
+      localStorage.setItem('gantt-swimlane-width', newWidth.toString());
+    };
+
+    const handleMouseUp = () => {
+      if (isResizing) {
+        isResizing = false;
+        document.body.style.cursor = '';
+      }
+    };
+
+    handle.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      handle.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [swimlaneColumnWidth]);
+
   // Keyboard handlers - attached to container
   React.useEffect(() => {
     const container = containerRef.current;
@@ -609,10 +661,9 @@ export const GanttChart = () => {
     // Calculate start time based on cursor position
     const scrollContainer = document.querySelector('.overflow-auto');
     const scrollLeft = scrollContainer?.scrollLeft || 0;
-    const swimlaneLabelWidth = 280;
     const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
     
-    const gridX = copyGhost.mouseX + scrollLeft - swimlaneLabelWidth;
+    const gridX = copyGhost.mouseX + scrollLeft - swimlaneColumnWidth;
     const start = Math.max(0, Math.round((gridX / columnWidth) * zoom / zoom) * zoom);
 
     // Check for overlap
@@ -685,33 +736,34 @@ export const GanttChart = () => {
         : null;
 
       elements.push(
-        <GanttRow
-          key={id}
-          swimlane={swimlane}
-          level={level}
-          zoom={zoom}
-          totalHours={totalHours}
-          selected={selected}
-          onSelect={(type, swimlaneId, itemId) => {
-            console.log('[GanttChart] onSelect called', { type, swimlaneId, itemId });
-            setSelected({ type, swimlaneId, itemId });
-            console.log('[GanttChart] setSelected called with', { type, swimlaneId, itemId });
-          }}
-          onToggleExpand={toggleExpanded}
-          onDelete={deleteSwimlane}
-          onAddChild={handleAddChild}
-          onCreateByDrag={handleCreateByDrag}
-          onActivityDoubleClick={handleActivityDoubleClick}
-          onStateDoubleClick={handleStateDoubleClick}
-          onActivityMove={handleActivityMove}
-          onStateMove={handleStateMove}
-          onActivityResize={handleActivityResize}
-          onStateResize={handleStateResize}
-          onSwimlaneNameChange={(id, name) => updateSwimlane(id, { name })}
-          checkOverlap={checkOverlap}
-          onDragStateChange={handleDragStateChange}
-          summaryBar={summaryBar}
-        />
+          <GanttRow
+            key={id}
+            swimlane={swimlane}
+            level={level}
+            zoom={zoom}
+            totalHours={totalHours}
+            swimlaneColumnWidth={swimlaneColumnWidth}
+            selected={selected}
+            onSelect={(type, swimlaneId, itemId) => {
+              console.log('[GanttChart] onSelect called', { type, swimlaneId, itemId });
+              setSelected({ type, swimlaneId, itemId });
+              console.log('[GanttChart] setSelected called with', { type, swimlaneId, itemId });
+            }}
+            onToggleExpand={toggleExpanded}
+            onDelete={deleteSwimlane}
+            onAddChild={handleAddChild}
+            onCreateByDrag={handleCreateByDrag}
+            onActivityDoubleClick={handleActivityDoubleClick}
+            onStateDoubleClick={handleStateDoubleClick}
+            onActivityMove={handleActivityMove}
+            onStateMove={handleStateMove}
+            onActivityResize={handleActivityResize}
+            onStateResize={handleStateResize}
+            onSwimlaneNameChange={(id, name) => updateSwimlane(id, { name })}
+            checkOverlap={checkOverlap}
+            onDragStateChange={handleDragStateChange}
+            summaryBar={summaryBar}
+          />
       );
 
       if (swimlane.expanded && swimlane.children.length > 0) {
@@ -770,13 +822,19 @@ export const GanttChart = () => {
       >
         <div className="inline-block min-w-full">
           <div className="flex">
-            <div className="sticky left-0 z-20 bg-gantt-header border-r-2 border-border">
+            <div className="sticky left-0 z-20 bg-gantt-header border-r-2 border-border relative">
               <div
                 className="h-12 flex items-center px-4 font-semibold text-foreground border-b-2 border-border"
-                style={{ width: "280px", minWidth: "280px" }}
+                style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px` }}
               >
                 Swimlanes
               </div>
+              {/* Resize handle */}
+              <div
+                ref={resizeRef}
+                className="absolute right-0 top-0 bottom-0 w-1 hover:w-2 cursor-col-resize bg-transparent hover:bg-primary/50 transition-all z-30"
+                title="Drag to resize"
+              />
             </div>
             <div className="flex-1">
               <GanttTimeline zoom={zoom} totalHours={totalHours} />
