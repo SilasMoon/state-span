@@ -160,122 +160,108 @@ export class GridRouter {
   }
 
   public findPath(start: Point, end: Point): Point[] | null {
-    const gridStart = this.toGridCoords(start);
-    const gridEnd = this.toGridCoords(end);
+    // Create simple elbow-style orthogonal paths
+    return this.createElbowPath(start, end);
+  }
+
+  /**
+   * Creates a clean elbow path using only horizontal and vertical segments
+   * Pattern: Horizontal -> Vertical -> Horizontal (always ends horizontally)
+   */
+  private createElbowPath(start: Point, end: Point): Point[] {
+    const path: Point[] = [start];
     
-    // Find valid cells by moving vertically first (away from bars)
-    const findValidStartCell = (cell: Point): Point => {
-      // Try moving up and down to find a valid cell
-      for (let offset = 0; offset < 10; offset++) {
-        if (this.isValidCell(cell.x, cell.y + offset)) {
-          return { x: cell.x, y: cell.y + offset };
-        }
-        if (this.isValidCell(cell.x, cell.y - offset)) {
-          return { x: cell.x, y: cell.y - offset };
-        }
-      }
-      // Fallback to clamping
-      return {
-        x: Math.max(0, Math.min(this.width - 1, cell.x)),
-        y: Math.max(0, Math.min(this.height - 1, cell.y))
-      };
-    };
-    
-    const validStart = !this.isValidCell(gridStart.x, gridStart.y) 
-      ? findValidStartCell(gridStart) 
-      : gridStart;
-    
-    const validEnd = !this.isValidCell(gridEnd.x, gridEnd.y) 
-      ? findValidStartCell(gridEnd) 
-      : gridEnd;
-    
-    const openSet: GridCell[] = [];
-    const closedSet = new Set<string>();
-    
-    const startCell: GridCell = {
-      x: validStart.x,
-      y: validStart.y,
-      g: 0,
-      h: this.heuristic(validStart, validEnd),
-      f: 0,
-      parent: null
-    };
-    startCell.f = startCell.g + startCell.h;
-    
-    openSet.push(startCell);
-    
-    let iterations = 0;
-    const MAX_ITERATIONS = 10000; // Prevent infinite loops
-    
-    while (openSet.length > 0 && iterations < MAX_ITERATIONS) {
-      iterations++;
-      
-      // Find cell with lowest f score
-      openSet.sort((a, b) => a.f - b.f);
-      const current = openSet.shift()!;
-      
-      const currentKey = `${current.x},${current.y}`;
-      
-      // Check if we reached the goal
-      if (current.x === validEnd.x && current.y === validEnd.y) {
-        // Reconstruct path
-        const path: Point[] = [];
-        let node: GridCell | null = current;
-        
-        while (node) {
-          path.unshift(this.toPixelCoords({ x: node.x, y: node.y }));
-          node = node.parent;
-        }
-        
-        // Add actual start and end points
-        path[0] = start;
-        path[path.length - 1] = end;
-        
-        const smoothed = this.smoothPath(path);
-        return this.ensureHorizontalArrowhead(smoothed);
-      }
-      
-      closedSet.add(currentKey);
-      
-      // Check neighbors
-      const neighbors = this.getNeighbors({ x: current.x, y: current.y });
-      
-      neighbors.forEach(neighbor => {
-        const neighborKey = `${neighbor.x},${neighbor.y}`;
-        
-        if (closedSet.has(neighborKey)) return;
-        
-        const parentPoint = current.parent ? { x: current.parent.x, y: current.parent.y } : null;
-        const moveCost = this.calculateMoveCost({ x: current.x, y: current.y }, neighbor, parentPoint);
-        const tentativeG = current.g + moveCost;
-        
-        const existingInOpen = openSet.find(cell => cell.x === neighbor.x && cell.y === neighbor.y);
-        
-        if (!existingInOpen || tentativeG < existingInOpen.g) {
-          const neighborCell: GridCell = {
-            x: neighbor.x,
-            y: neighbor.y,
-            g: tentativeG,
-            h: this.heuristic(neighbor, validEnd),
-            f: 0,
-            parent: current
-          };
-          neighborCell.f = neighborCell.g + neighborCell.h;
-          
-          if (existingInOpen) {
-            // Update existing
-            Object.assign(existingInOpen, neighborCell);
-          } else {
-            openSet.push(neighborCell);
-          }
-        }
-      });
+    // If already on same horizontal line, direct horizontal path
+    if (Math.abs(start.y - end.y) < 1) {
+      path.push(end);
+      return path;
     }
     
-    // No path found - create a safe vertical-first path as fallback
-    console.warn('[GridRouter] No path found, using safe fallback path');
-    const fallbackPath = this.createSafeFallbackPath(start, end);
-    return this.ensureHorizontalArrowhead(fallbackPath);
+    // Calculate clearance needed around obstacles
+    const CLEARANCE = 24; // pixels above/below bars
+    
+    // Determine if we need to route around obstacles
+    const needsRouting = this.hasObstacleBetween(start, end);
+    
+    if (!needsRouting) {
+      // Simple 3-point elbow: start -> middle -> end
+      // Go horizontal halfway, then vertical, then horizontal to end
+      const midX = start.x + (end.x - start.x) / 2;
+      path.push({ x: midX, y: start.y });
+      path.push({ x: midX, y: end.y });
+      path.push(end);
+    } else {
+      // Route around obstacles with vertical clearance
+      // Pattern: horizontal -> vertical (with clearance) -> horizontal -> vertical -> horizontal
+      
+      // Find a clear Y position to route through
+      const routingY = this.findClearRoutingY(start, end, CLEARANCE);
+      
+      // Build path: start -> vertical escape -> routing level -> approach target -> end
+      path.push({ x: start.x, y: routingY });
+      path.push({ x: end.x, y: routingY });
+      path.push(end);
+    }
+    
+    return path;
+  }
+
+  /**
+   * Check if there are obstacles between start and end points
+   */
+  private hasObstacleBetween(start: Point, end: Point): boolean {
+    const minX = Math.min(start.x, end.x);
+    const maxX = Math.max(start.x, end.x);
+    const minY = Math.min(start.y, end.y);
+    const maxY = Math.max(start.y, end.y);
+    
+    return this.obstacles.some(obs => {
+      const obsRight = obs.x + obs.width;
+      const obsBottom = obs.y + obs.height;
+      
+      // Check if obstacle intersects the bounding box of our path
+      return !(obsRight < minX || obs.x > maxX || obsBottom < minY || obs.y > maxY);
+    });
+  }
+
+  /**
+   * Find a clear Y position to route the link through
+   */
+  private findClearRoutingY(start: Point, end: Point, clearance: number): number {
+    const minY = Math.min(start.y, end.y);
+    const maxY = Math.max(start.y, end.y);
+    const midY = (minY + maxY) / 2;
+    
+    // Try routing above the obstacles
+    const aboveY = minY - clearance;
+    if (aboveY > 0 && this.isYClear(aboveY, start.x, end.x)) {
+      return aboveY;
+    }
+    
+    // Try routing below the obstacles
+    const belowY = maxY + clearance;
+    if (belowY < this.height * this.gridSize && this.isYClear(belowY, start.x, end.x)) {
+      return belowY;
+    }
+    
+    // Fallback: use middle with extra clearance
+    return midY;
+  }
+
+  /**
+   * Check if a horizontal routing line at Y is clear between startX and endX
+   */
+  private isYClear(y: number, startX: number, endX: number): boolean {
+    const minX = Math.min(startX, endX);
+    const maxX = Math.max(startX, endX);
+    
+    return !this.obstacles.some(obs => {
+      const obsRight = obs.x + obs.width;
+      const obsBottom = obs.y + obs.height;
+      
+      // Check if obstacle intersects with our horizontal line
+      return y >= obs.y && y <= obsBottom && !(obsRight < minX || obs.x > maxX);
+    });
   }
 
   private createSafeFallbackPath(start: Point, end: Point): Point[] {
