@@ -9,15 +9,37 @@ interface GanttLinksProps {
   selectedLink: string | null;
   onLinkSelect: (linkId: string) => void;
   onLinkDoubleClick: (linkId: string) => void;
+  // PHASE 4: Temp positions for items being dragged
+  itemTempPositions?: Record<string, { start: number; duration: number; swimlaneId: string }>;
+  // PHASE 5: Debug mode for visual debugging
+  debugMode?: boolean;
 }
 
-export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selectedLink, onLinkSelect, onLinkDoubleClick }: GanttLinksProps) => {
+export const GanttLinks = ({ 
+  data, 
+  zoom, 
+  columnWidth, 
+  swimlaneColumnWidth, 
+  selectedLink, 
+  onLinkSelect, 
+  onLinkDoubleClick,
+  itemTempPositions = {},
+  debugMode = false
+}: GanttLinksProps) => {
   const getItemPosition = (swimlaneId: string, itemId: string, linkForLogging?: GanttLink) => {
-    const swimlane = data.swimlanes[swimlaneId];
+    // PHASE 4: Check for temp position first (item being dragged)
+    const tempPos = itemTempPositions[itemId];
+    const effectiveSwimlaneId = tempPos?.swimlaneId || swimlaneId;
+    
+    const swimlane = data.swimlanes[effectiveSwimlaneId];
     if (!swimlane) return null;
 
     const item = swimlane.activities?.find((a) => a.id === itemId) || swimlane.states?.find((s) => s.id === itemId);
     if (!item) return null;
+    
+    // PHASE 4: Use temp position if available, otherwise use actual position
+    const itemStart = tempPos?.start ?? item.start;
+    const itemDuration = tempPos?.duration ?? item.duration;
 
     // Calculate swimlane vertical position
     let yPos = 48; // Header height (h-12 = 48px)
@@ -72,30 +94,31 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
       return height;
     };
 
-    const y = findYPosition(swimlaneId);
+    const y = findYPosition(effectiveSwimlaneId);
     if (y === null) {
-      console.error(`[GanttLinks] Could not find Y position for swimlane ${swimlaneId}`);
+      console.error(`[GanttLinks] Could not find Y position for swimlane ${effectiveSwimlaneId}`);
       return null;
     }
     
     // Comprehensive debug logging
     if (linkForLogging) {
-      const swimlaneName = data.swimlanes[swimlaneId]?.name || 'Unknown';
+      const swimlaneName = data.swimlanes[effectiveSwimlaneId]?.name || 'Unknown';
       const itemLabel = item.label || itemId;
       console.log(`[Link ${linkForLogging.id}] Connection point:`, {
-        swimlane: `${swimlaneName} (${swimlaneId})`,
+        swimlane: `${swimlaneName} (${effectiveSwimlaneId})`,
         item: `${itemLabel} (${itemId})`,
         yPosition: `${y}px`,
-        itemStart: item.start,
-        itemDuration: item.duration,
+        itemStart: itemStart,
+        itemDuration: itemDuration,
         isFromPoint: itemId === linkForLogging.fromId,
         isToPoint: itemId === linkForLogging.toId,
-        linkType: linkForLogging.type
+        linkType: linkForLogging.type,
+        usingTempPosition: !!tempPos
       });
     }
 
-    const x = (item.start / zoom) * columnWidth + swimlaneColumnWidth;
-    const width = (item.duration / zoom) * columnWidth;
+    const x = (itemStart / zoom) * columnWidth + swimlaneColumnWidth;
+    const width = (itemDuration / zoom) * columnWidth;
 
     // Determine which end to use based on link type
     let x1 = x + width; // Default: finish (right side)
@@ -673,6 +696,94 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
         </marker>
       </defs>
       {data.links.map(renderLink)}
+      
+      {/* PHASE 5: Debug markers - show attachment points and bar boundaries */}
+      {debugMode && data.links.map(link => {
+        const from = getItemPosition(link.fromSwimlaneId, link.fromId, link);
+        const to = getItemPosition(link.toSwimlaneId, link.toId, link);
+        
+        if (!from || !to) return null;
+        
+        return (
+          <g key={`debug-${link.id}`}>
+            {/* From attachment point */}
+            <circle
+              cx={from.x1}
+              cy={from.y1}
+              r="4"
+              fill="#10b981"
+              stroke="#ffffff"
+              strokeWidth="2"
+              className="pointer-events-none"
+            />
+            <text
+              x={from.x1 + 8}
+              y={from.y1 - 8}
+              className="text-xs fill-green-600 font-bold pointer-events-none"
+              style={{ fontSize: '10px' }}
+            >
+              FROM
+            </text>
+            
+            {/* To attachment point */}
+            <circle
+              cx={to.x2}
+              cy={to.y2}
+              r="4"
+              fill="#ef4444"
+              stroke="#ffffff"
+              strokeWidth="2"
+              className="pointer-events-none"
+            />
+            <text
+              x={to.x2 + 8}
+              y={to.y2 + 16}
+              className="text-xs fill-red-600 font-bold pointer-events-none"
+              style={{ fontSize: '10px' }}
+            >
+              TO
+            </text>
+            
+            {/* Crosshairs at attachment points */}
+            <line
+              x1={from.x1 - 8}
+              y1={from.y1}
+              x2={from.x1 + 8}
+              y2={from.y1}
+              stroke="#10b981"
+              strokeWidth="1"
+              className="pointer-events-none"
+            />
+            <line
+              x1={from.x1}
+              y1={from.y1 - 8}
+              x2={from.x1}
+              y2={from.y1 + 8}
+              stroke="#10b981"
+              strokeWidth="1"
+              className="pointer-events-none"
+            />
+            <line
+              x1={to.x2 - 8}
+              y1={to.y2}
+              x2={to.x2 + 8}
+              y2={to.y2}
+              stroke="#ef4444"
+              strokeWidth="1"
+              className="pointer-events-none"
+            />
+            <line
+              x1={to.x2}
+              y1={to.y2 - 8}
+              x2={to.x2}
+              y2={to.y2 + 8}
+              stroke="#ef4444"
+              strokeWidth="1"
+              className="pointer-events-none"
+            />
+          </g>
+        );
+      })}
     </svg>
   );
 };

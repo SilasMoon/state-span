@@ -91,6 +91,16 @@ export const GanttChart = () => {
     offsetY: number;
   } | null>(null);
 
+  // PHASE 4: Track temp positions for all items being dragged/resized
+  const [itemTempPositions, setItemTempPositions] = useState<Record<string, {
+    start: number;
+    duration: number;
+    swimlaneId: string;
+  }>>({});
+  
+  // PHASE 5: Debug mode for visual debugging
+  const [debugMode, setDebugMode] = useState(false);
+
   const [copiedItem, setCopiedItem] = useState<{
     type: "activity" | "state";
     swimlaneId: string;
@@ -724,25 +734,43 @@ export const GanttChart = () => {
 
   const handleDragStateChange = (itemId: string, swimlaneId: string) => 
     (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => {
-      if (isDragging && targetSwimlaneId) {
-        const swimlane = data.swimlanes[swimlaneId];
-        const item = swimlane?.activities?.find(a => a.id === itemId) || swimlane?.states?.find(s => s.id === itemId);
-        if (item) {
-          setDragPreview(prev => ({
-            itemId,
-            swimlaneId,
-            targetSwimlaneId,
-            tempStart,
-            tempDuration,
-            color: item.color,
-            mouseX,
-            mouseY,
-            // Use existing offset if not provided (during drag move), or new offset (drag start)
-            offsetX: offsetX !== undefined ? offsetX : (prev?.offsetX || 0),
-            offsetY: offsetY !== undefined ? offsetY : (prev?.offsetY || 0),
-          }));
+      // PHASE 4: Update temp positions for real-time link updates
+      if (isDragging) {
+        setItemTempPositions(prev => ({
+          ...prev,
+          [itemId]: {
+            start: tempStart,
+            duration: tempDuration,
+            swimlaneId: targetSwimlaneId || swimlaneId
+          }
+        }));
+        
+        if (targetSwimlaneId) {
+          const swimlane = data.swimlanes[swimlaneId];
+          const item = swimlane?.activities?.find(a => a.id === itemId) || swimlane?.states?.find(s => s.id === itemId);
+          if (item) {
+            setDragPreview(prev => ({
+              itemId,
+              swimlaneId,
+              targetSwimlaneId,
+              tempStart,
+              tempDuration,
+              color: item.color,
+              mouseX,
+              mouseY,
+              // Use existing offset if not provided (during drag move), or new offset (drag start)
+              offsetX: offsetX !== undefined ? offsetX : (prev?.offsetX || 0),
+              offsetY: offsetY !== undefined ? offsetY : (prev?.offsetY || 0),
+            }));
+          }
         }
       } else {
+        // Clear temp position when drag ends
+        setItemTempPositions(prev => {
+          const newPositions = { ...prev };
+          delete newPositions[itemId];
+          return newPositions;
+        });
         setDragPreview(null);
       }
     };
@@ -824,6 +852,8 @@ export const GanttChart = () => {
         onRedo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
+        debugMode={debugMode}
+        onDebugToggle={() => setDebugMode(!debugMode)}
       />
 
       <div 
@@ -892,6 +922,8 @@ export const GanttChart = () => {
               setLinkEditDialog({ linkId });
             }
           }}
+          itemTempPositions={itemTempPositions}
+          debugMode={debugMode}
         />
 
         {/* Drag preview ghost bar */}
