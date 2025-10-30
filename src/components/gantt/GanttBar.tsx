@@ -214,18 +214,15 @@ export const GanttBar = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className={`absolute ${isState ? 'h-full' : 'h-6 rounded'} ${isSummary ? 'cursor-default opacity-60' : isDragging === 'move' ? 'cursor-grabbing' : isModifierPressed ? 'cursor-crosshair' : 'cursor-grab'} group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
+              className={`absolute ${isSummary ? 'h-0.5' : isState ? 'h-full' : 'h-6 rounded'} ${isSummary ? 'cursor-default' : isDragging === 'move' ? 'cursor-grabbing' : isModifierPressed ? 'cursor-crosshair' : 'cursor-grab'} group flex items-center justify-center text-xs font-medium ${isSummary ? '' : 'shadow-lg hover:shadow-xl'} transition-all pointer-events-auto ${
                 isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
               } ${isDragging === 'move' && targetSwimlaneId !== swimlaneId ? 'opacity-50' : ''} ${isModifierPressed && !isSummary ? 'ring-2 ring-blue-400/50' : ''}`}
               style={{
                 left: `${left}px`,
                 width: `${width}px`,
-                ...(isState ? { top: 0 } : { top: '50%', transform: 'translateY(-50%)' }),
-                backgroundColor: item.color,
+                ...(isSummary ? { top: '50%', transform: 'translateY(-50%)' } : isState ? { top: 0 } : { top: '50%', transform: 'translateY(-50%)' }),
+                backgroundColor: isSummary ? '#9ca3af' : item.color,
                 color: "#fff",
-                backgroundImage: isSummary 
-                  ? 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)'
-                  : undefined,
               }}
               onMouseDown={handleMoveStart}
               onDoubleClick={(e) => {
@@ -240,8 +237,8 @@ export const GanttBar = ({
               data-swimlane-id={swimlaneId}
               data-item-id={item.id}
             >
-              {/* Display label inside the bar */}
-              {item.label && (
+              {/* Display label inside the bar (not for summary) */}
+              {item.label && !isSummary && (
                 <span 
                   className="px-2 truncate font-medium text-shadow-sm" 
                   style={{ 
@@ -251,6 +248,14 @@ export const GanttBar = ({
                 >
                   {item.label}
                 </span>
+              )}
+              
+              {/* End markers for summary bars */}
+              {isSummary && (
+                <>
+                  <div className="absolute left-0 w-0.5 h-3 bg-gray-400" style={{ top: '50%', transform: 'translateY(-50%)' }} />
+                  <div className="absolute right-0 w-0.5 h-3 bg-gray-400" style={{ top: '50%', transform: 'translateY(-50%)' }} />
+                </>
               )}
               
               {/* Resize handles - show when NOT in link mode and NOT summary */}
