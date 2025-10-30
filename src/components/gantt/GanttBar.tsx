@@ -89,9 +89,14 @@ export const GanttBar = ({
   const handleMoveStart = (e: React.MouseEvent) => {
     // Only prevent drag if clicking on resize or link handles
     const target = e.target as HTMLElement;
-    if (target.closest('[data-handle-type]') || target.classList.contains('cursor-ew-resize')) return;
+    console.log('[GanttBar] handleMoveStart called', { itemId: item.id, targetTag: target.tagName, targetClasses: target.className });
+    if (target.closest('[data-handle-type]') || target.classList.contains('cursor-ew-resize')) {
+      console.log('[GanttBar] Ignoring - clicked on handle');
+      return;
+    }
     e.stopPropagation();
     e.preventDefault();
+    console.log('[GanttBar] Starting move, calling onSelect');
     document.body.style.cursor = 'grabbing';
     onSelect();
     setIsDragging('move');
@@ -210,6 +215,7 @@ export const GanttBar = ({
             }}
             onClick={(e) => {
               e.stopPropagation();
+              console.log('[GanttBar] onClick called', { itemId: item.id });
               onSelect();
             }}
             data-swimlane-id={swimlaneId}
@@ -243,6 +249,8 @@ export const GanttBar = ({
                   data-item-id={item.id}
                   onMouseDown={(e) => {
                     e.stopPropagation();
+                    e.preventDefault();
+                    console.log('[GanttBar] Link handle START clicked', { itemId: item.id });
                     const event = e.nativeEvent;
                     window.dispatchEvent(new CustomEvent('startLinkDrag', {
                       detail: { swimlaneId, itemId: item.id, handleType: 'start', x: event.clientX, y: event.clientY }
@@ -259,6 +267,8 @@ export const GanttBar = ({
                   data-item-id={item.id}
                   onMouseDown={(e) => {
                     e.stopPropagation();
+                    e.preventDefault();
+                    console.log('[GanttBar] Link handle FINISH clicked', { itemId: item.id });
                     const event = e.nativeEvent;
                     window.dispatchEvent(new CustomEvent('startLinkDrag', {
                       detail: { swimlaneId, itemId: item.id, handleType: 'finish', x: event.clientX, y: event.clientY }

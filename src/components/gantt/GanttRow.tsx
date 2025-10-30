@@ -81,13 +81,26 @@ export const GanttRow = ({
             const clickedOnBar = elementsAtPoint.some(el => el.hasAttribute('data-item-id'));
             const clickedOnHandle = elementsAtPoint.some(el => el.hasAttribute('data-handle-type'));
             
+            console.log('[GanttRow] Grid cell mousedown:', {
+              clickedOnBar,
+              clickedOnHandle,
+              elementsAtPoint: elementsAtPoint.map(el => ({
+                tag: el.tagName,
+                classes: el.className,
+                dataItemId: el.getAttribute('data-item-id'),
+                dataHandleType: el.getAttribute('data-handle-type')
+              }))
+            });
+            
             if (clickedOnBar || clickedOnHandle) {
               // Let the bar handle its own events
+              console.log('[GanttRow] Returning early - bar or handle detected');
               return;
             }
             
             e.preventDefault();
             e.stopPropagation();
+            console.log('[GanttRow] Starting drag creation');
             const hour = i * zoom;
             setDragCreation({ startHour: hour, currentHour: hour });
           }}
