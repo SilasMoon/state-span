@@ -56,14 +56,6 @@ export const GanttLinks = ({
     const rowTop = findYPosition(effectiveSwimlaneId);
     if (rowTop === null) return null;
     
-    console.log('[GanttLinks] getItemPosition', {
-      itemId,
-      swimlaneId: effectiveSwimlaneId,
-      rowTop,
-      SWIMLANE_HEIGHT,
-      calculatedCenter: rowTop + SWIMLANE_HEIGHT / 2
-    });
-    
     const x = (itemStart / zoom) * columnWidth + swimlaneColumnWidth;
     const width = (itemDuration / zoom) * columnWidth;
     
@@ -212,6 +204,13 @@ export const GanttLinks = ({
     // Use barCenterY for exact vertical center attachment
     const start = { x: startX, y: fromPos.barCenterY };
     const end = { x: endX, y: toPos.barCenterY };
+
+    console.log(`[GanttLinks] renderLink ${link.id}`, {
+      from: { itemId: link.fromId, swimlaneId: link.fromSwimlaneId, barCenterY: fromPos.barCenterY, startX },
+      to: { itemId: link.toId, swimlaneId: link.toSwimlaneId, barCenterY: toPos.barCenterY, endX },
+      start,
+      end
+    });
 
     // Special case: same position
     if (Math.abs(start.x - end.x) < 5 && Math.abs(start.y - end.y) < 5) {
