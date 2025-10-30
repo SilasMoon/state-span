@@ -243,7 +243,7 @@ export const GanttBar = ({
               <>
                 {/* Left handle (start) */}
                 <div
-                  className="absolute -left-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-blue-500 border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-20 hover:scale-125"
+                  className="absolute -left-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-blue-500 border-2 border-white transition-opacity cursor-crosshair z-20 hover:scale-125 pointer-events-auto"
                   data-handle-type="start"
                   data-swimlane-id={swimlaneId}
                   data-item-id={item.id}
@@ -261,7 +261,7 @@ export const GanttBar = ({
                 
                 {/* Right handle (finish) */}
                 <div
-                  className="absolute -right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-green-500 border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-20 hover:scale-125"
+                  className="absolute -right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-green-500 border-2 border-white transition-opacity cursor-crosshair z-20 hover:scale-125 pointer-events-auto"
                   data-handle-type="finish"
                   data-swimlane-id={swimlaneId}
                   data-item-id={item.id}
