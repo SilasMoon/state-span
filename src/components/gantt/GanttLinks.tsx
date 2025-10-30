@@ -39,6 +39,24 @@ export const GanttLinks = ({
 
   // Ref to SVG element to get its position for coordinate transformation
   const svgRef = React.useRef<SVGSVGElement>(null);
+  
+  // Force re-render when positions change (for scroll/resize)
+  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+  
+  // Update positions when chart scrolls or resizes
+  React.useEffect(() => {
+    const container = document.querySelector('.overflow-auto');
+    if (!container) return;
+    
+    const handleUpdate = () => forceUpdate();
+    container.addEventListener('scroll', handleUpdate);
+    window.addEventListener('resize', handleUpdate);
+    
+    return () => {
+      container.removeEventListener('scroll', handleUpdate);
+      window.removeEventListener('resize', handleUpdate);
+    };
+  }, []);
 
   // Get item position with support for temp positions during drag
   const getItemPosition = (swimlaneId: string, itemId: string): ItemPosition | null => {
