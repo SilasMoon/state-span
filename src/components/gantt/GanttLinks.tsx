@@ -56,7 +56,13 @@ export const GanttLinks = ({
     const rowTop = findYPosition(effectiveSwimlaneId);
     if (rowTop === null) return null;
     
-    const x = (itemStart / zoom) * columnWidth + swimlaneColumnWidth;
+    // CRITICAL: Match coordinate system with GanttBar handle positioning
+    // Bars and handles in GanttBar.tsx are positioned with style={{ left: `${left}px` }}
+    // where left = (itemStart / zoom) * columnWidth
+    // These are positioned relative to the ROW's chart area container (NOT including swimlane column)
+    //
+    // The SVG must use the SAME coordinate system - chart-area relative, not full-canvas relative
+    const x = (itemStart / zoom) * columnWidth;
     const width = (itemDuration / zoom) * columnWidth;
     
     // CRITICAL: Match EXACT handle positioning from GanttBar.tsx
@@ -76,11 +82,11 @@ export const GanttLinks = ({
       itemStart,
       itemDuration,
       columnWidth,
-      swimlaneColumnWidth,
       calculatedX: x,
       calculatedWidth: width,
       rowTop,
-      barCenterY
+      barCenterY,
+      note: 'Coordinates relative to chart area (not including swimlane column)'
     });
 
     return {
@@ -348,9 +354,9 @@ export const GanttLinks = ({
       className="absolute pointer-events-none"
       style={{ 
         zIndex: 40,
-        left: 0,
+        left: `${swimlaneColumnWidth}px`, // Offset SVG to start after swimlane column
         top: 0,
-        width: '100%',
+        width: `calc(100% - ${swimlaneColumnWidth}px)`,
         height: `${calculateTotalHeight()}px`,
         overflow: 'visible'
       }}
