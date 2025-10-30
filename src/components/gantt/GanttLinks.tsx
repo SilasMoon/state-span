@@ -21,10 +21,15 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
 
     // Calculate swimlane vertical position
     let yPos = 48; // Header height (h-12 = 48px)
-    const findYPosition = (id: string, currentY: number): number | null => {
+    const findYPosition = (id: string): number | null => {
+      let currentY = 48; // Start after header
+      
       for (const rootId of data.rootIds) {
         const result = traverseSwimlane(rootId, id, currentY);
         if (result !== null) return result;
+        
+        // If not found in this root tree, add its height and continue to next root
+        currentY += getVisibleHeight(rootId);
       }
       return null;
     };
@@ -67,7 +72,7 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
       return height;
     };
 
-    const y = findYPosition(swimlaneId, 48);
+    const y = findYPosition(swimlaneId);
     if (y === null) {
       console.error(`[GanttLinks] Could not find Y position for swimlane ${swimlaneId}`);
       return null;
