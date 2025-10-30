@@ -363,31 +363,19 @@ export const GanttLinks = ({
     );
   };
 
-  // Calculate the chart width dynamically for clipPath
-  const chartWidth = calculateTotalWidth();
-  const clipWidth = chartWidth - swimlaneColumnWidth;
-
   return (
     <svg
       ref={svgRef}
       className="absolute pointer-events-none"
       style={{ 
         zIndex: 20, // Below the sidebar (z-30) so it gets masked
-        left: 0,
+        left: `${swimlaneColumnWidth}px`, // Start AFTER the sidebar
         top: 0,
-        width: '100%',
+        width: `calc(100% - ${swimlaneColumnWidth}px)`,
         height: `${calculateTotalHeight()}px`,
       }}
     >
-      <defs>
-        <clipPath id="gantt-links-clip">
-          {/* Use numeric values - SVG doesn't support calc() */}
-          <rect x={swimlaneColumnWidth} y="0" width={clipWidth} height="100%" />
-        </clipPath>
-      </defs>
-      <g clipPath="url(#gantt-links-clip)">
-        {data.links.map(renderLink)}
-      </g>
+      {data.links.map(renderLink)}
     </svg>
   );
 };
