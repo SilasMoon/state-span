@@ -166,6 +166,7 @@ export const GanttRow = ({
                 key={activity.id}
                 item={activity}
                 swimlaneId={swimlane.id}
+                swimlaneType={swimlane.type}
                 zoom={zoom}
                 columnWidth={columnWidth}
                 isSelected={selected?.type === 'activity' && selected.swimlaneId === swimlane.id && selected.itemId === activity.id}
@@ -183,6 +184,7 @@ export const GanttRow = ({
                 key={state.id}
                 item={state}
                 swimlaneId={swimlane.id}
+                swimlaneType={swimlane.type}
                 zoom={zoom}
                 columnWidth={columnWidth}
                 isSelected={selected?.type === 'state' && selected.swimlaneId === swimlane.id && selected.itemId === state.id}

@@ -5,6 +5,7 @@ import React, { useState } from "react";
 interface GanttBarProps {
   item: GanttActivity | GanttState;
   swimlaneId: string;
+  swimlaneType: "activity" | "state";
   zoom: ZoomLevel;
   columnWidth: number;
   isSelected: boolean;
@@ -19,6 +20,7 @@ interface GanttBarProps {
 export const GanttBar = ({
   item,
   swimlaneId,
+  swimlaneType,
   zoom,
   columnWidth,
   isSelected,
@@ -29,6 +31,7 @@ export const GanttBar = ({
   checkOverlap,
   onDragStateChange,
 }: GanttBarProps) => {
+  const isState = swimlaneType === "state";
   const [isDragging, setIsDragging] = useState<'start' | 'end' | 'move' | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialSwimlaneId: swimlaneId, offsetX: 0, offsetY: 0 });
   const [tempStart, setTempStart] = useState(item.start);
@@ -168,14 +171,13 @@ export const GanttBar = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <div
-            className={`absolute h-6 rounded ${isDragging === 'move' ? 'cursor-grabbing' : 'cursor-grab'} group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
+            className={`absolute ${isState ? 'h-full' : 'h-6 rounded'} ${isDragging === 'move' ? 'cursor-grabbing' : 'cursor-grab'} group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
               isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
             } ${isDragging === 'move' && targetSwimlaneId !== swimlaneId ? 'opacity-50' : ''}`}
             style={{
               left: `${left}px`,
               width: `${width}px`,
-              top: '50%',
-              transform: 'translateY(-50%)',
+              ...(isState ? { top: 0 } : { top: '50%', transform: 'translateY(-50%)' }),
               backgroundColor: item.color,
               color: "#fff",
             }}
