@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Bug } from "lucide-react";
+import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Bug, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,6 +17,7 @@ interface GanttToolbarProps {
   onAddActivityLane: () => void;
   onAddStateLane: () => void;
   onExport: () => void;
+  onExportPNG: () => void;
   onImport: (data: string) => void;
   onClear: () => void;
   onUndo: () => void;
@@ -35,6 +36,7 @@ export const GanttToolbar = ({
   onAddActivityLane,
   onAddStateLane,
   onExport,
+  onExportPNG,
   onImport,
   onClear,
   onUndo,
@@ -89,7 +91,12 @@ export const GanttToolbar = ({
 
       <Button variant="outline" size="sm" onClick={onExport}>
         <Download className="w-4 h-4 mr-1" />
-        Export
+        Export JSON
+      </Button>
+      
+      <Button variant="outline" size="sm" onClick={onExportPNG}>
+        <Image className="w-4 h-4 mr-1" />
+        Export PNG
       </Button>
       
       <Button variant="outline" size="sm" onClick={handleImportClick}>

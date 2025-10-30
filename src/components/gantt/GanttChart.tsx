@@ -338,6 +338,43 @@ export const GanttChart = () => {
     toast.success("Chart exported");
   };
 
+  const handleExportPNG = async () => {
+    try {
+      // Dynamically import html2canvas
+      const html2canvas = await import('html2canvas').then(m => m.default);
+      
+      const chartContainer = document.querySelector('.gantt-chart-container') as HTMLElement;
+      if (!chartContainer) {
+        toast.error("Chart container not found");
+        return;
+      }
+
+      toast.info("Generating image...");
+      
+      const canvas = await html2canvas(chartContainer, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      });
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `gantt-chart-${Date.now()}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast.success("Image exported");
+        }
+      }, 'image/png');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export image");
+    }
+  };
+
   const handleImport = (jsonData: string) => {
     try {
       importData(jsonData);
@@ -846,6 +883,7 @@ export const GanttChart = () => {
         onAddActivityLane={handleAddActivityLane}
         onAddStateLane={handleAddStateLane}
         onExport={handleExport}
+        onExportPNG={handleExportPNG}
         onImport={handleImport}
         onClear={handleClear}
         onUndo={undo}
