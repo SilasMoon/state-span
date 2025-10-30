@@ -45,6 +45,45 @@ export const useGanttData = () => {
   const [data, setData] = useState<GanttData>(createDefaultData());
   const [zoom, setZoom] = useState<ZoomLevel>(8);
 
+  // Helper function to calculate summary bar from children
+  const calculateSummaryBar = (swimlaneId: string, swimlanes: Record<string, GanttSwimlane>): { start: number; duration: number; hasContent: boolean } | null => {
+    const swimlane = swimlanes[swimlaneId];
+    if (!swimlane) return null;
+
+    let minStart = Infinity;
+    let maxEnd = -Infinity;
+    let hasContent = false;
+
+    const collectItems = (id: string) => {
+      const lane = swimlanes[id];
+      if (!lane) return;
+
+      // Collect from direct items
+      const items = lane.type === "activity" ? lane.activities : lane.states;
+      if (items && items.length > 0) {
+        items.forEach((item) => {
+          hasContent = true;
+          minStart = Math.min(minStart, item.start);
+          maxEnd = Math.max(maxEnd, item.start + item.duration);
+        });
+      }
+
+      // Recursively collect from children
+      lane.children.forEach(collectItems);
+    };
+
+    // Collect from all children
+    swimlane.children.forEach(collectItems);
+
+    if (!hasContent) return null;
+
+    return {
+      start: minStart,
+      duration: maxEnd - minStart,
+      hasContent: true,
+    };
+  };
+
   const addSwimlane = (type: "activity" | "state", parentId?: string) => {
     const id = generateId();
     const newSwimlane: GanttSwimlane = {
@@ -64,9 +103,12 @@ export const useGanttData = () => {
 
       if (parentId) {
         const parent = newData.swimlanes[parentId];
+        // Clear parent's activities/states when adding a child
         newData.swimlanes[parentId] = {
           ...parent,
           children: [...parent.children, id],
+          activities: parent.type === "activity" ? [] : parent.activities,
+          states: parent.type === "state" ? [] : parent.states,
         };
       } else {
         newData.rootIds = [...prev.rootIds, id];
@@ -144,6 +186,12 @@ export const useGanttData = () => {
     setData((prev) => {
       const swimlane = prev.swimlanes[swimlaneId];
       if (!swimlane || swimlane.type !== "activity") return prev;
+      
+      // Prevent adding activities to parent swimlanes
+      if (swimlane.children.length > 0) {
+        console.warn("Cannot add activities to parent swimlanes");
+        return prev;
+      }
 
       return {
         ...prev,
@@ -175,6 +223,12 @@ export const useGanttData = () => {
     setData((prev) => {
       const swimlane = prev.swimlanes[swimlaneId];
       if (!swimlane || swimlane.type !== "state") return prev;
+      
+      // Prevent adding states to parent swimlanes
+      if (swimlane.children.length > 0) {
+        console.warn("Cannot add states to parent swimlanes");
+        return prev;
+      }
 
       return {
         ...prev,
@@ -660,5 +714,6 @@ export const useGanttData = () => {
     clearAll,
     exportData,
     importData,
+    calculateSummaryBar,
   };
 };

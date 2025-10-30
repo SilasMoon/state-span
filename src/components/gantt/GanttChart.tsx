@@ -33,6 +33,7 @@ export const GanttChart = () => {
     clearAll,
     exportData,
     importData,
+    calculateSummaryBar,
   } = useGanttData();
 
   const [editDialog, setEditDialog] = useState<{
@@ -492,6 +493,11 @@ export const GanttChart = () => {
       const swimlane = data.swimlanes[id];
       if (!swimlane) return;
 
+      // Calculate summary bar for parent swimlanes
+      const summaryBar = swimlane.children.length > 0 
+        ? calculateSummaryBar(id, data.swimlanes)
+        : null;
+
       elements.push(
         <GanttRow
           key={id}
@@ -518,6 +524,7 @@ export const GanttChart = () => {
           onSwimlaneNameChange={(id, name) => updateSwimlane(id, { name })}
           checkOverlap={checkOverlap}
           onDragStateChange={handleDragStateChange}
+          summaryBar={summaryBar}
         />
       );
 

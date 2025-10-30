@@ -31,6 +31,7 @@ interface GanttRowProps {
   onSwimlaneNameChange: (id: string, name: string) => void;
   checkOverlap: (swimlaneId: string, itemId: string, start: number, duration: number) => boolean;
   onDragStateChange: (itemId: string, swimlaneId: string) => (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => void;
+  summaryBar: { start: number; duration: number; hasContent: boolean } | null;
 }
 
 export const GanttRow = ({
@@ -53,6 +54,7 @@ export const GanttRow = ({
   onSwimlaneNameChange,
   checkOverlap,
   onDragStateChange,
+  summaryBar,
 }: GanttRowProps) => {
   const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
   const columns = Math.ceil(totalHours / zoom);
@@ -75,6 +77,11 @@ export const GanttRow = ({
           style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
           onMouseDown={(e) => {
             if (e.button !== 0) return; // Only left click
+            
+            // Disable drag creation for parent swimlanes
+            if (hasChildren) {
+              return;
+            }
             
             // Check if there's a bar or handle at the click position
             const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
@@ -257,7 +264,35 @@ export const GanttRow = ({
         })()}
         
         <div className="absolute inset-0 pointer-events-none">
-          {swimlane.type === "activity" &&
+          {/* Render summary bar for parent swimlanes */}
+          {hasChildren && summaryBar && summaryBar.hasContent && (
+            <GanttBar
+              key={`summary-${swimlane.id}`}
+              item={{
+                id: `summary-${swimlane.id}`,
+                start: summaryBar.start,
+                duration: summaryBar.duration,
+                color: swimlane.type === "activity" ? "#94a3b8" : "#a78bfa",
+                label: `${swimlane.children.length} child${swimlane.children.length > 1 ? 'ren' : ''}`,
+                labelColor: "#ffffff",
+                description: `Aggregated from ${swimlane.children.length} sub-swimlane${swimlane.children.length > 1 ? 's' : ''}`,
+              }}
+              swimlaneId={swimlane.id}
+              swimlaneType={swimlane.type}
+              zoom={zoom}
+              columnWidth={columnWidth}
+              isSelected={false}
+              isSummary={true}
+              onDoubleClick={() => {}}
+              onSelect={() => {}}
+              onMove={() => {}}
+              onResize={() => {}}
+              checkOverlap={checkOverlap}
+            />
+          )}
+          
+          {/* Render individual items for leaf swimlanes */}
+          {!hasChildren && swimlane.type === "activity" &&
             swimlane.activities?.map((activity) => (
               <GanttBar
                 key={activity.id}
@@ -278,7 +313,7 @@ export const GanttRow = ({
                 onDragStateChange={onDragStateChange(activity.id, swimlane.id)}
               />
             ))}
-          {swimlane.type === "state" &&
+          {!hasChildren && swimlane.type === "state" &&
             swimlane.states?.map((state) => (
               <GanttBar
                 key={state.id}

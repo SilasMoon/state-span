@@ -9,6 +9,7 @@ interface GanttBarProps {
   zoom: ZoomLevel;
   columnWidth: number;
   isSelected: boolean;
+  isSummary?: boolean;
   onDoubleClick: () => void;
   onSelect: () => void;
   onMove: (toSwimlaneId: string, newStart: number) => void;
@@ -31,6 +32,7 @@ export const GanttBar = ({
   zoom,
   columnWidth,
   isSelected,
+  isSummary = false,
   onDoubleClick,
   onSelect,
   onMove,
@@ -97,6 +99,9 @@ export const GanttBar = ({
   };
 
   const handleMoveStart = (e: React.MouseEvent) => {
+    // Disable interaction for summary bars
+    if (isSummary) return;
+    
     // Only prevent drag if clicking on resize or link handles
     const target = e.target as HTMLElement;
     console.log('[GanttBar] handleMoveStart called', { itemId: item.id, targetTag: target.tagName, targetClasses: target.className });
@@ -209,15 +214,18 @@ export const GanttBar = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className={`absolute ${isState ? 'h-full' : 'h-6 rounded'} ${isDragging === 'move' ? 'cursor-grabbing' : isModifierPressed ? 'cursor-crosshair' : 'cursor-grab'} group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
+              className={`absolute ${isState ? 'h-full' : 'h-6 rounded'} ${isSummary ? 'cursor-default opacity-60' : isDragging === 'move' ? 'cursor-grabbing' : isModifierPressed ? 'cursor-crosshair' : 'cursor-grab'} group flex items-center justify-center text-xs font-medium shadow-lg hover:shadow-xl transition-all pointer-events-auto ${
                 isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
-              } ${isDragging === 'move' && targetSwimlaneId !== swimlaneId ? 'opacity-50' : ''} ${isModifierPressed ? 'ring-2 ring-blue-400/50' : ''}`}
+              } ${isDragging === 'move' && targetSwimlaneId !== swimlaneId ? 'opacity-50' : ''} ${isModifierPressed && !isSummary ? 'ring-2 ring-blue-400/50' : ''}`}
               style={{
                 left: `${left}px`,
                 width: `${width}px`,
                 ...(isState ? { top: 0 } : { top: '50%', transform: 'translateY(-50%)' }),
                 backgroundColor: item.color,
                 color: "#fff",
+                backgroundImage: isSummary 
+                  ? 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)'
+                  : undefined,
               }}
               onMouseDown={handleMoveStart}
               onDoubleClick={(e) => {
@@ -245,8 +253,8 @@ export const GanttBar = ({
                 </span>
               )}
               
-              {/* Resize handles - show when NOT in link mode */}
-              {!isModifierPressed && (
+              {/* Resize handles - show when NOT in link mode and NOT summary */}
+              {!isModifierPressed && !isSummary && (
                 <>
                   {/* Resize handle - left */}
                   <div
@@ -289,9 +297,14 @@ export const GanttBar = ({
                   <span>{item.duration} hours</span>
                 </div>
               </div>
-              {!isModifierPressed && (
+              {!isModifierPressed && !isSummary && (
                 <p className="text-xs text-muted-foreground italic pt-2 border-t border-border">
                   Hold Shift/Ctrl to create links
+                </p>
+              )}
+              {isSummary && (
+                <p className="text-xs text-muted-foreground italic pt-2 border-t border-border">
+                  Summary bar (read-only)
                 </p>
               )}
             </div>
@@ -299,8 +312,8 @@ export const GanttBar = ({
         </Tooltip>
       </TooltipProvider>
 
-      {/* Link creation handles - positioned absolutely at bar edges */}
-      {isModifierPressed && (
+      {/* Link creation handles - positioned absolutely at bar edges (not for summary bars) */}
+      {isModifierPressed && !isSummary && (
         <>
           {/* Left handle (start) */}
           <div
