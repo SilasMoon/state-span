@@ -75,6 +75,17 @@ export const GanttRow = ({
           style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
           onMouseDown={(e) => {
             if (e.button !== 0) return; // Only left click
+            
+            // Check if clicking on a bar or bar handle - if so, don't start drag creation
+            const target = e.target as HTMLElement;
+            const clickedOnBar = target.closest('[data-item-id]');
+            const clickedOnHandle = target.closest('[data-handle-type]');
+            
+            if (clickedOnBar || clickedOnHandle) {
+              // Let the bar handle its own events
+              return;
+            }
+            
             e.preventDefault();
             e.stopPropagation();
             const hour = i * zoom;
