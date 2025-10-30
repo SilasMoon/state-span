@@ -43,9 +43,23 @@ export const GanttLinks = ({ data, zoom, columnWidth, swimlaneColumnWidth, selec
     };
 
     const traverseSwimlane = (currentId: string, targetId: string, currentY: number): number | null => {
-      if (currentId === targetId) return currentY;
-      
       const current = data.swimlanes[currentId];
+      
+      console.log('[GanttLinks] Traversing:', {
+        currentId,
+        currentName: current?.name,
+        targetId,
+        currentY,
+        isTarget: currentId === targetId,
+        hasChildren: current?.children.length || 0,
+        isExpanded: current?.expanded
+      });
+      
+      if (currentId === targetId) {
+        console.log('[GanttLinks] Found target at Y:', currentY);
+        return currentY;
+      }
+      
       if (!current) return null;
       
       let nextY = currentY + 48; // Row height
