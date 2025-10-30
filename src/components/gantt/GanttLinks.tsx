@@ -105,34 +105,83 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
   };
 
 
-  // Get Y-ranges of all activities (excluding source/target)
-  const getActivityYRanges = (excludeFromId?: string, excludeToId?: string) => {
-    const ranges: Array<{ minY: number; maxY: number; activityId: string }> = [];
-    const margin = 15; // Vertical margin around activities
-    
-    Object.entries(data.swimlanes).forEach(([swimlaneId, swimlane]) => {
-      const items = [...(swimlane.activities || []), ...(swimlane.states || [])];
-      items.forEach((item) => {
-        if (item.id === excludeFromId || item.id === excludeToId) {
-          return;
+  // New obstacle detection for routing
+  interface Obstacle {
+    swimlaneId: string;
+    itemId: string;
+    xStart: number;
+    xEnd: number;
+    y: number;
+  }
+
+  const getSwimlanesBetween = (fromId: string, toId: string): string[] => {
+    // Get the vertical order of all visible swimlanes
+    const visibleOrder: string[] = [];
+    const traverse = (ids: string[]) => {
+      ids.forEach(id => {
+        visibleOrder.push(id);
+        const swimlane = data.swimlanes[id];
+        if (swimlane?.expanded && swimlane.children.length > 0) {
+          traverse(swimlane.children);
         }
-        
+      });
+    };
+    traverse(data.rootIds);
+    
+    // Find indices
+    const fromIndex = visibleOrder.indexOf(fromId);
+    const toIndex = visibleOrder.indexOf(toId);
+    
+    if (fromIndex === -1 || toIndex === -1) return [];
+    
+    // Return swimlanes between (exclusive of source and target)
+    const start = Math.min(fromIndex, toIndex) + 1;
+    const end = Math.max(fromIndex, toIndex);
+    
+    return visibleOrder.slice(start, end);
+  };
+
+  const findObstacles = (
+    fromSwimlaneId: string,
+    toSwimlaneId: string,
+    pathStartX: number,
+    pathEndX: number
+  ): Obstacle[] => {
+    const obstacles: Obstacle[] = [];
+    
+    // Get all swimlanes between source and target
+    const swimlanesBetween = getSwimlanesBetween(fromSwimlaneId, toSwimlaneId);
+    
+    // For each swimlane, check all activities/states
+    swimlanesBetween.forEach(swimlaneId => {
+      const swimlane = data.swimlanes[swimlaneId];
+      if (!swimlane) return;
+      
+      const items = [...(swimlane.activities || []), ...(swimlane.states || [])];
+      
+      items.forEach(item => {
         const pos = getItemPosition(swimlaneId, item.id);
-        if (pos) {
-          ranges.push({
-            minY: pos.y1 - margin,
-            maxY: pos.y1 + margin,
-            activityId: item.id,
+        if (!pos) return;
+        
+        const itemStart = pos.x2; // Left edge
+        const itemEnd = pos.x1;   // Right edge
+        
+        // Check horizontal overlap
+        const horizontalOverlap = !(itemEnd < pathStartX || itemStart > pathEndX);
+        
+        if (horizontalOverlap) {
+          obstacles.push({
+            swimlaneId,
+            itemId: item.id,
+            xStart: itemStart,
+            xEnd: itemEnd,
+            y: pos.y1
           });
         }
       });
     });
-    return ranges;
-  };
-
-  // Check if a horizontal line at given Y crosses any activity's Y-range
-  const doesHorizontalLineCrossActivity = (y: number, ranges: Array<{ minY: number; maxY: number }>) => {
-    return ranges.some(range => y >= range.minY && y <= range.maxY);
+    
+    return obstacles;
   };
 
   const createRoutedPath = (from: { x1: number; y1: number }, 
@@ -146,7 +195,12 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
     const endX = to.x2;
     const endY = to.y2;
     
-    // RULE 0: Consecutive tasks on same swimlane - always straight line
+    // Constants
+    const HORIZONTAL_OFFSET = 20; // Short horizontal segment length
+    const CHANNEL_OFFSET = 30;    // Distance to clear channel above/below swimlane
+    const FORWARD_THRESHOLD = 10; // Minimum X difference to be considered "forward"
+    
+    // SPECIAL CASE: Same swimlane, same row, forward flow
     const sameSwimlane = fromSwimlaneId && toSwimlaneId && fromSwimlaneId === toSwimlaneId;
     const sameRow = Math.abs(startY - endY) < 5;
     const horizontalFlow = endX > startX;
@@ -155,53 +209,93 @@ export const GanttLinks = ({ data, zoom, columnWidth, selectedLink, onLinkSelect
       return { path: `M ${startX} ${startY} L ${endX} ${endY}`, isVertical: false };
     }
     
-    const activityRanges = getActivityYRanges(fromId, toId);
-    
-    // RULE 1: Pure vertical link (only case for vertical arrow)
+    // SPECIAL CASE: Pure vertical link
     if (Math.abs(startX - endX) < 5) {
       return { path: `M ${startX} ${startY} L ${endX} ${endY}`, isVertical: true };
     }
     
-    // RULE 2: Direct horizontal link
-    if (Math.abs(startY - endY) < 5) {
-      if (!doesHorizontalLineCrossActivity(startY, activityRanges)) {
-        return { path: `M ${startX} ${startY} L ${endX} ${endY}`, isVertical: false };
+    // MAIN DECISION: Forward or Backward link?
+    const isForwardLink = endX > startX + FORWARD_THRESHOLD;
+    
+    if (isForwardLink) {
+      // === FORWARD LINK LOGIC ===
+      
+      // Check for obstacles
+      const obstacles = fromSwimlaneId && toSwimlaneId 
+        ? findObstacles(fromSwimlaneId, toSwimlaneId, startX, endX)
+        : [];
+      
+      if (obstacles.length === 0) {
+        // NO OBSTACLES: Simple 3-segment path
+        // 1. Horizontal out
+        const point1X = startX + HORIZONTAL_OFFSET;
+        const point1Y = startY;
+        
+        // 2. Vertical to target swimlane
+        const point2X = point1X;
+        const point2Y = endY;
+        
+        // 3. Horizontal into target
+        const path = `M ${startX} ${startY} L ${point1X} ${point1Y} L ${point2X} ${point2Y} L ${endX} ${endY}`;
+        return { path, isVertical: false };
+        
+      } else {
+        // OBSTACLES FOUND: 5-segment detour path
+        
+        // Determine direction to clear channel (up or down from source)
+        const sourceIsAboveTarget = startY < endY;
+        const channelY = sourceIsAboveTarget 
+          ? startY - CHANNEL_OFFSET  // Go up from source
+          : startY + CHANNEL_OFFSET; // Go down from source
+        
+        // 1. Horizontal out from source
+        const point1X = startX + HORIZONTAL_OFFSET;
+        const point1Y = startY;
+        
+        // 2. Vertical to clear channel
+        const point2X = point1X;
+        const point2Y = channelY;
+        
+        // 3. Long horizontal across channel (past obstacles)
+        const point3X = endX - HORIZONTAL_OFFSET;
+        const point3Y = channelY;
+        
+        // 4. Vertical to target swimlane
+        const point4X = point3X;
+        const point4Y = endY;
+        
+        // 5. Horizontal into target
+        const path = `M ${startX} ${startY} L ${point1X} ${point1Y} L ${point2X} ${point2Y} L ${point3X} ${point3Y} L ${point4X} ${point4Y} L ${endX} ${endY}`;
+        return { path, isVertical: false };
       }
+      
+    } else {
+      // === BACKWARD/CLOSE LINK LOGIC ===
+      // Always use 5-segment loop-back
+      
+      const SWIMLANE_HEIGHT = 48;
+      const HALF_SWIMLANE = SWIMLANE_HEIGHT / 2;
+      
+      // 1. Horizontal out from source
+      const point1X = startX + HORIZONTAL_OFFSET;
+      const point1Y = startY;
+      
+      // 2. Vertical down by half swimlane height (enter clear channel)
+      const point2X = point1X;
+      const point2Y = startY + HALF_SWIMLANE;
+      
+      // 3. Horizontal (backward) to align with target entry
+      const point3X = endX - HORIZONTAL_OFFSET;
+      const point3Y = point2Y;
+      
+      // 4. Vertical to target swimlane
+      const point4X = point3X;
+      const point4Y = endY;
+      
+      // 5. Horizontal into target
+      const path = `M ${startX} ${startY} L ${point1X} ${point1Y} L ${point2X} ${point2Y} L ${point3X} ${point3Y} L ${point4X} ${point4Y} L ${endX} ${endY}`;
+      return { path, isVertical: false };
     }
-    
-    // RULE 3: Two-segment H-V pattern
-    const hvPath = `M ${startX} ${startY} L ${endX} ${startY} L ${endX} ${endY}`;
-    if (!doesHorizontalLineCrossActivity(startY, activityRanges)) {
-      return { path: hvPath, isVertical: false };
-    }
-    
-    // RULE 4: Two-segment V-H pattern
-    const vhPath = `M ${startX} ${startY} L ${startX} ${endY} L ${endX} ${endY}`;
-    if (!doesHorizontalLineCrossActivity(endY, activityRanges)) {
-      return { path: vhPath, isVertical: false };
-    }
-    
-    // RULE 5: Three-segment routing with safe Y coordinate
-    // Find a Y coordinate that doesn't cross any activities
-    let safeY: number;
-    
-    // Collect all activity Y positions
-    const activityYs = activityRanges.map(r => (r.minY + r.maxY) / 2);
-    const minActivityY = activityRanges.length > 0 ? Math.min(...activityRanges.map(r => r.minY)) : startY;
-    const maxActivityY = activityRanges.length > 0 ? Math.max(...activityRanges.map(r => r.maxY)) : startY;
-    
-    // Try different safe Y options
-    const safeYOptions = [
-      maxActivityY + 30, // Above all activities
-      minActivityY - 30, // Below all activities
-      (startY + endY) / 2, // Midpoint
-    ];
-    
-    // Pick the first safe Y that doesn't cross activities
-    safeY = safeYOptions.find(y => !doesHorizontalLineCrossActivity(y, activityRanges)) || safeYOptions[0];
-    
-    const threePath = `M ${startX} ${startY} L ${startX} ${safeY} L ${endX} ${safeY} L ${endX} ${endY}`;
-    return { path: threePath, isVertical: false };
   };
 
   const renderLink = (link: GanttLink) => {
