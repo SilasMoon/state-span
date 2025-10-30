@@ -7,16 +7,18 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 interface EditDialogProps {
   open: boolean;
   onClose: () => void;
   initialColor: string;
+  initialLabel: string;
   initialDescription: string;
   start: number;
   duration: number;
-  onSave: (color: string, description: string) => void;
+  onSave: (color: string, label: string, description: string) => void;
 }
 
 const formatHoursToDayTime = (hours: number): string => {
@@ -36,12 +38,14 @@ export const EditDialog = ({
   open,
   onClose,
   initialColor,
+  initialLabel,
   initialDescription,
   start,
   duration,
   onSave,
 }: EditDialogProps) => {
   const [color, setColor] = useState(initialColor);
+  const [label, setLabel] = useState(initialLabel);
   const [description, setDescription] = useState(initialDescription);
   
   const endHour = start + duration;
@@ -49,7 +53,7 @@ export const EditDialog = ({
   const endFormatted = formatHoursToDayTime(endHour);
 
   const handleSave = () => {
-    onSave(color, description);
+    onSave(color, label, description);
     onClose();
   };
 
@@ -73,6 +77,18 @@ export const EditDialog = ({
               <span className="font-medium">Duration:</span>
               <span>{duration} hours</span>
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="label">Label</Label>
+            <Input
+              id="label"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="Enter label..."
+              maxLength={50}
+              className="mt-2"
+            />
           </div>
 
           <div>

@@ -41,6 +41,7 @@ export const GanttChart = () => {
     itemId: string;
     type: "activity" | "state";
     color: string;
+    label: string;
     description: string;
     start: number;
     duration: number;
@@ -209,6 +210,7 @@ export const GanttChart = () => {
         itemId: activityId,
         type: "activity",
         color: activity.color,
+        label: activity.label || "",
         description: activity.description || "",
         start: activity.start,
         duration: activity.duration,
@@ -226,6 +228,7 @@ export const GanttChart = () => {
         itemId: stateId,
         type: "state",
         color: state.color,
+        label: state.label || "",
         description: state.description || "",
         start: state.start,
         duration: state.duration,
@@ -233,13 +236,13 @@ export const GanttChart = () => {
     }
   };
 
-  const handleEditSave = (color: string, description: string) => {
+  const handleEditSave = (color: string, label: string, description: string) => {
     if (!editDialog) return;
 
     if (editDialog.type === "activity") {
-      updateActivity(editDialog.swimlaneId, editDialog.itemId, { color, description });
+      updateActivity(editDialog.swimlaneId, editDialog.itemId, { color, label, description });
     } else {
-      updateState(editDialog.swimlaneId, editDialog.itemId, { color, description });
+      updateState(editDialog.swimlaneId, editDialog.itemId, { color, label, description });
     }
 
     toast.success("Item updated");
@@ -699,6 +702,7 @@ export const GanttChart = () => {
           open={editDialog.open}
           onClose={() => setEditDialog(null)}
           initialColor={editDialog.color}
+          initialLabel={editDialog.label}
           initialDescription={editDialog.description}
           start={editDialog.start}
           duration={editDialog.duration}

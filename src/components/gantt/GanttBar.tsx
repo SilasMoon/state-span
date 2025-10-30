@@ -232,6 +232,13 @@ export const GanttBar = ({
               data-swimlane-id={swimlaneId}
               data-item-id={item.id}
             >
+              {/* Display label inside the bar */}
+              {item.label && (
+                <span className="px-2 truncate text-shadow-sm" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+                  {item.label}
+                </span>
+              )}
+              
               {/* Resize handles - show when NOT in link mode */}
               {!isModifierPressed && (
                 <>
