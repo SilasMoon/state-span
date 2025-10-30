@@ -37,32 +37,28 @@ export const GanttBar = ({
   const [tempStart, setTempStart] = useState(item.start);
   const [tempDuration, setTempDuration] = useState(item.duration);
   const [targetSwimlaneId, setTargetSwimlaneId] = useState(swimlaneId);
-  const [isModifierPressed, setIsModifierPressed] = useState(false);
+  const [modifierKeyState, setModifierKeyState] = useState(0);
 
-  console.log('[GanttBar] Render', { itemId: item.id, isSelected, isModifierPressed });
+  console.log('[GanttBar] Render', { itemId: item.id, isSelected, modifierKeyState });
 
-  // Track modifier key for link mode
+  // Track modifier key state globally to force re-render
   React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.shiftKey || e.ctrlKey || e.metaKey) {
-        console.log('[GanttBar] Modifier key pressed', { itemId: item.id });
-        setIsModifierPressed(true);
-      }
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
-        console.log('[GanttBar] Modifier key released', { itemId: item.id });
-        setIsModifierPressed(false);
-      }
+    const handleKeyChange = (e: KeyboardEvent) => {
+      const isPressed = e.shiftKey || e.ctrlKey || e.metaKey;
+      console.log('[GanttBar] Modifier key changed', { itemId: item.id, isPressed, shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey });
+      setModifierKeyState(prev => isPressed ? prev + 1 : 0);
     };
     
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('keydown', handleKeyChange);
+    window.addEventListener('keyup', handleKeyChange);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('keydown', handleKeyChange);
+      window.removeEventListener('keyup', handleKeyChange);
     };
   }, [item.id]);
+
+  // Check current modifier key state
+  const isModifierPressed = modifierKeyState > 0;
 
   // Sync local state with props when item changes (but not during drag)
   React.useEffect(() => {
@@ -258,9 +254,6 @@ export const GanttBar = ({
       {/* Link creation handles - positioned absolutely at bar edges */}
       {isModifierPressed && (
         <>
-          <div style={{ position: 'absolute', left: 0, top: -30, color: 'red', fontSize: '10px', zIndex: 999 }}>
-            HANDLES VISIBLE itemId:{item.id}
-          </div>
           {/* Left handle (start) */}
           <div
             className="absolute w-5 h-5 rounded-full bg-blue-500 border-2 border-white transition-all cursor-crosshair z-[100] hover:scale-125 pointer-events-auto"

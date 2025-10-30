@@ -81,6 +81,9 @@ export const GanttChart = () => {
     offsetY: number;
   } | null>(null);
 
+  // Ref for the main container to handle keyboard events
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
   // Calculate total hours dynamically based on content
   const calculateTotalHours = () => {
     let maxHour = 240; // Default 10 days
@@ -403,8 +406,11 @@ export const GanttChart = () => {
     moveState(fromSwimlaneId, toSwimlaneId, stateId, newStart);
   };
 
-  // Delete key handler
+  // Delete key handler - attached to container
   React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       console.log('[GanttChart] Delete key pressed', { selected, selectedLink });
       if (e.key === 'Delete') {
@@ -431,9 +437,16 @@ export const GanttChart = () => {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    container.addEventListener('keydown', handleKeyDown);
+    return () => container.removeEventListener('keydown', handleKeyDown);
   }, [selected, selectedLink, deleteSwimlane, deleteActivity, deleteState, deleteLink]);
+
+  // Auto-focus container when item is selected
+  React.useEffect(() => {
+    if (selected && containerRef.current) {
+      containerRef.current.focus();
+    }
+  }, [selected]);
 
   const handleDragStateChange = (itemId: string, swimlaneId: string) => 
     (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => {
@@ -519,7 +532,9 @@ export const GanttChart = () => {
       />
 
       <div 
-        className="flex-1 overflow-auto relative"
+        ref={containerRef}
+        tabIndex={0}
+        className="flex-1 overflow-auto relative outline-none focus:ring-2 focus:ring-primary/20"
         onClick={(e) => {
           if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.inline-block')) {
             setSelected(null);
