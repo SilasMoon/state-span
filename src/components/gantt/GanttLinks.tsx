@@ -59,26 +59,17 @@ export const GanttLinks = ({
     const x = (itemStart / zoom) * columnWidth + swimlaneColumnWidth;
     const width = (itemDuration / zoom) * columnWidth;
     
-    // MATCH EXACT HANDLE POSITIONING FROM GanttBar.tsx
-    // The handles use: style={{ top: '50%', transform: 'translateY(-50%)' }}
-    // This positions them relative to the bar element
-    
-    // Activity bars (h-6 = 24px): 
-    //   Bar positioned at top: 50%, transform: translateY(-50%) = centered in 48px row
-    //   Bar top absolute: rowTop + (48-24)/2 = rowTop + 12px
-    //   Bar center: rowTop + 12 + 12 = rowTop + 24px
-    //   Handle at 50% of bar = 12px from bar top
-    //   Handle absolute: rowTop + 12 + 12 = rowTop + 24px
-    
-    // State bars (h-full = 48px):
-    //   Bar positioned at top: 0 = top-aligned in 48px row  
-    //   Bar top absolute: rowTop + 0px
-    //   Bar center: rowTop + 0 + 24 = rowTop + 24px
-    //   Handle at 50% of bar = 24px from bar top
-    //   Handle absolute: rowTop + 0 + 24 = rowTop + 24px
-    
-    // Both types: handle center is at rowTop + 24px
-    const barCenterY = rowTop + 24;
+    // CRITICAL: Match EXACT handle positioning from GanttBar.tsx
+    // Link handles in GanttBar.tsx use: style={{ top: '50%', transform: 'translateY(-50%)' }}
+    // This centers them in the row container (h-12 = 48px from GanttRow.tsx line 331)
+    // 
+    // The handles are positioned relative to the row container (NOT the bar itself):
+    // - Row container: 48px tall (SWIMLANE_HEIGHT)
+    // - Handle position: top: 50% = SWIMLANE_HEIGHT / 2 = 24px from row top
+    // - This applies to BOTH activity bars and state bars
+    //
+    // Therefore: barCenterY = rowTop + (SWIMLANE_HEIGHT / 2)
+    const barCenterY = rowTop + (SWIMLANE_HEIGHT / 2);
 
     return {
       x,
