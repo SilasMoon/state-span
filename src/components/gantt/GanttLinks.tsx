@@ -44,8 +44,7 @@ export const GanttLinks = ({
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
   
   // Update positions when chart scrolls or resizes
-  // Use useLayoutEffect to read DOM after layout but before paint
-  React.useLayoutEffect(() => {
+  React.useEffect(() => {
     const container = document.querySelector('.overflow-auto');
     if (!container) return;
     
@@ -53,14 +52,11 @@ export const GanttLinks = ({
     container.addEventListener('scroll', handleUpdate);
     window.addEventListener('resize', handleUpdate);
     
-    // Initial update to ensure positions are read after bars are rendered
-    forceUpdate();
-    
     return () => {
       container.removeEventListener('scroll', handleUpdate);
       window.removeEventListener('resize', handleUpdate);
     };
-  }, [data, itemTempPositions]); // Re-run when data or temp positions change
+  }, []);
 
   // Get item position with support for temp positions during drag
   const getItemPosition = (swimlaneId: string, itemId: string): ItemPosition | null => {
@@ -375,23 +371,15 @@ export const GanttLinks = ({
       className="absolute pointer-events-none"
       style={{ 
         zIndex: 40,
-        left: `${swimlaneColumnWidth}px`, // Offset SVG to start after swimlane column
+        left: `${swimlaneColumnWidth}px`,
         top: 0,
         width: `calc(100% - ${swimlaneColumnWidth}px)`,
         height: `${calculateTotalHeight()}px`,
-        overflow: 'visible'
+        overflow: 'hidden',
+        clipPath: 'inset(0 0 0 0)'
       }}
     >
-      {/* Clip path to prevent links from showing behind swimlane column */}
-      <defs>
-        <clipPath id="gantt-links-clip">
-          <rect x="0" y="0" width="100%" height="100%" />
-        </clipPath>
-      </defs>
-      
-      <g clipPath="url(#gantt-links-clip)">
-        {data.links.map(renderLink)}
-      </g>
+      {data.links.map(renderLink)}
       
       {/* Debug mode: Show attachment points and bar boundaries with detailed info */}
       {debugMode && data.links.map(link => {
