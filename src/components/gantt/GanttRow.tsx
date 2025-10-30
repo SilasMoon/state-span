@@ -203,7 +203,7 @@ export const GanttRow = ({
         />
         
         <span
-          className={`text-xs px-2 py-0.5 rounded ${
+          className={`text-xs px-2 py-0.5 rounded ml-auto ${
             swimlane.type === "activity"
               ? "bg-primary/20 text-primary"
               : "bg-secondary/20 text-secondary"
