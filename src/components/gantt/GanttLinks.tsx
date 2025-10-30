@@ -401,6 +401,18 @@ export const GanttLinks = ({
         
         if (!fromPos || !toPos) return null;
 
+        // Log what we're about to render
+        console.log('[GanttLinks DEBUG]', {
+          linkId: link.id,
+          fromItem: link.fromId,
+          toItem: link.toId,
+          debugRect: { 
+            from: { x: fromPos.x, y: fromPos.barCenterY - BAR_HEIGHT / 2, width: fromPos.width, height: BAR_HEIGHT },
+            to: { x: toPos.x, y: toPos.barCenterY - BAR_HEIGHT / 2, width: toPos.width, height: BAR_HEIGHT }
+          },
+          note: 'These are the debug rectangle positions in SVG coordinates'
+        });
+
         // Calculate exact attachment X coordinates (matching handle centers)
         const HANDLE_OFFSET = 2; // Handles are 2px inward from bar edges
         
