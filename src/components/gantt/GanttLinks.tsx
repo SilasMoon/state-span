@@ -451,6 +451,13 @@ export const GanttLinks = ({
     const linkColor = link.color || "#00bcd4";
     const markerId = `arrowhead-${link.id}`;
 
+    // Memoize the midpoint to prevent jitter when selected
+    const midpointRef = React.useRef({ x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 });
+    if (!isSelected) {
+      // Only update when not selected to prevent jitter during interaction
+      midpointRef.current = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+    }
+
     const handleWaypointMouseDown = (e: React.MouseEvent, index: number) => {
       e.stopPropagation();
       const rect = svgRef.current?.getBoundingClientRect();
@@ -466,21 +473,19 @@ export const GanttLinks = ({
 
     const handleAddWaypoint = (e: React.MouseEvent, insertIndex: number) => {
       e.stopPropagation();
-      if (!link.waypoints || !onUpdateWaypoints) return;
+      if (!onUpdateWaypoints) return;
       
       const rect = svgRef.current?.getBoundingClientRect();
       if (!rect) return;
       
-      // Calculate midpoint between two adjacent waypoints
-      const prevPoint = insertIndex === 0 ? start : link.waypoints[insertIndex - 1];
-      const nextPoint = insertIndex >= link.waypoints.length ? end : link.waypoints[insertIndex];
+      // Calculate position relative to SVG
+      const svgX = e.clientX - rect.left;
+      const svgY = e.clientY - rect.top;
       
-      const newWaypoint = {
-        x: (prevPoint.x + nextPoint.x) / 2,
-        y: (prevPoint.y + nextPoint.y) / 2,
-      };
+      const newWaypoint = { x: svgX, y: svgY };
       
-      const newWaypoints = [...link.waypoints];
+      const currentWaypoints = link.waypoints || [];
+      const newWaypoints = [...currentWaypoints];
       newWaypoints.splice(insertIndex, 0, newWaypoint);
       onUpdateWaypoints(link.id, newWaypoints);
     };
@@ -570,8 +575,8 @@ export const GanttLinks = ({
             {/* If no waypoints, show a button to add the first one */}
             {(!link.waypoints || link.waypoints.length === 0) && (
               <circle
-                cx={(start.x + end.x) / 2}
-                cy={(start.y + end.y) / 2}
+                cx={midpointRef.current.x}
+                cy={midpointRef.current.y}
                 r="10"
                 fill="hsl(var(--primary))"
                 opacity="0.7"
