@@ -19,8 +19,10 @@ interface LinkEditDialogProps {
 }
 
 const PRESET_COLORS = [
+  // Basics
+  "#FFFFFF",
   // Blues
-  "#0d47a1", "#1565c0", "#1976d2", "#1e88e5", "#2196f3", 
+  "#0d47a1", "#1565c0", "#1976d2", "#1e88e5", "#2196f3",
   "#42a5f5", "#64b5f6", "#90caf9", "#00bcd4", "#00acc1",
   "#0097a7", "#00838f", "#006064",
   // Greens
