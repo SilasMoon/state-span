@@ -400,17 +400,11 @@ export const GanttLinks = ({
 
     if (!fromPos || !toPos) return null;
 
-    // CRITICAL: Match EXACT handle center positions from GanttBar.tsx
-    // Handles are w-5 (20px) with left edge at:
-    //   - Finish: left + width - 12px  → center at: left + width - 12 + 10 = left + width - 2
-    //   - Start: left - 12px  → center at: left - 12 + 10 = left - 2
-    const HANDLE_OFFSET = 2; // Handles are 2px inward from bar edges
-    
     // FIXED ANCHOR POINTS: Always use Finish-to-Start (right side of predecessor to left side of successor)
     // Anchor points never change regardless of task positions
     // Add swimlaneColumnWidth offset because SVG coordinate system starts at chart origin (0,0)
-    const startX = swimlaneColumnWidth + fromPos.x + fromPos.width - HANDLE_OFFSET; // Finish handle (right side)
-    const endX = swimlaneColumnWidth + toPos.x - HANDLE_OFFSET; // Start handle (left side)
+    const startX = swimlaneColumnWidth + fromPos.x + fromPos.width; // Finish handle (right edge)
+    const endX = swimlaneColumnWidth + toPos.x; // Start handle (left edge)
 
     // Use barCenterY for exact vertical center attachment
     const start = { x: startX, y: fromPos.barCenterY };
