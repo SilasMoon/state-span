@@ -62,6 +62,7 @@ export const GanttToolbar = ({
   };
 
   const getZoomLabel = () => {
+    if (zoom === 0.5) return "0.5";
     if (zoom === 1) return "1";
     if (zoom === 24) return "1d";
     return `${zoom}`;
@@ -157,7 +158,7 @@ export const GanttToolbar = ({
         variant="outline"
         size="sm"
         onClick={onZoomIn}
-        disabled={zoom === 1}
+        disabled={zoom === 0.5}
       >
         <ZoomIn className="w-4 h-4" />
       </Button>
