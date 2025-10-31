@@ -17,17 +17,17 @@ interface GanttRowProps {
   zoom: ZoomLevel;
   totalHours: number;
   swimlaneColumnWidth: number;
-  selected: { type: "swimlane" | "activity" | "state"; swimlaneId: string; itemId?: string } | null;
-  onSelect: (type: "swimlane" | "activity" | "state", swimlaneId: string, itemId?: string) => void;
+  selected: { type: "swimlane" | "task" | "state"; swimlaneId: string; itemId?: string } | null;
+  onSelect: (type: "swimlane" | "task" | "state", swimlaneId: string, itemId?: string) => void;
   onToggleExpand: (id: string) => void;
   onDelete: (id: string) => void;
-  onAddChild: (parentId: string, type: "activity" | "state") => void;
+  onAddChild: (parentId: string, type: "task" | "state") => void;
   onCreateByDrag: (swimlaneId: string, start: number, duration: number) => void;
-  onActivityDoubleClick: (swimlaneId: string, activityId: string) => void;
+  onTaskDoubleClick: (swimlaneId: string, taskId: string) => void;
   onStateDoubleClick: (swimlaneId: string, stateId: string) => void;
-  onActivityMove: (fromSwimlaneId: string, activityId: string, toSwimlaneId: string, newStart: number) => void;
+  onTaskMove: (fromSwimlaneId: string, taskId: string, toSwimlaneId: string, newStart: number) => void;
   onStateMove: (fromSwimlaneId: string, stateId: string, toSwimlaneId: string, newStart: number) => void;
-  onActivityResize: (swimlaneId: string, activityId: string, newStart: number, newDuration: number) => void;
+  onTaskResize: (swimlaneId: string, taskId: string, newStart: number, newDuration: number) => void;
   onStateResize: (swimlaneId: string, stateId: string, newStart: number, newDuration: number) => void;
   onSwimlaneNameChange: (id: string, name: string) => void;
   onSwimlaneDrop: (swimlaneId: string, targetParentId: string | null, insertBeforeId: string | null) => void;
@@ -47,11 +47,11 @@ export const GanttRow = ({
   onDelete,
   onAddChild,
   onCreateByDrag,
-  onActivityDoubleClick,
+  onTaskDoubleClick,
   onStateDoubleClick,
-  onActivityMove,
+  onTaskMove,
   onStateMove,
-  onActivityResize,
+  onTaskResize,
   onStateResize,
   onSwimlaneNameChange,
   onSwimlaneDrop,
@@ -298,7 +298,7 @@ export const GanttRow = ({
         <div className="flex items-center gap-2 flex-shrink-0">
           <span
             className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
-              swimlane.type === "activity"
+              swimlane.type === "task"
                 ? "bg-primary/20 text-primary"
                 : "bg-secondary/20 text-secondary"
             }`}
@@ -319,8 +319,8 @@ export const GanttRow = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => onAddChild(swimlane.id, "activity")}>
-                  Add Activity Child
+                <DropdownMenuItem onClick={() => onAddChild(swimlane.id, "task")}>
+                  Add Task Child
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onAddChild(swimlane.id, "state")}>
                   Add State Child
@@ -342,21 +342,21 @@ export const GanttRow = ({
           
           const left = (start / zoom) * columnWidth;
           const width = (duration / zoom) * columnWidth;
-          const isActivityLane = swimlane.type === 'activity';
+          const isTaskLane = swimlane.type === 'task';
           const wouldOverlap = checkOverlap(swimlane.id, 'temp-creation', start, duration);
           
           return (
             <div
-              className={`absolute ${isActivityLane ? 'h-6 rounded top-1/2 -translate-y-1/2' : 'h-full top-0'} border-2 border-dashed pointer-events-none z-30`}
+              className={`absolute ${isTaskLane ? 'h-6 rounded top-1/2 -translate-y-1/2' : 'h-full top-0'} border-2 border-dashed pointer-events-none z-30`}
               style={{
                 left: `${left}px`,
                 width: `${width}px`,
                 backgroundColor: wouldOverlap 
                   ? 'rgba(239, 68, 68, 0.3)' 
-                  : (isActivityLane ? 'rgba(59, 130, 246, 0.3)' : 'rgba(168, 85, 247, 0.3)'),
+                  : (isTaskLane ? 'rgba(59, 130, 246, 0.3)' : 'rgba(168, 85, 247, 0.3)'),
                 borderColor: wouldOverlap 
                   ? 'rgb(239, 68, 68)' 
-                  : (isActivityLane ? 'rgb(59, 130, 246)' : 'rgb(168, 85, 247)'),
+                  : (isTaskLane ? 'rgb(59, 130, 246)' : 'rgb(168, 85, 247)'),
               }}
             />
           );
@@ -375,25 +375,25 @@ export const GanttRow = ({
           )}
           
           {/* Render individual items for leaf swimlanes */}
-          {!hasChildren && swimlane.type === "activity" &&
-            swimlane.activities?.map((activity) => (
+          {!hasChildren && swimlane.type === "task" &&
+            swimlane.tasks?.map((task) => (
               <GanttBar
-                key={activity.id}
-                item={activity}
+                key={task.id}
+                item={task}
                 swimlaneId={swimlane.id}
                 swimlaneType={swimlane.type}
                 zoom={zoom}
                 columnWidth={columnWidth}
-                isSelected={selected?.type === 'activity' && selected.swimlaneId === swimlane.id && selected.itemId === activity.id}
-                onDoubleClick={() => onActivityDoubleClick(swimlane.id, activity.id)}
+                isSelected={selected?.type === 'task' && selected.swimlaneId === swimlane.id && selected.itemId === task.id}
+                onDoubleClick={() => onTaskDoubleClick(swimlane.id, task.id)}
                 onSelect={() => {
-                  console.log('[GanttRow] Activity onSelect callback', { swimlaneId: swimlane.id, activityId: activity.id });
-                  onSelect('activity', swimlane.id, activity.id);
+                  console.log('[GanttRow] Task onSelect callback', { swimlaneId: swimlane.id, taskId: task.id });
+                  onSelect('task', swimlane.id, task.id);
                 }}
-                onMove={(toSwimlaneId, newStart) => onActivityMove(swimlane.id, activity.id, toSwimlaneId, newStart)}
-                onResize={(newStart, newDuration) => onActivityResize(swimlane.id, activity.id, newStart, newDuration)}
+                onMove={(toSwimlaneId, newStart) => onTaskMove(swimlane.id, task.id, toSwimlaneId, newStart)}
+                onResize={(newStart, newDuration) => onTaskResize(swimlane.id, task.id, newStart, newDuration)}
                 checkOverlap={checkOverlap}
-                onDragStateChange={onDragStateChange(activity.id, swimlane.id)}
+                onDragStateChange={onDragStateChange(task.id, swimlane.id)}
               />
             ))}
           {!hasChildren && swimlane.type === "state" &&

@@ -1036,7 +1036,7 @@ export const GanttChart = () => {
           const swimlane = data.swimlanes[linkDragStart.swimlaneId];
           let sourceColor = "#00bcd4";
           if (swimlane) {
-            const item = swimlane.activities?.find((a) => a.id === linkDragStart.itemId) || 
+            const item = swimlane.tasks?.find((a) => a.id === linkDragStart.itemId) || 
                          swimlane.states?.find((s) => s.id === linkDragStart.itemId);
             if (item) sourceColor = item.color;
           }
