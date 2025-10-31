@@ -688,11 +688,6 @@ export const useGanttData = () => {
             },
           },
         };
-        
-        // Propagate position change to linked activities (same swimlane)
-        if (positionDelta !== 0) {
-          newData = propagatePositionChange(newData, fromSwimlaneId, activityId, positionDelta);
-        }
       } else {
         newData = {
           ...prev,
@@ -723,60 +718,12 @@ export const useGanttData = () => {
             toSwimlaneId: link.toId === activityId ? toSwimlaneId : link.toSwimlaneId,
           };
         });
-        
-        // Propagate position changes if any
-        if (positionDelta !== 0) {
-          newData = propagatePositionChange(newData, toSwimlaneId, activityId, positionDelta);
-        }
       }
       
       return newData;
     });
   };
 
-  // Helper function to propagate position changes through links
-  const propagatePositionChange = (data: GanttData, fromSwimlaneId: string, fromItemId: string, positionDelta: number): GanttData => {
-    // Find all links where this item is the source
-    const affectedLinks = data.links.filter(link => 
-      link.fromSwimlaneId === fromSwimlaneId && link.fromId === fromItemId
-    );
-
-    let newData = { ...data };
-
-    affectedLinks.forEach(link => {
-      const toSwimlane = newData.swimlanes[link.toSwimlaneId];
-      if (!toSwimlane) return;
-
-      // Update the target activity/state position
-      if (toSwimlane.activities) {
-        newData.swimlanes[link.toSwimlaneId] = {
-          ...toSwimlane,
-          activities: toSwimlane.activities.map(act => 
-            act.id === link.toId 
-              ? { ...act, start: act.start + positionDelta }
-              : act
-          ),
-        };
-
-        // Recursively propagate to activities linked from this one
-        newData = propagatePositionChange(newData, link.toSwimlaneId, link.toId, positionDelta);
-      } else if (toSwimlane.states) {
-        newData.swimlanes[link.toSwimlaneId] = {
-          ...toSwimlane,
-          states: toSwimlane.states.map(state => 
-            state.id === link.toId 
-              ? { ...state, start: state.start + positionDelta }
-              : state
-          ),
-        };
-
-        // Recursively propagate to states linked from this one
-        newData = propagatePositionChange(newData, link.toSwimlaneId, link.toId, positionDelta);
-      }
-    });
-
-    return newData;
-  };
 
   const moveState = (fromSwimlaneId: string, toSwimlaneId: string, stateId: string, newStart: number) => {
     updateData((prev) => {
@@ -806,11 +753,6 @@ export const useGanttData = () => {
             },
           },
         };
-        
-        // Propagate position change to linked states (same swimlane)
-        if (positionDelta !== 0) {
-          newData = propagatePositionChange(newData, fromSwimlaneId, stateId, positionDelta);
-        }
       } else {
         newData = {
           ...prev,
@@ -841,11 +783,6 @@ export const useGanttData = () => {
             toSwimlaneId: link.toId === stateId ? toSwimlaneId : link.toSwimlaneId,
           };
         });
-        
-        // Propagate position changes if any
-        if (positionDelta !== 0) {
-          newData = propagatePositionChange(newData, toSwimlaneId, stateId, positionDelta);
-        }
       }
       
       return newData;
