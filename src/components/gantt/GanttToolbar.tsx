@@ -62,9 +62,9 @@ export const GanttToolbar = ({
   };
 
   const getZoomLabel = () => {
-    if (zoom === 1) return "1h";
+    if (zoom === 1) return "1";
     if (zoom === 24) return "1d";
-    return `${zoom}h`;
+    return `${zoom}`;
   };
 
   return (

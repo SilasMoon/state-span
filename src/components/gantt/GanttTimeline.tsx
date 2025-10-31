@@ -29,7 +29,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
         >
           {showDay && <div className="text-gantt-text font-semibold">D{day}</div>}
           {!showDay && <div className="h-[14px]" />}
-          <div className="text-gantt-text-muted">{hourInDay}h</div>
+          <div className="text-gantt-text-muted">{hourInDay}</div>
         </div>
       );
     }
