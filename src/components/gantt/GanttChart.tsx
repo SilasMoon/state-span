@@ -346,27 +346,15 @@ export const GanttChart = () => {
 
       toast.info("Generating image...");
       
-      // Remove SVG links temporarily
-      const svgs = chartContainer.querySelectorAll('svg');
-      const svgParents: { parent: Element; svg: Element; nextSibling: Node | null }[] = [];
-      svgs.forEach(svg => {
-        const parent = svg.parentElement;
-        if (parent) {
-          svgParents.push({ parent, svg, nextSibling: svg.nextSibling });
-          parent.removeChild(svg);
-        }
-      });
-      
-      // Capture with modern-screenshot
+      // Capture with modern-screenshot (including SVG links)
       const dataUrl = await domToPng(chartContainer, {
         quality: 1,
         backgroundColor: '#0a0a0a',
         scale: 2,
-      });
-      
-      // Restore SVGs
-      svgParents.forEach(({ parent, svg, nextSibling }) => {
-        parent.insertBefore(svg, nextSibling);
+        features: {
+          // Ensure SVGs are properly rendered
+          removeControlCharacter: true,
+        }
       });
 
       // Download
