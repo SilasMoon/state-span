@@ -258,7 +258,7 @@ export const GanttLinks = ({
     toId: string
   ): { x: number; y: number }[] => {
     const excludeIds = [fromId, toId];
-    const HORIZONTAL_CLEARANCE = 30;
+    const EXIT_CLEARANCE = 20; // Distance to exit task before going vertical
     
     // FR-3.1: Special case - vertically aligned
     if (Math.abs(start.x - end.x) < 5) {
@@ -267,9 +267,8 @@ export const GanttLinks = ({
     
     const goingRight = end.x > start.x;
     
-    // Check if we can route horizontally at start Y
+    // Try simple horizontal path at start Y level
     if (!horizontalSegmentCrossesTasks(start.x, end.x, start.y, excludeIds)) {
-      // Simple path at start level
       return [
         start,
         { x: end.x, y: start.y },
@@ -277,9 +276,8 @@ export const GanttLinks = ({
       ];
     }
     
-    // Check if we can route horizontally at end Y
+    // Try simple horizontal path at end Y level  
     if (!horizontalSegmentCrossesTasks(start.x, end.x, end.y, excludeIds)) {
-      // Simple path at end level
       return [
         start,
         { x: start.x, y: end.y },
@@ -287,20 +285,26 @@ export const GanttLinks = ({
       ];
     }
     
-    // Need to route through a gutter
+    // Need to route through gutters to avoid horizontal crossing
     const gutters = findGutterPositions();
     
-    // Find a suitable gutter Y that doesn't cross tasks
+    // Exit point: move away from start task horizontally
+    const exitX = start.x + (goingRight ? EXIT_CLEARANCE : -EXIT_CLEARANCE);
+    
+    // Entry point: approach end task horizontally
+    const entryX = end.x - (goingRight ? EXIT_CLEARANCE : -EXIT_CLEARANCE);
+    
+    // Try each gutter to find one that's clear for the entire horizontal span
     for (const gutterY of gutters) {
-      const startToGutterClear = !horizontalSegmentCrossesTasks(start.x, start.x + (goingRight ? HORIZONTAL_CLEARANCE : -HORIZONTAL_CLEARANCE), start.y, excludeIds);
-      const gutterToEndClear = !horizontalSegmentCrossesTasks(end.x - (goingRight ? HORIZONTAL_CLEARANCE : -HORIZONTAL_CLEARANCE), end.x, end.y, excludeIds);
-      const gutterHorizontalClear = !horizontalSegmentCrossesTasks(start.x, end.x, gutterY, excludeIds);
+      // Check if we can route the full horizontal span through this gutter
+      const fullHorizontalClear = !horizontalSegmentCrossesTasks(exitX, entryX, gutterY, excludeIds);
       
-      if (startToGutterClear && gutterToEndClear && gutterHorizontalClear) {
-        // Route through this gutter
-        const exitX = start.x + (goingRight ? HORIZONTAL_CLEARANCE : -HORIZONTAL_CLEARANCE);
-        const entryX = end.x - (goingRight ? HORIZONTAL_CLEARANCE : -HORIZONTAL_CLEARANCE);
-        
+      // Also check the exit and entry segments
+      const exitSegmentClear = !horizontalSegmentCrossesTasks(start.x, exitX, start.y, excludeIds);
+      const entrySegmentClear = !horizontalSegmentCrossesTasks(entryX, end.x, end.y, excludeIds);
+      
+      if (fullHorizontalClear && exitSegmentClear && entrySegmentClear) {
+        // This gutter works - use it
         return [
           start,
           { x: exitX, y: start.y },
@@ -312,15 +316,29 @@ export const GanttLinks = ({
       }
     }
     
-    // Fallback: Use closest gutter and route far around
-    const midGutterY = gutters.length > 0 ? gutters[Math.floor(gutters.length / 2)] : (start.y + end.y) / 2;
-    const farX = goingRight ? Math.max(start.x, end.x) + 50 : Math.min(start.x, end.x) - 50;
+    // Fallback: Route way out to the side to avoid all tasks
+    // Go further out horizontally to ensure we clear all obstacles
+    const bars = collectTaskBars();
+    const maxX = Math.max(...bars.map(b => b.x + b.width), end.x);
+    const minX = Math.min(...bars.map(b => b.x), start.x);
+    const farX = goingRight ? maxX + 100 : minX - 100;
+    
+    // Find a gutter that's relatively clear
+    const midGutterY = gutters.length > 0 
+      ? gutters.sort((a, b) => {
+          // Sort gutters by distance from midpoint between start and end
+          const mid = (start.y + end.y) / 2;
+          return Math.abs(a - mid) - Math.abs(b - mid);
+        })[0]
+      : (start.y + end.y) / 2;
     
     return [
       start,
+      { x: start.x + (goingRight ? EXIT_CLEARANCE : -EXIT_CLEARANCE), y: start.y },
       { x: farX, y: start.y },
       { x: farX, y: midGutterY },
       { x: farX, y: end.y },
+      { x: end.x - (goingRight ? EXIT_CLEARANCE : -EXIT_CLEARANCE), y: end.y },
       end
     ];
   };
@@ -388,19 +406,10 @@ export const GanttLinks = ({
     //   - Start: left - 12px  → center at: left - 12 + 10 = left - 2
     const HANDLE_OFFSET = 2; // Handles are 2px inward from bar edges
     
-    // Determine direction: if target is to the right, use finish→start; if to the left, use start→finish
-    const targetIsRight = toPos.x >= fromPos.x;
-    
-    let startX: number, endX: number;
-    if (targetIsRight) {
-      // Target is to the right: start from finish handle (right), end at start handle (left)
-      startX = fromPos.x + fromPos.width - HANDLE_OFFSET;
-      endX = toPos.x - HANDLE_OFFSET;
-    } else {
-      // Target is to the left: start from start handle (left), end at finish handle (right)
-      startX = fromPos.x - HANDLE_OFFSET;
-      endX = toPos.x + toPos.width - HANDLE_OFFSET;
-    }
+    // FIXED ANCHOR POINTS: Always use Finish-to-Start (right side of predecessor to left side of successor)
+    // Anchor points never change regardless of task positions
+    const startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Finish handle (right side)
+    const endX = toPos.x - HANDLE_OFFSET; // Start handle (left side)
 
     // Use barCenterY for exact vertical center attachment
     const start = { x: startX, y: fromPos.barCenterY };
