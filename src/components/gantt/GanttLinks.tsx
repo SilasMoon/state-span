@@ -445,6 +445,15 @@ export const GanttLinks = ({
           }}
         />
         
+        {/* Background stroke for outline effect */}
+        <path
+          d={path}
+          stroke="hsl(var(--background))"
+          strokeWidth={isSelected ? "5" : "4"}
+          fill="none"
+          className="pointer-events-none"
+        />
+        
         {/* Visible path */}
         <path
           d={path}
