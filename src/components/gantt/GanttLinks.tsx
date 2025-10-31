@@ -466,14 +466,14 @@ export const GanttLinks = ({
         <defs>
           <marker
             id={markerId}
-            markerWidth="8"
-            markerHeight="8"
-            refX="7"
-            refY="2.5"
+            markerWidth="12"
+            markerHeight="12"
+            refX="10"
+            refY="4"
             orient="auto"
           >
             <polygon
-              points="0 0, 8 2.5, 0 5"
+              points="0 0, 10 4, 0 8"
               fill={isSelected ? "hsl(var(--destructive))" : linkColor}
               stroke="hsl(var(--background))"
               strokeWidth="1.5"
