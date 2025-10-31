@@ -5,7 +5,9 @@ import { GanttTimeline } from "./GanttTimeline";
 import { GanttRow } from "./GanttRow";
 import { EditDialog } from "./EditDialog";
 import { LinkEditDialog } from "./LinkEditDialog";
+import { FlagEditDialog } from "./FlagEditDialog";
 import { GanttLinks } from "./GanttLinks";
+import { GanttFlags } from "./GanttFlags";
 import { useGanttData } from "@/hooks/useGanttData";
 import { ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
 import { toast } from "sonner";
@@ -32,6 +34,9 @@ export const GanttChart = () => {
     deleteLink,
     updateLink,
     updateSwimlane,
+    addFlag,
+    updateFlag,
+    deleteFlag,
     clearAll,
     exportData,
     importData,
@@ -418,6 +423,9 @@ export const GanttChart = () => {
     linkId: string;
   } | null>(null);
 
+  const [selectedFlag, setSelectedFlag] = useState<string | null>(null);
+  const [flagEditDialog, setFlagEditDialog] = useState<boolean>(false);
+
   // Link creation event listeners
   React.useEffect(() => {
     const handleStartLink = (e: Event) => {
@@ -637,9 +645,14 @@ export const GanttChart = () => {
 
       // Delete
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        console.log('[GanttChart] Delete key pressed', { selected, selectedLink, activeElement: document.activeElement });
+        console.log('[GanttChart] Delete key pressed', { selected, selectedLink, selectedFlag, activeElement: document.activeElement });
         e.preventDefault();
-        if (selectedLink) {
+        if (selectedFlag) {
+          console.log('[GanttChart] Deleting flag:', selectedFlag);
+          deleteFlag(selectedFlag);
+          setSelectedFlag(null);
+          toast.success("Flag deleted");
+        } else if (selectedLink) {
           console.log('[GanttChart] Deleting link:', selectedLink);
           deleteLink(selectedLink);
           setSelectedLink(null);
@@ -661,11 +674,26 @@ export const GanttChart = () => {
           }
         }
       }
+
+      // F key: Add flag at current scroll position
+      if (e.key === 'f' || e.key === 'F') {
+        if (!modifier) { // Only trigger if no Ctrl/Cmd key
+          e.preventDefault();
+          const scrollContainer = document.querySelector('.overflow-auto');
+          const scrollLeft = scrollContainer?.scrollLeft || 0;
+          const viewportCenter = scrollLeft + (scrollContainer?.clientWidth || 0) / 2 - swimlaneColumnWidth;
+          const position = Math.max(0, Math.round((viewportCenter / zoom.columnWidth) * zoom.hoursPerColumn));
+          const flagId = addFlag(position);
+          setSelectedFlag(flagId);
+          setFlagEditDialog(true);
+          toast.success("Flag added");
+        }
+      }
     };
 
     container.addEventListener('keydown', handleKeyDown);
     return () => container.removeEventListener('keydown', handleKeyDown);
-  }, [selected, selectedLink, copiedItem, copyGhost, data.swimlanes, deleteSwimlane, deleteTask, deleteState, deleteLink, undo, redo, canUndo, canRedo]);
+  }, [selected, selectedLink, selectedFlag, copiedItem, copyGhost, data.swimlanes, deleteSwimlane, deleteTask, deleteState, deleteLink, deleteFlag, undo, redo, canUndo, canRedo, addFlag, zoom, swimlaneColumnWidth]);
 
   // Mouse wheel zoom handler
   React.useEffect(() => {
@@ -883,6 +911,17 @@ export const GanttChart = () => {
     return elements;
   };
 
+  const handleAddFlag = () => {
+    const scrollContainer = document.querySelector('.overflow-auto');
+    const scrollLeft = scrollContainer?.scrollLeft || 0;
+    const viewportCenter = scrollLeft + (scrollContainer?.clientWidth || 0) / 2 - swimlaneColumnWidth;
+    const position = Math.max(0, Math.round((viewportCenter / zoom.columnWidth) * zoom.hoursPerColumn));
+    const flagId = addFlag(position);
+    setSelectedFlag(flagId);
+    setFlagEditDialog(true);
+    toast.success("Flag added");
+  };
+
   return (
     <div className="flex flex-col h-screen bg-background">
       <GanttToolbar
@@ -894,6 +933,7 @@ export const GanttChart = () => {
         onZoomToFit={handleZoomToFit}
         onAddTaskLane={handleAddTaskLane}
         onAddStateLane={handleAddStateLane}
+        onAddFlag={handleAddFlag}
         onExport={handleExport}
         onExportPNG={handleExportPNG}
         onImport={handleImport}
@@ -975,6 +1015,20 @@ export const GanttChart = () => {
             }
           }}
           itemTempPositions={itemTempPositions}
+        />
+
+        {/* Render flags */}
+        <GanttFlags
+          flags={data.flags}
+          zoom={zoom}
+          swimlaneColumnWidth={swimlaneColumnWidth}
+          selectedFlag={selectedFlag}
+          onFlagClick={(flagId) => {
+            setSelectedFlag(flagId);
+            setSelected(null);
+            setSelectedLink(null);
+            setFlagEditDialog(true);
+          }}
         />
 
 
@@ -1152,6 +1206,31 @@ export const GanttChart = () => {
             }}
           />
         );
+      })()}
+
+      {flagEditDialog && (() => {
+        const flag = selectedFlag ? data.flags.find((f) => f.id === selectedFlag) : null;
+        return flag ? (
+          <FlagEditDialog
+            open={flagEditDialog}
+            flag={flag}
+            onSave={(flagId, updates) => {
+              updateFlag(flagId, updates);
+              setFlagEditDialog(false);
+              toast.success("Flag updated");
+            }}
+            onDelete={(flagId) => {
+              deleteFlag(flagId);
+              setFlagEditDialog(false);
+              setSelectedFlag(null);
+              toast.success("Flag deleted");
+            }}
+            onClose={() => {
+              setFlagEditDialog(false);
+              setSelectedFlag(null);
+            }}
+          />
+        ) : null;
       })()}
     </div>
   );

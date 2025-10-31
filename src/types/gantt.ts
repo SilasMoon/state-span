@@ -36,6 +36,14 @@ export interface GanttLink {
   label?: string;
 }
 
+export interface GanttFlag {
+  id: string;
+  position: number; // hours from 0
+  label: string;
+  color: string;
+  icon?: string; // Lucide icon name
+}
+
 export interface GanttSwimlane {
   id: string;
   name: string;
@@ -51,6 +59,7 @@ export interface GanttData {
   swimlanes: Record<string, GanttSwimlane>;
   rootIds: string[];
   links: GanttLink[];
+  flags: GanttFlag[];
 }
 
 export const ZOOM_LEVELS: ZoomConfig[] = [

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GanttData, GanttSwimlane, GanttTask, GanttState, GanttLink, ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
+import { GanttData, GanttSwimlane, GanttTask, GanttState, GanttLink, GanttFlag, ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
 
 let nextId = 1;
 const generateId = () => `item-${nextId++}`;
@@ -230,6 +230,31 @@ const createDefaultData = (): GanttData => {
     },
   ];
 
+  // Create example flags
+  const flags: GanttFlag[] = [
+    {
+      id: generateId(),
+      position: 40,
+      label: "Strategy Complete",
+      color: "#2196f3",
+      icon: "Flag",
+    },
+    {
+      id: generateId(),
+      position: 144,
+      label: "Beta Release",
+      color: "#ff9800",
+      icon: "CheckCircle",
+    },
+    {
+      id: generateId(),
+      position: 168,
+      label: "Launch Day",
+      color: "#4caf50",
+      icon: "Rocket",
+    },
+  ];
+
   return {
     swimlanes: {
       [planningPhase.id]: planningPhase,
@@ -247,6 +272,7 @@ const createDefaultData = (): GanttData => {
     },
     rootIds: [planningPhase.id, developmentPhase.id, marketingPhase.id, projectStatusParent.id],
     links,
+    flags,
   };
 };
 
@@ -910,11 +936,46 @@ export const useGanttData = () => {
     }));
   };
 
+  const addFlag = (position: number, label: string = "New Flag", color: string = "#2196f3", icon?: string) => {
+    const id = generateId();
+    const flag: GanttFlag = {
+      id,
+      position,
+      label,
+      color,
+      icon,
+    };
+
+    updateData((prev) => ({
+      ...prev,
+      flags: [...prev.flags, flag],
+    }));
+
+    return id;
+  };
+
+  const updateFlag = (flagId: string, updates: Partial<GanttFlag>) => {
+    updateData((prev) => ({
+      ...prev,
+      flags: prev.flags.map((flag) =>
+        flag.id === flagId ? { ...flag, ...updates } : flag
+      ),
+    }));
+  };
+
+  const deleteFlag = (flagId: string) => {
+    updateData((prev) => ({
+      ...prev,
+      flags: prev.flags.filter((flag) => flag.id !== flagId),
+    }));
+  };
+
   const clearAll = () => {
     updateData(() => ({
       swimlanes: {},
       rootIds: [],
       links: [],
+      flags: [],
     }));
     nextId = 1;
   };
@@ -960,6 +1021,9 @@ export const useGanttData = () => {
     deleteLink,
     updateLink,
     updateSwimlane,
+    addFlag,
+    updateFlag,
+    deleteFlag,
     clearAll,
     exportData,
     importData,

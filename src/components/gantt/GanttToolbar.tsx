@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Image } from "lucide-react";
+import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Image, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ interface GanttToolbarProps {
   onZoomToFit: () => void;
   onAddTaskLane: () => void;
   onAddStateLane: () => void;
+  onAddFlag: () => void;
   onExport: () => void;
   onExportPNG: () => void;
   onImport: (data: string) => void;
@@ -40,6 +41,7 @@ export const GanttToolbar = ({
   onZoomToFit,
   onAddTaskLane,
   onAddStateLane,
+  onAddFlag,
   onExport,
   onExportPNG,
   onImport,
@@ -90,6 +92,10 @@ export const GanttToolbar = ({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <Button variant="outline" size="icon" onClick={onAddFlag} title="Add Flag (F)">
+        <Flag className="w-4 h-4" />
+      </Button>
 
       <Button variant="outline" size="icon" onClick={onExport} title="Export JSON">
         <Download className="w-4 h-4" />
