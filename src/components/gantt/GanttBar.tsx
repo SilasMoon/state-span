@@ -266,7 +266,7 @@ export const GanttBar = ({
           width: `${width}px`,
           top: '50%',
           transform: 'translateY(-50%)',
-          backgroundColor: isSummary ? '#9ca3af' : isState ? `${item.color}33` : item.color,
+          backgroundColor: isSummary ? '#9ca3af' : isState ? `${item.color}80` : item.color,
           color: "#fff",
         }}
         onMouseDown={handleMoveStart}
