@@ -1,6 +1,6 @@
 import { GanttTask, GanttState, ZoomConfig } from "@/types/gantt";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 
 interface GanttBarProps {
   item: GanttTask | GanttState;
@@ -257,33 +257,39 @@ export const GanttBar = ({
 
   return (
     <>
-      <TooltipProvider>
-        <Tooltip open={isSelected}>
-          <TooltipTrigger asChild>
-            <div
-              className={`absolute ${isSummary ? 'h-0.5' : isState ? 'h-full' : 'h-6 rounded'} ${isSummary ? 'cursor-default' : isDragging === 'move' ? 'cursor-grabbing' : isModifierPressed ? 'cursor-crosshair' : 'cursor-grab'} group flex items-center justify-center text-xs font-medium ${isSummary ? '' : 'shadow-lg hover:shadow-xl'} transition-all pointer-events-auto ${
-                isSelected ? 'ring-2 ring-primary ring-offset-2 z-50' : 'z-10'
-              } ${isDragging === 'move' && targetSwimlaneId !== swimlaneId ? 'opacity-50' : ''} ${isModifierPressed && !isSummary ? 'ring-2 ring-blue-400/50' : ''}`}
-              style={{
-                left: `${left}px`,
-                width: `${width}px`,
-                ...(isSummary ? { top: '50%', transform: 'translateY(-50%)' } : isState ? { top: 0 } : { top: '50%', transform: 'translateY(-50%)' }),
-                backgroundColor: isSummary ? '#9ca3af' : item.color,
-                color: "#fff",
-              }}
-              onMouseDown={handleMoveStart}
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                onDoubleClick();
-              }}
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('[GanttBar] onClick called, calling onSelect', { itemId: item.id });
-              onSelect();
-            }}
-              data-swimlane-id={swimlaneId}
-              data-item-id={item.id}
-            >
+      <div
+        className={`absolute ${isSummary ? 'h-0.5' : isState ? 'h-full' : 'h-6 rounded'} ${isSummary ? 'cursor-default' : isDragging === 'move' ? 'cursor-grabbing' : isModifierPressed ? 'cursor-crosshair' : 'cursor-grab'} group flex items-center justify-center text-xs font-medium ${isSummary ? '' : 'shadow-lg hover:shadow-xl'} transition-all pointer-events-auto ${
+          isSelected ? 'ring-2 ring-primary ring-offset-2 z-50' : 'z-10'
+        } ${isDragging === 'move' && targetSwimlaneId !== swimlaneId ? 'opacity-50' : ''} ${isModifierPressed && !isSummary ? 'ring-2 ring-blue-400/50' : ''}`}
+        style={{
+          left: `${left}px`,
+          width: `${width}px`,
+          ...(isSummary ? { top: '50%', transform: 'translateY(-50%)' } : isState ? { top: 0 } : { top: '50%', transform: 'translateY(-50%)' }),
+          backgroundColor: isSummary ? '#9ca3af' : item.color,
+          color: "#fff",
+        }}
+        onMouseDown={handleMoveStart}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          onDoubleClick();
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log('[GanttBar] onClick called, calling onSelect', { itemId: item.id });
+          onSelect();
+        }}
+        onMouseMove={(e) => {
+          if (isSelected && !tooltipPos && !isTooltipDragging) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            setTooltipPos({
+              x: rect.right + 10,
+              y: rect.top
+            });
+          }
+        }}
+        data-swimlane-id={swimlaneId}
+        data-item-id={item.id}
+      >
               {/* Display label inside the bar (not for summary) */}
               {item.label && !isSummary && (
                 <span 
@@ -305,73 +311,73 @@ export const GanttBar = ({
                 </>
               )}
               
-              {/* Resize handles - show when NOT in link mode and NOT summary */}
-              {!isModifierPressed && !isSummary && (
-                <>
-                  {/* Resize handle - left */}
-                  <div
-                    className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize hover:bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                    onMouseDown={(e) => handleResizeStart(e, 'start')}
-                  />
-                  
-                  {/* Resize handle - right */}
-                  <div
-                    className="absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize hover:bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                    onMouseDown={(e) => handleResizeStart(e, 'end')}
-                  />
-                </>
-              )}
-            </div>
-          </TooltipTrigger>
-          <TooltipContent 
-            className="max-w-sm cursor-move select-none z-[100]"
-            style={tooltipPos ? {
-              position: 'fixed',
-              left: `${tooltipPos.x}px`,
-              top: `${tooltipPos.y}px`,
-              transform: 'none'
-            } : undefined}
-            onMouseDown={handleTooltipMouseDown}
-          >
-            <div className="space-y-2">
-              {item.label && (
-                <div className="font-semibold text-base">
-                  {item.label}
-                </div>
-              )}
-              {item.description && (
-                <div className={item.label ? "pt-2 border-t border-border" : ""}>
-                  <p className="text-sm">{item.description}</p>
-                </div>
-              )}
-              <div className={`space-y-1 ${(item.label || item.description) ? "pt-2 border-t border-border" : ""}`}>
-                <div className="flex justify-between gap-4 text-sm">
-                  <span className="font-medium">Start:</span>
-                  <span>{startFormatted}</span>
-                </div>
-                <div className="flex justify-between gap-4 text-sm">
-                  <span className="font-medium">End:</span>
-                  <span>{endFormatted}</span>
-                </div>
-                <div className="flex justify-between gap-4 text-sm">
-                  <span className="font-medium">Duration:</span>
-                  <span>{item.duration} hours</span>
-                </div>
+        {/* Resize handles - show when NOT in link mode and NOT summary */}
+        {!isModifierPressed && !isSummary && (
+          <>
+            {/* Resize handle - left */}
+            <div
+              className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize hover:bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              onMouseDown={(e) => handleResizeStart(e, 'start')}
+            />
+            
+            {/* Resize handle - right */}
+            <div
+              className="absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize hover:bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              onMouseDown={(e) => handleResizeStart(e, 'end')}
+            />
+          </>
+        )}
+      </div>
+
+      {/* Custom draggable tooltip */}
+      {isSelected && tooltipPos && createPortal(
+        <div
+          className="fixed z-[100] max-w-sm rounded-md border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md cursor-move select-none"
+          style={{
+            left: `${tooltipPos.x}px`,
+            top: `${tooltipPos.y}px`,
+          }}
+          onMouseDown={handleTooltipMouseDown}
+        >
+          <div className="space-y-2">
+            {item.label && (
+              <div className="font-semibold text-base">
+                {item.label}
               </div>
-              {!isModifierPressed && !isSummary && (
-                <p className="text-xs text-muted-foreground italic pt-2 border-t border-border">
-                  Hold Shift/Ctrl to create links
-                </p>
-              )}
-              {isSummary && (
-                <p className="text-xs text-muted-foreground italic pt-2 border-t border-border">
-                  Summary bar (read-only)
-                </p>
-              )}
+            )}
+            {item.description && (
+              <div className={item.label ? "pt-2 border-t border-border" : ""}>
+                <p className="text-sm">{item.description}</p>
+              </div>
+            )}
+            <div className={`space-y-1 ${(item.label || item.description) ? "pt-2 border-t border-border" : ""}`}>
+              <div className="flex justify-between gap-4 text-sm">
+                <span className="font-medium">Start:</span>
+                <span>{startFormatted}</span>
+              </div>
+              <div className="flex justify-between gap-4 text-sm">
+                <span className="font-medium">End:</span>
+                <span>{endFormatted}</span>
+              </div>
+              <div className="flex justify-between gap-4 text-sm">
+                <span className="font-medium">Duration:</span>
+                <span>{item.duration} hours</span>
+              </div>
             </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+            {!isModifierPressed && !isSummary && (
+              <p className="text-xs text-muted-foreground italic pt-2 border-t border-border">
+                Hold Shift/Ctrl to create links
+              </p>
+            )}
+            {isSummary && (
+              <p className="text-xs text-muted-foreground italic pt-2 border-t border-border">
+                Summary bar (read-only)
+              </p>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Link creation handles - positioned absolutely at bar edges (not for summary bars) */}
       {isModifierPressed && !isSummary && (
