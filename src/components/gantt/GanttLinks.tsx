@@ -87,7 +87,7 @@ export const GanttLinks = ({
       const svgRect = svgRef.current.getBoundingClientRect();
       
       // Convert to SVG coordinate system
-      // SVG starts AFTER swimlane column, so coordinates are relative to that starting point
+      // SVG now spans full width starting at x=0
       x = barRect.left - svgRect.left;
       width = barRect.width;
       
@@ -103,8 +103,8 @@ export const GanttLinks = ({
       };
     } else {
       // Fallback: calculate from data
-      // SVG starts AFTER swimlane column, so coordinates are 0-based from timeline start
-      x = (itemStart / zoom) * columnWidth;
+      // SVG now spans full width, add swimlane offset
+      x = swimlaneColumnWidth + (itemStart / zoom) * columnWidth;
       width = (itemDuration / zoom) * columnWidth;
     }
     
@@ -364,19 +364,36 @@ export const GanttLinks = ({
     );
   };
 
+  const totalHeight = calculateTotalHeight();
+  
   return (
     <svg
       ref={svgRef}
       className="absolute pointer-events-none"
       style={{ 
         zIndex: 20, // Below the sidebar (z-30) so it gets masked
-        left: `${swimlaneColumnWidth}px`, // Start AFTER the sidebar - don't render in sidebar area
+        left: 0,
         top: 0,
-        width: `calc(100% - ${swimlaneColumnWidth}px)`,
-        height: `${calculateTotalHeight()}px`,
+        width: '100%',
+        height: `${totalHeight}px`,
       }}
     >
-      {data.links.map(renderLink)}
+      {/* Define clip mask to hide anything under the sidebar */}
+      <defs>
+        <clipPath id="sidebar-mask">
+          <rect 
+            x={swimlaneColumnWidth} 
+            y={0} 
+            width={`calc(100% - ${swimlaneColumnWidth}px)`}
+            height={totalHeight}
+          />
+        </clipPath>
+      </defs>
+      
+      {/* Apply mask to all links */}
+      <g clipPath="url(#sidebar-mask)">
+        {data.links.map(renderLink)}
+      </g>
     </svg>
   );
 };

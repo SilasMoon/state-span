@@ -354,13 +354,10 @@ export const GanttChart = () => {
         logging: false,
         useCORS: true,
         allowTaint: true,
-        onclone: (clonedDoc) => {
-          // Fix text rendering in cloned document by adding padding
-          const clonedContainer = clonedDoc.querySelector('.overflow-auto');
-          if (clonedContainer) {
-            (clonedContainer as HTMLElement).style.paddingBottom = '20px';
-          }
-        },
+        windowHeight: scrollContainer.scrollHeight,
+        windowWidth: scrollContainer.scrollWidth,
+        scrollY: 0,
+        scrollX: 0,
       });
 
       // Download the image
@@ -947,17 +944,6 @@ export const GanttChart = () => {
           )}
         </div>
 
-        {/* Solid sidebar overlay to prevent arrow bleeding through gaps between rows */}
-        <div 
-          className="sticky left-0 pointer-events-none bg-card border-r-2 border-border"
-          style={{
-            width: `${swimlaneColumnWidth}px`,
-            top: 0,
-            minHeight: '100vh',
-            maxHeight: '100vh',
-            zIndex: 25, // Above arrows (20) but below sidebar content (30)
-          }}
-        />
 
         {/* Render links - INSIDE scroll container for natural masking */}
         <GanttLinks
