@@ -205,7 +205,7 @@ export const GanttChart = () => {
     
     // Calculate best zoom level to fit the actual content
     const levels: ZoomLevel[] = [1, 2, 4, 8, 12, 24];
-    const columnWidths: Record<ZoomLevel, number> = { 1: 30, 2: 40, 4: 50, 8: 60, 12: 70, 24: 80 };
+    const columnWidths: Record<ZoomLevel, number> = { 1: 24, 2: 32, 4: 40, 8: 48, 12: 56, 24: 64 };
     
     let bestZoom: ZoomLevel = 24;
     
@@ -712,7 +712,7 @@ export const GanttChart = () => {
     // Calculate start time based on cursor position
     const scrollContainer = document.querySelector('.overflow-auto');
     const scrollLeft = scrollContainer?.scrollLeft || 0;
-    const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
+    const columnWidth = zoom === 1 ? 24 : zoom === 2 ? 32 : zoom === 4 ? 40 : zoom === 8 ? 48 : zoom === 12 ? 56 : 64;
     
     const gridX = copyGhost.mouseX + scrollLeft - swimlaneColumnWidth;
     const start = Math.max(0, Math.round((gridX / columnWidth) * zoom / zoom) * zoom);
@@ -931,7 +931,7 @@ export const GanttChart = () => {
           <GanttLinks
             data={data}
             zoom={zoom}
-            columnWidth={zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80}
+            columnWidth={zoom === 1 ? 24 : zoom === 2 ? 32 : zoom === 4 ? 40 : zoom === 8 ? 48 : zoom === 12 ? 56 : 64}
             swimlaneColumnWidth={swimlaneColumnWidth}
             selectedLink={selectedLink}
             onLinkSelect={(linkId) => {
@@ -951,7 +951,7 @@ export const GanttChart = () => {
 
         {/* Drag preview ghost bar */}
         {dragPreview && (() => {
-          const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
+          const columnWidth = zoom === 1 ? 24 : zoom === 2 ? 32 : zoom === 4 ? 40 : zoom === 8 ? 48 : zoom === 12 ? 56 : 64;
           
           // Calculate position - ghost is portaled to body, so use viewport coordinates
           const left = dragPreview.mouseX - dragPreview.offsetX;
@@ -978,7 +978,7 @@ export const GanttChart = () => {
 
         {/* Copy ghost preview */}
         {copyGhost && (() => {
-          const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
+          const columnWidth = zoom === 1 ? 24 : zoom === 2 ? 32 : zoom === 4 ? 40 : zoom === 8 ? 48 : zoom === 12 ? 56 : 64;
           const width = (copyGhost.duration / zoom) * columnWidth;
           
           return createPortal(
