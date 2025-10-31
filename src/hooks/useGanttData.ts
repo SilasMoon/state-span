@@ -297,45 +297,6 @@ export const useGanttData = () => {
   const canUndo = history.length > 0;
   const canRedo = future.length > 0;
 
-  // Helper function to calculate summary bar from children
-  const calculateSummaryBar = (swimlaneId: string, swimlanes: Record<string, GanttSwimlane>): { start: number; duration: number; hasContent: boolean } | null => {
-    const swimlane = swimlanes[swimlaneId];
-    if (!swimlane) return null;
-
-    let minStart = Infinity;
-    let maxEnd = -Infinity;
-    let hasContent = false;
-
-    const collectItems = (id: string) => {
-      const lane = swimlanes[id];
-      if (!lane) return;
-
-      // Collect from direct items
-      const items = lane.type === "activity" ? lane.activities : lane.states;
-      if (items && items.length > 0) {
-        items.forEach((item) => {
-          hasContent = true;
-          minStart = Math.min(minStart, item.start);
-          maxEnd = Math.max(maxEnd, item.start + item.duration);
-        });
-      }
-
-      // Recursively collect from children
-      lane.children.forEach(collectItems);
-    };
-
-    // Collect from all children
-    swimlane.children.forEach(collectItems);
-
-    if (!hasContent) return null;
-
-    return {
-      start: minStart,
-      duration: maxEnd - minStart,
-      hasContent: true,
-    };
-  };
-
   const addSwimlane = (type: "activity" | "state", parentId?: string) => {
     const id = generateId();
     const newSwimlane: GanttSwimlane = {
@@ -1072,7 +1033,6 @@ export const useGanttData = () => {
     clearAll,
     exportData,
     importData,
-    calculateSummaryBar,
     undo,
     redo,
     canUndo,

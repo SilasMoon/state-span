@@ -34,7 +34,6 @@ export const GanttChart = () => {
     clearAll,
     exportData,
     importData,
-    calculateSummaryBar,
     undo,
     redo,
     canUndo,
@@ -805,11 +804,6 @@ export const GanttChart = () => {
       const swimlane = data.swimlanes[id];
       if (!swimlane) return;
 
-      // Calculate summary bar for parent swimlanes
-      const summaryBar = swimlane.children.length > 0 
-        ? calculateSummaryBar(id, data.swimlanes)
-        : null;
-
       elements.push(
           <GanttRow
             key={id}
@@ -838,7 +832,6 @@ export const GanttChart = () => {
             onSwimlaneDrop={moveSwimlane}
             checkOverlap={checkOverlap}
             onDragStateChange={handleDragStateChange}
-            summaryBar={summaryBar}
           />
       );
 

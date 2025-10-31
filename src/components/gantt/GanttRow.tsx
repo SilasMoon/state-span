@@ -33,7 +33,6 @@ interface GanttRowProps {
   onSwimlaneDrop: (swimlaneId: string, targetParentId: string | null, insertBeforeId: string | null) => void;
   checkOverlap: (swimlaneId: string, itemId: string, start: number, duration: number) => boolean;
   onDragStateChange: (itemId: string, swimlaneId: string) => (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => void;
-  summaryBar: { start: number; duration: number; hasContent: boolean } | null;
 }
 
 export const GanttRow = ({
@@ -58,7 +57,6 @@ export const GanttRow = ({
   onSwimlaneDrop,
   checkOverlap,
   onDragStateChange,
-  summaryBar,
 }: GanttRowProps) => {
   const columnWidth = zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80;
   const columns = Math.ceil(totalHours / zoom);
@@ -360,30 +358,13 @@ export const GanttRow = ({
         })()}
         
         <div className="absolute inset-0 pointer-events-none">
-          {/* Render summary bar for parent swimlanes */}
-          {hasChildren && summaryBar && summaryBar.hasContent && (
-            <GanttBar
-              key={`summary-${swimlane.id}`}
-              item={{
-                id: `summary-${swimlane.id}`,
-                start: summaryBar.start,
-                duration: summaryBar.duration,
-                color: swimlane.type === "activity" ? "#94a3b8" : "#a78bfa",
-                label: `${swimlane.children.length} child${swimlane.children.length > 1 ? 'ren' : ''}`,
-                labelColor: "#ffffff",
-                description: `Aggregated from ${swimlane.children.length} sub-swimlane${swimlane.children.length > 1 ? 's' : ''}`,
+          {/* Render thick vertical white delimiter for root-level swimlanes */}
+          {!swimlane.parentId && (
+            <div 
+              className="absolute top-0 bottom-0 left-0 w-1 bg-white pointer-events-none z-10"
+              style={{ 
+                boxShadow: '0 0 4px rgba(255, 255, 255, 0.5)'
               }}
-              swimlaneId={swimlane.id}
-              swimlaneType={swimlane.type}
-              zoom={zoom}
-              columnWidth={columnWidth}
-              isSelected={false}
-              isSummary={true}
-              onDoubleClick={() => {}}
-              onSelect={() => {}}
-              onMove={() => {}}
-              onResize={() => {}}
-              checkOverlap={checkOverlap}
             />
           )}
           
