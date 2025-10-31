@@ -367,6 +367,46 @@ export const GanttLinks = ({
 
   const totalHeight = calculateTotalHeight();
   
+  // Generate a mask that covers all swimlane rows but excludes gaps
+  const generateSwimlanesMask = () => {
+    const visibleSwimlanes: string[] = [];
+    
+    const collectVisible = (ids: string[]) => {
+      ids.forEach(id => {
+        const swimlane = data.swimlanes[id];
+        if (swimlane) {
+          visibleSwimlanes.push(id);
+          if (swimlane.expanded && swimlane.children.length > 0) {
+            collectVisible(swimlane.children);
+          }
+        }
+      });
+    };
+    
+    collectVisible(data.rootIds);
+    
+    return (
+      <mask id="swimlanes-mask">
+        {/* White areas are visible, black areas are hidden */}
+        <rect x="0" y="0" width="100%" height="100%" fill="black" />
+        {visibleSwimlanes.map(id => {
+          const yPos = findYPosition(id);
+          if (yPos === null) return null;
+          return (
+            <rect 
+              key={id} 
+              x="0" 
+              y={yPos} 
+              width="100%" 
+              height={SWIMLANE_HEIGHT} 
+              fill="white" 
+            />
+          );
+        })}
+      </mask>
+    );
+  };
+  
   // SVG positioned at 0,0 WITHIN the clipping container
   // Container starts at swimlaneColumnWidth with overflow:hidden to prevent bleeding
   return (
@@ -380,7 +420,12 @@ export const GanttLinks = ({
         height: `${totalHeight}px`,
       }}
     >
-      {data.links.map(renderLink)}
+      <defs>
+        {generateSwimlanesMask()}
+      </defs>
+      <g mask="url(#swimlanes-mask)">
+        {data.links.map(renderLink)}
+      </g>
     </svg>
   );
 };

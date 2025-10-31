@@ -347,70 +347,35 @@ export const GanttChart = () => {
 
       toast.info("Generating image...");
       
-      // Create a properly sized export container
-      const exportWrapper = document.createElement('div');
-      exportWrapper.style.position = 'fixed';
-      exportWrapper.style.left = '0';
-      exportWrapper.style.top = '0';
-      exportWrapper.style.zIndex = '-1';
-      exportWrapper.style.background = '#0a0a0a'; // Match gantt background
-      exportWrapper.style.overflow = 'visible';
-      
-      // Clone the chart
+      // Clone and prepare for export
       const clone = chartContainer.cloneNode(true) as HTMLElement;
-      clone.style.position = 'relative';
-      clone.style.display = 'block';
       
-      // Fix all positioning issues
-      const fixElements = (el: Element) => {
-        if (el instanceof HTMLElement) {
-          if (el.style.position === 'sticky' || el.style.position === 'fixed' || el.style.position === 'absolute') {
-            el.style.position = 'relative';
-          }
-          el.style.transform = 'none';
-          
-          // Ensure text elements have proper line height
-          if (el.textContent && el.textContent.trim()) {
-            const computed = window.getComputedStyle(el);
-            if (!el.style.lineHeight) {
-              el.style.lineHeight = computed.lineHeight === 'normal' ? '1.5' : computed.lineHeight;
-            }
-            el.style.paddingBottom = '2px'; // Extra space for descenders
-          }
-        }
-        Array.from(el.children).forEach(fixElements);
-      };
-      fixElements(clone);
-      
-      // Remove SVG links (export static content)
+      // Remove SVG links (export static content only)
       clone.querySelectorAll('svg').forEach(el => el.remove());
       
-      exportWrapper.appendChild(clone);
-      document.body.appendChild(exportWrapper);
+      // Create temporary container with proper styling
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.padding = '20px';
+      tempContainer.style.background = '#0a0a0a';
+      tempContainer.appendChild(clone);
+      document.body.appendChild(tempContainer);
       
-      // Force layout and wait for rendering
-      clone.offsetHeight; // Force reflow
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for layout
+      await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Get actual dimensions
-      const rect = clone.getBoundingClientRect();
-      
-      // Capture with proper settings
+      // Capture
       const canvas = await html2canvas(clone, {
         backgroundColor: '#0a0a0a',
         scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        width: rect.width,
-        height: rect.height + 20, // Extra 20px for text descenders
-        windowWidth: rect.width,
-        windowHeight: rect.height + 20,
-        x: 0,
-        y: 0,
       });
 
-      document.body.removeChild(exportWrapper);
+      document.body.removeChild(tempContainer);
 
       canvas.toBlob((blob) => {
         if (blob) {
