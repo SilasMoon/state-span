@@ -259,7 +259,7 @@ export const GanttBar = ({
     <>
       <div
         className={`absolute ${isSummary ? 'h-0.5' : isState ? 'h-[22px]' : 'h-6 rounded'} ${isSummary ? 'cursor-default' : isDragging === 'move' ? 'cursor-grabbing' : isModifierPressed ? 'cursor-crosshair' : 'cursor-grab'} group flex items-center justify-center text-xs ${isState ? '' : 'font-medium'} ${isSummary ? '' : 'shadow-lg hover:shadow-xl'} transition-all pointer-events-auto ${
-          isSelected ? 'ring-2 ring-primary ring-offset-2 z-50' : 'z-10'
+          isSelected ? 'ring-2 ring-primary ring-offset-2 z-50' : isState ? 'z-30' : 'z-10'
         } ${isDragging === 'move' && targetSwimlaneId !== swimlaneId ? 'opacity-50' : ''} ${isModifierPressed && !isSummary ? 'ring-2 ring-blue-400/50' : ''}`}
         style={{
           left: `${left}px`,
