@@ -85,12 +85,12 @@ export const LinkEditDialog = ({
   const [recentColors, setRecentColors] = useState<string[]>([]);
 
   useEffect(() => {
-    setRecentColors(getRecentColors('gantt-recent-link-colors'));
+    setRecentColors(getRecentColors('gantt-recent-bg-colors'));
   }, [open]);
 
   const handleColorSelect = (newColor: string) => {
     setColor(newColor);
-    addRecentColor('gantt-recent-link-colors', newColor);
+    addRecentColor('gantt-recent-bg-colors', newColor);
     setRecentColors([newColor, ...recentColors.filter(c => c !== newColor)].slice(0, 5));
   };
 
