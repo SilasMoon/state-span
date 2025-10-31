@@ -41,7 +41,7 @@ All colors MUST be HSL.
     /* Gantt-specific colors - light mode */
     --gantt-bg: 0 0% 90%;
     --gantt-grid: 0 0% 80%;
-    --gantt-header: 0 0% 86%;
+    --gantt-header: 0 0% 93%;
     --gantt-row-hover: 0 0% 88%;
     --gantt-activity: 189 100% 42%;
     --gantt-state: 280 70% 55%;
