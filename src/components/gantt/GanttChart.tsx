@@ -860,15 +860,6 @@ export const GanttChart = () => {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <div className="border-b border-border bg-card px-6 py-4">
-        <input
-          type="text"
-          value={chartTitle}
-          onChange={(e) => setChartTitle(e.target.value)}
-          className="text-2xl font-bold bg-transparent border-none outline-none text-foreground w-full focus:ring-2 focus:ring-primary/20 rounded px-2 py-1 transition-all"
-          placeholder="Enter chart title..."
-        />
-      </div>
       <GanttToolbar
         zoom={zoom}
         onZoomIn={handleZoomIn}
@@ -884,6 +875,8 @@ export const GanttChart = () => {
         onRedo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
+        chartTitle={chartTitle}
+        onChartTitleChange={setChartTitle}
       />
 
       <div 
