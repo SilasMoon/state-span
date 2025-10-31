@@ -81,6 +81,14 @@ export const GanttLinks = ({
     
     // Calculate barCenterY from row position
     const barCenterY = rowTop + (SWIMLANE_HEIGHT / 2);
+    
+    console.log('[GanttLinks] Position calc:', { 
+      swimlaneId: effectiveSwimlaneId, 
+      itemId: item.id,
+      rowTop, 
+      SWIMLANE_HEIGHT,
+      barCenterY 
+    });
 
     return {
       x,
