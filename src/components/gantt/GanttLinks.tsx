@@ -408,8 +408,9 @@ export const GanttLinks = ({
     
     // FIXED ANCHOR POINTS: Always use Finish-to-Start (right side of predecessor to left side of successor)
     // Anchor points never change regardless of task positions
-    const startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Finish handle (right side)
-    const endX = toPos.x - HANDLE_OFFSET; // Start handle (left side)
+    // Add swimlaneColumnWidth offset because SVG coordinate system starts at chart origin (0,0)
+    const startX = swimlaneColumnWidth + fromPos.x + fromPos.width - HANDLE_OFFSET; // Finish handle (right side)
+    const endX = swimlaneColumnWidth + toPos.x - HANDLE_OFFSET; // Start handle (left side)
 
     // Use barCenterY for exact vertical center attachment
     const start = { x: startX, y: fromPos.barCenterY };
@@ -505,17 +506,18 @@ export const GanttLinks = ({
   const totalHeight = calculateTotalHeight();
   const totalWidth = calculateTotalWidth();
   
-  // SVG positioned at 0,0 covering the full chart area
-  // No mask needed - links should be visible everywhere including gutters
+  // SVG positioned at 0,0 covering the full chart area including swimlane column
+  // Coordinates in renderLink are adjusted by swimlaneColumnWidth
   return (
     <svg
       ref={svgRef}
-      className="absolute pointer-events-none"
+      className="absolute top-0 left-0 pointer-events-none"
       style={{ 
         left: 0,
         top: 0,
-        width: `${totalWidth}px`,
+        width: `${swimlaneColumnWidth + totalWidth}px`,
         height: `${totalHeight}px`,
+        zIndex: 20,
       }}
     >
       {data.links.map(renderLink)}

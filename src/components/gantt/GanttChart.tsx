@@ -933,37 +933,25 @@ export const GanttChart = () => {
         </div>
 
 
-        {/* Render links with proper masking container */}
-        <div 
-          className="absolute pointer-events-none"
-          style={{
-            left: `${swimlaneColumnWidth}px`,
-            top: 0,
-            width: `calc(100% - ${swimlaneColumnWidth}px)`,
-            height: '100%',
-            overflow: 'hidden', // CRITICAL: clips any content trying to render outside
-            zIndex: 20,
+        {/* Render links directly without clipping container */}
+        <GanttLinks
+          data={data}
+          zoom={zoom}
+          columnWidth={zoom === 0.5 ? 36 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60}
+          swimlaneColumnWidth={swimlaneColumnWidth}
+          selectedLink={selectedLink}
+          onLinkSelect={(linkId) => {
+            setSelectedLink(linkId === "" ? null : linkId);
+            if (linkId) setSelected(null);
           }}
-        >
-          <GanttLinks
-            data={data}
-            zoom={zoom}
-            columnWidth={zoom === 0.5 ? 36 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60}
-            swimlaneColumnWidth={swimlaneColumnWidth}
-            selectedLink={selectedLink}
-            onLinkSelect={(linkId) => {
-              setSelectedLink(linkId === "" ? null : linkId);
-              if (linkId) setSelected(null);
-            }}
-            onLinkDoubleClick={(linkId) => {
-              const link = data.links.find(l => l.id === linkId);
-              if (link) {
-                setLinkEditDialog({ linkId });
-              }
-            }}
-            itemTempPositions={itemTempPositions}
-          />
-        </div>
+          onLinkDoubleClick={(linkId) => {
+            const link = data.links.find(l => l.id === linkId);
+            if (link) {
+              setLinkEditDialog({ linkId });
+            }
+          }}
+          itemTempPositions={itemTempPositions}
+        />
 
 
         {/* Drag preview ghost bar */}
