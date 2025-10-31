@@ -219,7 +219,7 @@ export const GanttChart = () => {
     
     // Calculate best zoom level to fit the actual content
     const levels: ZoomLevel[] = [0.5, 1, 2, 4, 8, 12, 24];
-    const columnWidths: Record<ZoomLevel, number> = { 0.5: 16, 1: 20, 2: 28, 4: 36, 8: 44, 12: 52, 24: 60 };
+    const columnWidths: Record<ZoomLevel, number> = { 0.5: 24, 1: 20, 2: 28, 4: 36, 8: 44, 12: 52, 24: 60 };
     
     let bestZoom: ZoomLevel = 24;
     
@@ -726,7 +726,7 @@ export const GanttChart = () => {
     // Calculate start time based on cursor position
     const scrollContainer = document.querySelector('.overflow-auto');
     const scrollLeft = scrollContainer?.scrollLeft || 0;
-    const columnWidth = zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
+    const columnWidth = zoom === 0.5 ? 24 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
     
     const gridX = copyGhost.mouseX + scrollLeft - swimlaneColumnWidth;
     const start = Math.max(0, Math.round((gridX / columnWidth) * zoom / zoom) * zoom);
@@ -947,7 +947,7 @@ export const GanttChart = () => {
           <GanttLinks
             data={data}
             zoom={zoom}
-            columnWidth={zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60}
+            columnWidth={zoom === 0.5 ? 24 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60}
             swimlaneColumnWidth={swimlaneColumnWidth}
             selectedLink={selectedLink}
             onLinkSelect={(linkId) => {
@@ -967,7 +967,7 @@ export const GanttChart = () => {
 
         {/* Drag preview ghost bar */}
         {dragPreview && (() => {
-          const columnWidth = zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
+          const columnWidth = zoom === 0.5 ? 24 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
           
           // Calculate position - ghost is portaled to body, so use viewport coordinates
           const left = dragPreview.mouseX - dragPreview.offsetX;
@@ -994,7 +994,7 @@ export const GanttChart = () => {
 
         {/* Copy ghost preview */}
         {copyGhost && (() => {
-          const columnWidth = zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
+          const columnWidth = zoom === 0.5 ? 24 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
           const width = (copyGhost.duration / zoom) * columnWidth;
           
           return createPortal(

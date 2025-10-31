@@ -6,7 +6,7 @@ interface GanttTimelineProps {
 }
 
 export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
-  const columnWidth = zoom === 0.5 ? 16 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
+  const columnWidth = zoom === 0.5 ? 24 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
   const columns = Math.ceil(totalHours / zoom);
 
   const renderTimeLabels = () => {
