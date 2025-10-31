@@ -255,22 +255,26 @@ export const GanttRow = ({
       onDrop={handleDrop}
     >
       <div
-        className={`sticky left-0 z-30 bg-card border-r border-border flex items-center gap-2 px-3 py-2 group cursor-pointer transition-colors ${
+        className={`sticky left-0 z-30 bg-card border-r border-border flex items-center gap-2 px-3 py-2 group transition-colors relative ${
           isRowSelected ? 'bg-primary/20 ring-2 ring-primary' : 'hover:bg-muted/50'
         }`}
         style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px`, paddingLeft: `${level * 20 + 12}px` }}
         draggable
         onDragStart={handleDragStart}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect('swimlane', swimlane.id);
-        }}
       >
+        {/* Background clickable area for selection */}
+        <div
+          className="absolute inset-0 cursor-pointer z-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect('swimlane', swimlane.id);
+          }}
+        />
         {hasChildren && (
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 flex-shrink-0"
+            className="h-6 w-6 p-0 flex-shrink-0 relative z-10"
             onClick={(e) => {
               e.stopPropagation();
               onToggleExpand(swimlane.id);
@@ -289,13 +293,16 @@ export const GanttRow = ({
           type="text"
           value={swimlane.name}
           onChange={(e) => onSwimlaneNameChange(swimlane.id, e.target.value)}
-          className="bg-transparent border-none outline-none text-sm text-foreground cursor-text min-w-0 flex-1 focus:ring-1 focus:ring-primary/30 rounded px-1"
+          className="bg-transparent border-none outline-none text-sm text-foreground cursor-text min-w-0 flex-1 focus:ring-1 focus:ring-primary/30 rounded px-1 relative z-10"
           onClick={(e) => {
+            e.stopPropagation();
+          }}
+          onKeyDown={(e) => {
             e.stopPropagation();
           }}
         />
         
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 relative z-10">
           <span
             className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
               swimlane.type === "task"
