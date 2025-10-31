@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { GanttSwimlane, ZoomLevel } from "@/types/gantt";
-import { ChevronRight, ChevronDown, Trash2, Plus } from "lucide-react";
+import { ChevronRight, ChevronDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GanttBar } from "./GanttBar";
 import { toast } from "sonner";
@@ -255,12 +255,18 @@ export const GanttRow = ({
       onDrop={handleDrop}
     >
       <div
-        className={`sticky left-0 z-30 bg-card border-r border-border flex items-center gap-2 px-3 py-2 group cursor-move ${
-          isRowSelected ? 'bg-primary/10 ring-2 ring-primary ring-inset' : ''
+        className={`sticky left-0 z-30 bg-card border-r border-border flex items-center gap-2 px-3 py-2 group cursor-pointer transition-colors ${
+          isRowSelected ? 'bg-primary/20 ring-2 ring-primary' : 'hover:bg-muted/50'
         }`}
         style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px`, paddingLeft: `${level * 20 + 12}px` }}
         draggable
         onDragStart={handleDragStart}
+        onClick={(e) => {
+          // Only select if clicking on the header itself, not on interactive elements
+          if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === 'DIV') {
+            onSelect('swimlane', swimlane.id);
+          }
+        }}
       >
         {hasChildren && (
           <Button
@@ -313,15 +319,6 @@ export const GanttRow = ({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-              onClick={() => onDelete(swimlane.id)}
-            >
-              <Trash2 className="w-3 h-3" />
-            </Button>
           </div>
         </div>
       </div>
