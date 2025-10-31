@@ -38,10 +38,10 @@ export const GanttLinks = ({
   // Ref to SVG element to get its position for coordinate transformation
   const svgRef = React.useRef<SVGSVGElement>(null);
   
-  // Force re-render when positions change (for scroll/resize/zoom)
+  // Force re-render when positions change (for scroll/resize)
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
   
-  // Update positions when chart scrolls, resizes, or zoom changes
+  // Update positions when chart scrolls or resizes
   React.useEffect(() => {
     const container = document.querySelector('.overflow-auto');
     if (!container) return;
@@ -55,14 +55,6 @@ export const GanttLinks = ({
       window.removeEventListener('resize', handleUpdate);
     };
   }, []);
-  
-  // Force update when zoom or columnWidth changes
-  // Use requestAnimationFrame to ensure bars have painted at new positions
-  React.useEffect(() => {
-    requestAnimationFrame(() => {
-      forceUpdate();
-    });
-  }, [zoom, columnWidth]);
 
   // Get item position with support for temp positions during drag
   const getItemPosition = (swimlaneId: string, itemId: string): ItemPosition | null => {
@@ -83,41 +75,12 @@ export const GanttLinks = ({
     const rowTop = findYPosition(effectiveSwimlaneId);
     if (rowTop === null) return null;
     
-    // CRITICAL FIX: Use actual DOM position to handle scroll offset
-    // Find the actual bar element in the DOM
-    const barElement = document.querySelector(`[data-item-id="${item.id}"][data-swimlane-id="${effectiveSwimlaneId}"]`);
+    // Calculate position from data using zoom and columnWidth
+    // This ensures arrows update immediately when zoom changes
+    const x = (itemStart / zoom) * columnWidth;
+    const width = (itemDuration / zoom) * columnWidth;
     
-    let x, width;
-    
-    if (barElement && svgRef.current) {
-      // Get positions relative to viewport
-      const barRect = barElement.getBoundingClientRect();
-      const svgRect = svgRef.current.getBoundingClientRect();
-      
-      // Convert to SVG coordinate system  
-      // Container starts at swimlaneColumnWidth, SVG is at 0,0 within it
-      // So bar's position relative to SVG is simply: bar.left - container.left
-      x = barRect.left - svgRect.left;
-      width = barRect.width;
-      
-      // Get Y position from DOM for consistency
-      const barCenterY = (barRect.top + barRect.height / 2) - svgRect.top;
-      
-      return {
-        x,
-        y: rowTop + 24,
-        width,
-        swimlaneId: effectiveSwimlaneId,
-        barCenterY
-      };
-    } else {
-      // Fallback: calculate from data
-      // SVG starts AFTER sidebar, so coords are 0-based from timeline start
-      x = (itemStart / zoom) * columnWidth;
-      width = (itemDuration / zoom) * columnWidth;
-    }
-    
-    // Fallback: calculate barCenterY from row position
+    // Calculate barCenterY from row position
     const barCenterY = rowTop + (SWIMLANE_HEIGHT / 2);
 
     return {
