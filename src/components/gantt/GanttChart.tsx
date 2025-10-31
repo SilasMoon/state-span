@@ -889,7 +889,7 @@ export const GanttChart = () => {
           <div className="flex">
             <div className="sticky left-0 z-30 bg-gantt-header border-r border-border relative">
               <div
-                className="h-12 flex items-center px-4 font-semibold text-foreground border-b-2 border-border"
+                className="h-12 flex items-center px-4 font-semibold text-foreground border-b border-border"
                 style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px` }}
               >
                 Swimlanes
