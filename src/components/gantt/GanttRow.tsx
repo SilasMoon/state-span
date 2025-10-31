@@ -291,6 +291,11 @@ export const GanttRow = ({
           className="bg-transparent border-none outline-none text-sm text-foreground cursor-text min-w-0 flex-1 focus:ring-1 focus:ring-primary/30 rounded px-1"
           onClick={(e) => {
             e.stopPropagation();
+          }}
+          onFocus={(e) => {
+            e.stopPropagation();
+          }}
+          onBlur={() => {
             onSelect('swimlane', swimlane.id);
           }}
         />
