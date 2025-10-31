@@ -67,7 +67,9 @@ export const GanttChart = () => {
   // Focus container when swimlane is selected to enable keyboard shortcuts
   React.useEffect(() => {
     if (selected?.type === 'swimlane' && containerRef.current) {
+      console.log('[GanttChart] Focusing container for swimlane selection');
       containerRef.current.focus();
+      console.log('[GanttChart] Container focused, activeElement:', document.activeElement);
     }
   }, [selected]);
 
@@ -630,8 +632,8 @@ export const GanttChart = () => {
       }
 
       // Delete
-      console.log('[GanttChart] Delete key pressed', { selected, selectedLink });
       if (e.key === 'Delete' || e.key === 'Backspace') {
+        console.log('[GanttChart] Delete key pressed', { selected, selectedLink, activeElement: document.activeElement });
         e.preventDefault();
         if (selectedLink) {
           console.log('[GanttChart] Deleting link:', selectedLink);
