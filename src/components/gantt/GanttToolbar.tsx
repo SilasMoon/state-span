@@ -6,6 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ZoomLevel } from "@/types/gantt";
 import { useRef } from "react";
 
@@ -130,6 +131,10 @@ export const GanttToolbar = ({
       </Button>
 
       <div className="flex-1" />
+
+      <ThemeToggle />
+
+      <div className="h-6 w-px bg-border mx-1" />
 
       <span className="text-sm text-muted-foreground">Zoom: {getZoomLabel()}</span>
       <Button
