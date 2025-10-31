@@ -234,6 +234,11 @@ export const GanttChart = () => {
       }
     }
     
+    // If the most appropriate zoom is 0.5, use 24 instead (inverted behavior)
+    if (bestZoom === 0.5) {
+      bestZoom = 24;
+    }
+    
     setZoom(bestZoom);
     
     // Scroll to the start of content
