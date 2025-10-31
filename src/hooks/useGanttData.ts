@@ -252,7 +252,7 @@ const createDefaultData = (): GanttData => {
 
 export const useGanttData = () => {
   const [data, setData] = useState<GanttData>(createDefaultData());
-  const [zoomIndex, setZoomIndex] = useState<number>(16); // Default to 8 hours per column
+  const [zoomIndex, setZoomIndex] = useState<number>(19); // Default to 8 hours per column, 44px width
   const zoom: ZoomConfig = ZOOM_LEVELS[zoomIndex];
   const [history, setHistory] = useState<GanttData[]>([]);
   const [future, setFuture] = useState<GanttData[]>([]);
