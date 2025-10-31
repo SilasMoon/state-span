@@ -70,9 +70,8 @@ export const GanttToolbar = ({
     <div className="flex items-center gap-2 p-3 bg-card border-b border-border">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Swimlane
+          <Button variant="outline" size="icon" title="Add Swimlane">
+            <Plus className="w-4 h-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -85,19 +84,16 @@ export const GanttToolbar = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Button variant="outline" size="sm" onClick={onExport}>
-        <Download className="w-4 h-4 mr-1" />
-        Export JSON
+      <Button variant="outline" size="icon" onClick={onExport} title="Export JSON">
+        <Download className="w-4 h-4" />
       </Button>
       
-      <Button variant="outline" size="sm" onClick={onExportPNG}>
-        <Image className="w-4 h-4 mr-1" />
-        Export PNG
+      <Button variant="outline" size="icon" onClick={handleImportClick} title="Import JSON">
+        <Upload className="w-4 h-4" />
       </Button>
       
-      <Button variant="outline" size="sm" onClick={handleImportClick}>
-        <Upload className="w-4 h-4 mr-1" />
-        Import
+      <Button variant="outline" size="icon" onClick={onExportPNG} title="Export PNG">
+        <Image className="w-4 h-4" />
       </Button>
       
       <input
@@ -108,9 +104,8 @@ export const GanttToolbar = ({
         className="hidden"
       />
       
-      <Button variant="destructive" size="sm" onClick={onClear}>
-        <Trash2 className="w-4 h-4 mr-1" />
-        Clear All
+      <Button variant="destructive" size="icon" onClick={onClear} title="Clear All">
+        <Trash2 className="w-4 h-4" />
       </Button>
 
       <div className="h-6 w-px bg-border mx-1" />
