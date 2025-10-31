@@ -246,7 +246,7 @@ export const GanttRow = ({
 
   return (
     <div
-      className={`flex transition-colors border-b border-gantt-grid relative ${
+      className={`flex transition-colors relative ${
         dragOver === 'top' ? 'border-t-4 border-t-primary' : ''
       } ${dragOver === 'bottom' ? 'border-b-4 border-b-primary' : ''} ${
         dragOver === 'inside' ? 'bg-primary/10' : ''

@@ -337,7 +337,7 @@ export const GanttChart = () => {
 
   const handleExportPNG = async () => {
     try {
-      const html2canvas = await import('html2canvas').then(m => m.default);
+      const domtoimage = await import('dom-to-image-more').then(m => m.default);
       
       const chartContainer = document.querySelector('.gantt-chart-container');
       if (!chartContainer) {
@@ -347,47 +347,37 @@ export const GanttChart = () => {
 
       toast.info("Generating image...");
       
-      // Clone and prepare for export
+      // Clone the chart to remove SVG links
       const clone = chartContainer.cloneNode(true) as HTMLElement;
-      
-      // Remove SVG links (export static content only)
       clone.querySelectorAll('svg').forEach(el => el.remove());
       
-      // Create temporary container with proper styling
+      // Create temporary container
       const tempContainer = document.createElement('div');
       tempContainer.style.position = 'fixed';
       tempContainer.style.left = '-9999px';
       tempContainer.style.top = '0';
-      tempContainer.style.padding = '20px';
-      tempContainer.style.background = '#0a0a0a';
       tempContainer.appendChild(clone);
       document.body.appendChild(tempContainer);
       
-      // Wait for layout
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Capture
-      const canvas = await html2canvas(clone, {
-        backgroundColor: '#0a0a0a',
-        scale: 2,
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
+      // Use dom-to-image to generate blob
+      const blob = await domtoimage.toBlob(clone, {
+        bgcolor: '#0a0a0a',
+        quality: 1,
+        style: {
+          transform: 'none',
+        }
       });
 
       document.body.removeChild(tempContainer);
 
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `gantt-chart-${Date.now()}.png`;
-          a.click();
-          URL.revokeObjectURL(url);
-          toast.success("Image exported");
-        }
-      }, 'image/png');
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `gantt-chart-${Date.now()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Image exported");
     } catch (error) {
       console.error('Export error:', error);
       toast.error("Failed to export image");
