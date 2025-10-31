@@ -170,7 +170,7 @@ export const GanttChart = () => {
   const totalHours = calculateTotalHours();
 
   const handleZoomIn = () => {
-    const levels: ZoomLevel[] = [24, 12, 8, 4, 2, 1];
+    const levels: ZoomLevel[] = [24, 12, 8, 4, 2, 1, 0.5];
     const currentIndex = levels.indexOf(zoom);
     if (currentIndex < levels.length - 1) {
       setZoom(levels[currentIndex + 1]);
@@ -178,7 +178,7 @@ export const GanttChart = () => {
   };
 
   const handleZoomOut = () => {
-    const levels: ZoomLevel[] = [1, 2, 4, 8, 12, 24];
+    const levels: ZoomLevel[] = [0.5, 1, 2, 4, 8, 12, 24];
     const currentIndex = levels.indexOf(zoom);
     if (currentIndex < levels.length - 1) {
       setZoom(levels[currentIndex + 1]);
