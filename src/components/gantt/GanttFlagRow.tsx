@@ -1,6 +1,6 @@
 import React from "react";
 import { GanttFlag, ZoomConfig } from "@/types/gantt";
-import { Flag, CheckCircle, AlertCircle, Star, Target, Zap, Trophy, Rocket } from "lucide-react";
+import { Flag, CheckCircle, AlertCircle, Star, Target, Zap, Trophy, Rocket, Play, CircleDot, Moon, Sun, Beaker } from "lucide-react";
 import { useState, useRef } from "react";
 
 interface GanttFlagRowProps {
@@ -22,6 +22,11 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   Zap,
   Trophy,
   Rocket,
+  Play,
+  CircleDot,
+  Moon,
+  Sun,
+  Beaker,
 };
 
 export const GanttFlagRow = ({

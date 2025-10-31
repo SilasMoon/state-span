@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Flag, CheckCircle, AlertCircle, Star, Target, Zap, Trophy, Rocket } from "lucide-react";
+import { Flag, CheckCircle, AlertCircle, Star, Target, Zap, Trophy, Rocket, Play, CircleDot, Moon, Sun, Beaker } from "lucide-react";
 import { GanttFlag } from "@/types/gantt";
 
 interface FlagEditDialogProps {
@@ -29,6 +29,11 @@ interface FlagEditDialogProps {
 
 const iconOptions = [
   { value: "Flag", label: "Flag", Icon: Flag },
+  { value: "Play", label: "Start", Icon: Play },
+  { value: "CircleDot", label: "End", Icon: CircleDot },
+  { value: "Moon", label: "Sleep", Icon: Moon },
+  { value: "Sun", label: "Wake Up", Icon: Sun },
+  { value: "Beaker", label: "Science", Icon: Beaker },
   { value: "CheckCircle", label: "Check Circle", Icon: CheckCircle },
   { value: "AlertCircle", label: "Alert Circle", Icon: AlertCircle },
   { value: "Star", label: "Star", Icon: Star },
