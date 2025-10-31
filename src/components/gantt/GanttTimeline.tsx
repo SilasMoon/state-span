@@ -6,7 +6,7 @@ interface GanttTimelineProps {
 }
 
 export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
-  const columnWidth = zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
+  const columnWidth = zoom === 0.5 ? 16 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
   const columns = Math.ceil(totalHours / zoom);
 
   const renderTimeLabels = () => {
@@ -21,6 +21,9 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
       const showDay = day !== lastDay;
       lastDay = day;
 
+      // Format hour display - use decimal for 0.5 zoom level
+      const hourDisplay = zoom === 0.5 ? hourInDay.toFixed(1) : hourInDay.toString();
+
       labels.push(
         <div
           key={i}
@@ -29,7 +32,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
         >
           {showDay && <div className="text-gantt-text font-semibold">D{day}</div>}
           {!showDay && <div className="h-[14px]" />}
-          <div className="text-gantt-text-muted">{hourInDay}</div>
+          <div className="text-gantt-text-muted">{hourDisplay}</div>
         </div>
       );
     }

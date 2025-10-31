@@ -47,4 +47,4 @@ export interface GanttData {
   links: GanttLink[];
 }
 
-export type ZoomLevel = 1 | 2 | 4 | 8 | 12 | 24; // hours per column
+export type ZoomLevel = 0.5 | 1 | 2 | 4 | 8 | 12 | 24; // hours per column
