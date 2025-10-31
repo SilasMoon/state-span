@@ -358,13 +358,13 @@ export const GanttRow = ({
         })()}
         
         <div className="absolute inset-0 pointer-events-none">
-          {/* Render thick horizontal white delimiter for root-level swimlanes */}
+          {/* Render thick horizontal dark grey delimiter for root-level swimlanes */}
           {!swimlane.parentId && (
             <div 
-              className="absolute top-1/2 left-0 right-0 h-1 bg-gray-300 pointer-events-none z-10"
+              className="absolute top-1/2 left-0 right-0 h-1 bg-gray-700 pointer-events-none z-10"
               style={{ 
                 transform: 'translateY(-50%)',
-                boxShadow: '0 0 4px rgba(0, 0, 0, 0.1)'
+                boxShadow: '0 0 4px rgba(0, 0, 0, 0.2)'
               }}
             />
           )}
