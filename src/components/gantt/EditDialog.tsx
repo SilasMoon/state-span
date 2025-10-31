@@ -172,28 +172,28 @@ export const EditDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit Item</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2 p-3 bg-muted rounded-lg">
-            <div className="flex justify-between text-sm">
+        <div className="space-y-3 overflow-y-auto pr-2">
+          <div className="space-y-1.5 p-2.5 bg-muted rounded-lg">
+            <div className="flex justify-between text-xs">
               <span className="font-medium">Start:</span>
               <span>{startFormatted}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs">
               <span className="font-medium">End:</span>
               <span>{endFormatted}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs">
               <span className="font-medium">Duration:</span>
               <span>{duration} hours</span>
             </div>
           </div>
 
           <div>
-            <Label htmlFor="label">Label</Label>
+            <Label htmlFor="label" className="text-sm">Label</Label>
             <Input
               id="label"
               value={label}
@@ -201,20 +201,20 @@ export const EditDialog = ({
               onKeyDown={(e) => e.stopPropagation()}
               placeholder="Enter label..."
               maxLength={50}
-              className="mt-2"
+              className="mt-1.5 h-9"
             />
           </div>
 
           <div>
-            <Label>Background Color</Label>
+            <Label className="text-sm">Background Color</Label>
             {recentBgColors.length > 0 && (
-              <div className="mb-3">
-                <div className="text-xs text-muted-foreground mb-2 mt-2">Recent Colors</div>
-                <div className="flex gap-2">
+              <div className="mb-2">
+                <div className="text-xs text-muted-foreground mb-1.5 mt-1.5">Recent</div>
+                <div className="flex gap-1.5">
                   {recentBgColors.map((recentColor) => (
                     <button
                       key={recentColor}
-                      className={`w-12 h-12 rounded border-2 transition-all hover:scale-110 ${
+                      className={`w-10 h-10 rounded border-2 transition-all hover:scale-105 ${
                         color === recentColor ? "border-primary ring-2 ring-primary" : "border-border"
                       }`}
                       style={{ backgroundColor: recentColor }}
@@ -225,13 +225,13 @@ export const EditDialog = ({
                 </div>
               </div>
             )}
-            <div className="text-xs text-muted-foreground mb-2">All Colors</div>
-            <div className="grid grid-cols-10 gap-1.5 mt-2 max-h-[200px] overflow-y-auto pr-2">
+            <div className="text-xs text-muted-foreground mb-1.5">All Colors</div>
+            <div className="grid grid-cols-12 gap-1 mt-1.5 max-h-[120px] overflow-y-auto pr-1 border rounded p-1">
               {PRESET_COLORS.map((presetColor) => (
                 <button
                   key={presetColor}
-                  className={`w-full h-8 rounded border-2 transition-all hover:scale-110 ${
-                    color === presetColor ? "border-primary ring-2 ring-primary" : "border-border"
+                  className={`w-full h-7 rounded border transition-all hover:scale-105 ${
+                    color === presetColor ? "border-primary ring-1 ring-primary" : "border-border"
                   }`}
                   style={{ backgroundColor: presetColor }}
                   onClick={() => handleColorSelect(presetColor)}
@@ -241,15 +241,15 @@ export const EditDialog = ({
           </div>
 
           <div>
-            <Label>Label Text Color</Label>
+            <Label className="text-sm">Label Text Color</Label>
             {recentTextColors.length > 0 && (
-              <div className="mb-3">
-                <div className="text-xs text-muted-foreground mb-2 mt-2">Recent Colors</div>
-                <div className="flex gap-2">
+              <div className="mb-2">
+                <div className="text-xs text-muted-foreground mb-1.5 mt-1.5">Recent</div>
+                <div className="flex gap-1.5">
                   {recentTextColors.map((recentColor) => (
                     <button
                       key={recentColor}
-                      className={`w-12 h-12 rounded border-2 transition-all hover:scale-110 ${
+                      className={`w-10 h-10 rounded border-2 transition-all hover:scale-105 ${
                         labelColor === recentColor ? "border-primary ring-2 ring-primary" : "border-border"
                       }`}
                       style={{ backgroundColor: recentColor }}
@@ -260,13 +260,13 @@ export const EditDialog = ({
                 </div>
               </div>
             )}
-            <div className="text-xs text-muted-foreground mb-2">All Colors</div>
-            <div className="grid grid-cols-10 gap-1.5 mt-2 max-h-[200px] overflow-y-auto pr-2">
+            <div className="text-xs text-muted-foreground mb-1.5">All Colors</div>
+            <div className="grid grid-cols-12 gap-1 mt-1.5 max-h-[120px] overflow-y-auto pr-1 border rounded p-1">
               {LABEL_TEXT_COLORS.map((textColor) => (
                 <button
                   key={textColor}
-                  className={`w-full h-8 rounded border-2 transition-all hover:scale-110 ${
-                    labelColor === textColor ? "border-primary ring-2 ring-primary" : "border-border"
+                  className={`w-full h-7 rounded border transition-all hover:scale-105 ${
+                    labelColor === textColor ? "border-primary ring-1 ring-primary" : "border-border"
                   }`}
                   style={{ backgroundColor: textColor }}
                   onClick={() => handleLabelColorSelect(textColor)}
@@ -276,23 +276,23 @@ export const EditDialog = ({
           </div>
 
           <div>
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description" className="text-sm">Description</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
               placeholder="Add a description..."
-              rows={4}
-              className="mt-2"
+              rows={3}
+              className="mt-1.5 text-sm"
             />
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={onClose} size="sm">
               Cancel
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave} size="sm">Save</Button>
           </div>
         </div>
       </DialogContent>
