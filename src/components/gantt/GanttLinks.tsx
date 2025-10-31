@@ -84,7 +84,7 @@ export const GanttLinks = ({
 
     return {
       x,
-      y: rowTop + 24,
+      y: rowTop + 16,
       width,
       swimlaneId: effectiveSwimlaneId,
       barCenterY
