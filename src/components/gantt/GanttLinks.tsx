@@ -50,16 +50,41 @@ export const GanttLinks = ({
     startY: number;
   } | null>(null);
   
-  // Update positions when chart scrolls or resizes
+  // Update positions when chart scrolls or resizes (with throttling)
   React.useEffect(() => {
     const container = document.querySelector('.overflow-auto');
     if (!container) return;
     
-    const handleUpdate = () => forceUpdate();
+    let rafId: number | null = null;
+    let lastUpdate = 0;
+    const THROTTLE_MS = 16; // ~60fps
+    
+    const handleUpdate = () => {
+      const now = Date.now();
+      
+      // Cancel any pending animation frame
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+      
+      // Throttle updates
+      if (now - lastUpdate < THROTTLE_MS) {
+        rafId = requestAnimationFrame(handleUpdate);
+        return;
+      }
+      
+      lastUpdate = now;
+      rafId = null;
+      forceUpdate();
+    };
+    
     container.addEventListener('scroll', handleUpdate);
     window.addEventListener('resize', handleUpdate);
     
     return () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
       container.removeEventListener('scroll', handleUpdate);
       window.removeEventListener('resize', handleUpdate);
     };
