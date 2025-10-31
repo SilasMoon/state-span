@@ -171,7 +171,6 @@ const createDefaultData = (): GanttData => {
       fromId: marketResearch.activities![1].id,
       toSwimlaneId: productStrategy.id,
       toId: productStrategy.activities![0].id,
-      lag: 0,
     },
     // Product strategy to development
     {
@@ -180,7 +179,6 @@ const createDefaultData = (): GanttData => {
       fromId: productStrategy.activities![1].id,
       toSwimlaneId: productDev.id,
       toId: productDev.activities![0].id,
-      lag: 0,
     },
     // Product strategy to UX design
     {
@@ -189,7 +187,6 @@ const createDefaultData = (): GanttData => {
       fromId: productStrategy.activities![1].id,
       toSwimlaneId: uxDesign.id,
       toId: uxDesign.activities![0].id,
-      lag: 0,
     },
     // UX prototypes to user testing
     {
@@ -198,7 +195,6 @@ const createDefaultData = (): GanttData => {
       fromId: uxDesign.activities![0].id,
       toSwimlaneId: uxDesign.id,
       toId: uxDesign.activities![1].id,
-      lag: 0,
     },
     // Development to content creation
     {
@@ -207,7 +203,6 @@ const createDefaultData = (): GanttData => {
       fromId: productDev.activities![1].id,
       toSwimlaneId: contentCreation.id,
       toId: contentCreation.activities![0].id,
-      lag: 0,
     },
     // Content to pre-launch campaign
     {
@@ -216,7 +211,6 @@ const createDefaultData = (): GanttData => {
       fromId: contentCreation.activities![1].id,
       toSwimlaneId: campaigns.id,
       toId: campaigns.activities![0].id,
-      lag: 0,
     },
     // Beta testing to launch event
     {
@@ -225,7 +219,6 @@ const createDefaultData = (): GanttData => {
       fromId: productDev.activities![1].id,
       toSwimlaneId: campaigns.id,
       toId: campaigns.activities![1].id,
-      lag: 0,
     },
     // Launch event to post-launch
     {
@@ -234,7 +227,6 @@ const createDefaultData = (): GanttData => {
       fromId: campaigns.activities![1].id,
       toSwimlaneId: campaigns.id,
       toId: campaigns.activities![2].id,
-      lag: 0,
     },
   ];
 
@@ -641,7 +633,6 @@ export const useGanttData = () => {
         toSwimlaneId,
         color,
         label: "",
-        lag: 0,
       };
 
       return {

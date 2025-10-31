@@ -1117,10 +1117,9 @@ export const GanttChart = () => {
             open={true}
             onClose={() => setLinkEditDialog(null)}
             initialLabel={link.label || ""}
-            initialLag={link.lag || 0}
             initialColor={link.color || "#00bcd4"}
-            onSave={(label: string, lag: number, color: string) => {
-              updateLink(linkEditDialog.linkId, { label, lag, color });
+            onSave={(label: string, color: string) => {
+              updateLink(linkEditDialog.linkId, { label, color });
               toast.success("Link updated");
               setLinkEditDialog(null);
             }}

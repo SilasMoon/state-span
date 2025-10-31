@@ -28,7 +28,6 @@ export interface GanttLink {
   toSwimlaneId: string;
   color?: string;
   label?: string;
-  lag?: number; // in hours
 }
 
 export interface GanttSwimlane {

@@ -13,9 +13,8 @@ interface LinkEditDialogProps {
   open: boolean;
   onClose: () => void;
   initialLabel: string;
-  initialLag: number;
   initialColor: string;
-  onSave: (label: string, lag: number, color: string) => void;
+  onSave: (label: string, color: string) => void;
   onDelete: () => void;
 }
 
@@ -75,13 +74,11 @@ export const LinkEditDialog = ({
   open,
   onClose,
   initialLabel,
-  initialLag,
   initialColor,
   onSave,
   onDelete,
 }: LinkEditDialogProps) => {
   const [label, setLabel] = useState(initialLabel);
-  const [lag, setLag] = useState(initialLag);
   const [color, setColor] = useState(initialColor);
   const [recentColors, setRecentColors] = useState<string[]>([]);
 
@@ -96,7 +93,7 @@ export const LinkEditDialog = ({
   };
 
   const handleSave = () => {
-    onSave(label, lag, color);
+    onSave(label, color);
     onClose();
   };
 
@@ -115,18 +112,6 @@ export const LinkEditDialog = ({
               onChange={(e) => setLabel(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
               placeholder="Optional label..."
-              className="mt-1.5 h-9"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="lag" className="text-sm">Lag (hours)</Label>
-            <Input
-              id="lag"
-              type="number"
-              value={lag}
-              onChange={(e) => setLag(Number(e.target.value))}
-              onKeyDown={(e) => e.stopPropagation()}
               className="mt-1.5 h-9"
             />
           </div>
