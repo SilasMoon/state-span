@@ -567,6 +567,11 @@ export const GanttChart = () => {
     if (!container) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore keyboard shortcuts when typing in input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       const modifier = isMac ? e.metaKey : e.ctrlKey;
 
