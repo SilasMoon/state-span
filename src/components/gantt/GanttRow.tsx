@@ -261,7 +261,10 @@ export const GanttRow = ({
         style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px`, paddingLeft: `${level * 20 + 12}px` }}
         draggable
         onDragStart={handleDragStart}
-        onClick={() => onSelect('swimlane', swimlane.id)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect('swimlane', swimlane.id);
+        }}
       >
         {hasChildren && (
           <Button
