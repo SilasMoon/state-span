@@ -339,46 +339,64 @@ export const GanttChart = () => {
     try {
       const html2canvas = await import('html2canvas').then(m => m.default);
       
-      const scrollContainer = document.querySelector('.overflow-auto');
-      if (!scrollContainer) {
-        toast.error("Container not found");
+      const chartContainer = document.querySelector('.gantt-chart-container');
+      if (!chartContainer) {
+        toast.error("Chart not found");
         return;
       }
 
       toast.info("Generating image...");
       
-      // DRAMATIC FIX: Create a temporary clone with fixed positioning
-      const clone = scrollContainer.cloneNode(true) as HTMLElement;
+      // FUNDAMENTAL FIX: Create completely new static DOM without sticky positioning
+      const exportContainer = document.createElement('div');
+      exportContainer.style.position = 'absolute';
+      exportContainer.style.left = '-99999px';
+      exportContainer.style.top = '0';
+      exportContainer.style.background = '#ffffff';
+      exportContainer.style.padding = '0';
+      exportContainer.style.margin = '0';
       
-      // Style the clone for proper rendering
-      clone.style.position = 'absolute';
-      clone.style.left = '-9999px';
-      clone.style.top = '0';
-      clone.style.width = `${scrollContainer.scrollWidth}px`;
-      clone.style.height = `${scrollContainer.scrollHeight}px`;
-      clone.style.overflow = 'visible';
-      clone.style.transform = 'none';
+      // Clone and strip all sticky/fixed positioning
+      const clone = chartContainer.cloneNode(true) as HTMLElement;
       
-      document.body.appendChild(clone);
+      // Remove all sticky/fixed positioning and transforms
+      const removeSticky = (el: Element) => {
+        if (el instanceof HTMLElement) {
+          const computedStyle = window.getComputedStyle(el);
+          if (computedStyle.position === 'sticky' || computedStyle.position === 'fixed') {
+            el.style.position = 'relative';
+          }
+          el.style.transform = 'none';
+        }
+        Array.from(el.children).forEach(removeSticky);
+      };
+      removeSticky(clone);
       
-      // Wait for layout to settle
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Remove the overlay mask and SVG (we only want the static content)
+      const overlay = clone.querySelector('[style*="zIndex: 25"]');
+      if (overlay) overlay.remove();
+      const svg = clone.querySelector('svg');
+      if (svg) svg.remove();
       
-      // Capture the clone
-      const canvas = await html2canvas(clone, {
+      exportContainer.appendChild(clone);
+      document.body.appendChild(exportContainer);
+      
+      // Wait for layout
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Capture with explicit dimensions
+      const canvas = await html2canvas(exportContainer, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        width: scrollContainer.scrollWidth,
-        height: scrollContainer.scrollHeight,
       });
 
-      // Remove the clone
-      document.body.removeChild(clone);
+      // Cleanup
+      document.body.removeChild(exportContainer);
 
-      // Download the image
+      // Download
       canvas.toBlob((blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
@@ -983,17 +1001,6 @@ export const GanttChart = () => {
           itemTempPositions={itemTempPositions}
         />
 
-        {/* DRAMATIC FIX: Full-height solid sidebar mask overlay */}
-        {/* This div sits between arrows (z-20) and content (z-30) to block arrow bleeding */}
-        <div 
-          className="absolute left-0 top-0 pointer-events-none bg-card border-r-2 border-border"
-          style={{
-            width: `${swimlaneColumnWidth}px`,
-            height: '100%',
-            minHeight: '100vh',
-            zIndex: 25,
-          }}
-        />
 
         {/* Drag preview ghost bar */}
         {dragPreview && (() => {

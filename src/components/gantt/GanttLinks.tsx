@@ -87,7 +87,7 @@ export const GanttLinks = ({
       const svgRect = svgRef.current.getBoundingClientRect();
       
       // Convert to SVG coordinate system
-      // SVG now spans full width starting at x=0
+      // SVG starts AFTER sidebar at swimlaneColumnWidth, so subtract that offset
       x = barRect.left - svgRect.left;
       width = barRect.width;
       
@@ -103,8 +103,8 @@ export const GanttLinks = ({
       };
     } else {
       // Fallback: calculate from data
-      // SVG now spans full width, add swimlane offset
-      x = swimlaneColumnWidth + (itemStart / zoom) * columnWidth;
+      // SVG starts AFTER sidebar, so coords are 0-based from timeline start
+      x = (itemStart / zoom) * columnWidth;
       width = (itemDuration / zoom) * columnWidth;
     }
     
@@ -366,34 +366,21 @@ export const GanttLinks = ({
 
   const totalHeight = calculateTotalHeight();
   
+  // FUNDAMENTAL FIX: SVG should ONLY render in timeline area, never in sidebar
+  // Position it starting AFTER the sidebar column
   return (
     <svg
       ref={svgRef}
       className="absolute pointer-events-none"
       style={{ 
-        zIndex: 20, // Below the sidebar (z-30) so it gets masked
-        left: 0,
+        zIndex: 20,
+        left: `${swimlaneColumnWidth}px`, // Start AFTER sidebar - physically cannot render there
         top: 0,
-        width: '100%',
+        width: `calc(100% - ${swimlaneColumnWidth}px)`, // Only cover timeline area
         height: `${totalHeight}px`,
       }}
     >
-      {/* Define clip mask to hide anything under the sidebar */}
-      <defs>
-        <clipPath id="sidebar-mask">
-          <rect 
-            x={swimlaneColumnWidth} 
-            y={0} 
-            width={`calc(100% - ${swimlaneColumnWidth}px)`}
-            height={totalHeight}
-          />
-        </clipPath>
-      </defs>
-      
-      {/* Apply mask to all links */}
-      <g clipPath="url(#sidebar-mask)">
-        {data.links.map(renderLink)}
-      </g>
+      {data.links.map(renderLink)}
     </svg>
   );
 };
