@@ -251,7 +251,7 @@ export const GanttRow = ({
         dragOver === 'top' ? 'border-t-4 border-t-primary' : ''
       } ${dragOver === 'bottom' ? 'border-b-4 border-b-primary' : ''} ${
         dragOver === 'inside' ? 'bg-primary/10' : ''
-      } ${isTopLevelParent ? 'border-t-[3px] border-t-border/50 mt-4 pt-2' : ''}`}
+      } ${isTopLevelParent ? 'border-t-2 border-t-border mt-2 pt-1' : ''}`}
       data-swimlane-id={swimlane.id}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
