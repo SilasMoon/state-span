@@ -338,24 +338,31 @@ export const GanttChart = () => {
     try {
       const { domToPng } = await import('modern-screenshot');
       
-      const chartContainer = document.querySelector('.gantt-chart-container') as HTMLElement;
-      if (!chartContainer) {
+      // Capture the parent container that includes both chart and links
+      const exportContainer = document.querySelector('.gantt-export-container') as HTMLElement;
+      if (!exportContainer) {
         toast.error("Chart not found");
         return;
       }
 
       toast.info("Generating image...");
       
+      // Temporarily hide scrollbars for clean export
+      const originalOverflow = exportContainer.style.overflow;
+      exportContainer.style.overflow = 'hidden';
+      
       // Capture with modern-screenshot (including SVG links)
-      const dataUrl = await domToPng(chartContainer, {
+      const dataUrl = await domToPng(exportContainer, {
         quality: 1,
         backgroundColor: '#0a0a0a',
         scale: 2,
         features: {
-          // Ensure SVGs are properly rendered
           removeControlCharacter: true,
         }
       });
+      
+      // Restore scrollbars
+      exportContainer.style.overflow = originalOverflow;
 
       // Download
       const a = document.createElement("a");
@@ -862,7 +869,7 @@ export const GanttChart = () => {
       <div 
         ref={containerRef}
         tabIndex={0}
-        className="flex-1 overflow-auto relative outline-none focus:ring-2 focus:ring-primary/20"
+        className="flex-1 overflow-auto relative outline-none focus:ring-2 focus:ring-primary/20 gantt-export-container"
         onClick={(e) => {
           // If in copy mode, paste on click
           if (copiedItem && copyGhost) {
