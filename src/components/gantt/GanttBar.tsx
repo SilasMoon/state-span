@@ -48,7 +48,6 @@ export const GanttBar = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialSwimlaneId: swimlaneId, offsetX: 0, offsetY: 0 });
   const [tempStart, setTempStart] = useState(item.start);
   const [tempDuration, setTempDuration] = useState(item.duration);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [targetSwimlaneId, setTargetSwimlaneId] = useState(swimlaneId);
   const [modifierKeyState, setModifierKeyState] = useState(0);
 
@@ -225,7 +224,6 @@ export const GanttBar = ({
                 backgroundColor: isSummary ? '#9ca3af' : item.color,
                 color: "#fff",
               }}
-              onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
               onMouseDown={handleMoveStart}
               onDoubleClick={(e) => {
                 e.stopPropagation();
@@ -278,16 +276,7 @@ export const GanttBar = ({
               )}
             </div>
           </TooltipTrigger>
-          {isSelected && (
-            <TooltipContent 
-              className="max-w-sm z-[100]"
-              style={{
-                position: 'fixed',
-                left: `${mousePos.x + 15}px`,
-                top: `${mousePos.y + 15}px`,
-                pointerEvents: 'none'
-              }}
-            >
+          <TooltipContent className="max-w-sm">
             <div className="space-y-2">
               {item.label && (
                 <div className="font-semibold text-base">
@@ -325,7 +314,6 @@ export const GanttBar = ({
               )}
             </div>
           </TooltipContent>
-          )}
         </Tooltip>
       </TooltipProvider>
 
