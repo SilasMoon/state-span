@@ -347,14 +347,20 @@ export const GanttChart = () => {
 
       toast.info("Generating image...");
       
-      // SIMPLE APPROACH: Capture the scroll container directly
-      // html2canvas will render what's visible
+      // Capture with settings optimized for text rendering
       const canvas = await html2canvas(scrollContainer, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
+        onclone: (clonedDoc) => {
+          // Fix text rendering in cloned document by adding padding
+          const clonedContainer = clonedDoc.querySelector('.overflow-auto');
+          if (clonedContainer) {
+            (clonedContainer as HTMLElement).style.paddingBottom = '20px';
+          }
+        },
       });
 
       // Download the image
@@ -940,6 +946,18 @@ export const GanttChart = () => {
             <div>{renderSwimlanes(data.rootIds)}</div>
           )}
         </div>
+
+        {/* Solid sidebar overlay to prevent arrow bleeding through gaps between rows */}
+        <div 
+          className="sticky left-0 pointer-events-none bg-card border-r-2 border-border"
+          style={{
+            width: `${swimlaneColumnWidth}px`,
+            top: 0,
+            minHeight: '100vh',
+            maxHeight: '100vh',
+            zIndex: 25, // Above arrows (20) but below sidebar content (30)
+          }}
+        />
 
         {/* Render links - INSIDE scroll container for natural masking */}
         <GanttLinks
