@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Image, Flag } from "lucide-react";
+import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Image, Flag, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -30,6 +30,8 @@ interface GanttToolbarProps {
   canRedo: boolean;
   chartTitle: string;
   onChartTitleChange: (title: string) => void;
+  showFlags: boolean;
+  onToggleFlags: () => void;
 }
 
 export const GanttToolbar = ({
@@ -52,6 +54,8 @@ export const GanttToolbar = ({
   canRedo,
   chartTitle,
   onChartTitleChange,
+  showFlags,
+  onToggleFlags,
 }: GanttToolbarProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,6 +99,15 @@ export const GanttToolbar = ({
 
       <Button variant="outline" size="icon" onClick={onAddFlag} title="Add Flag (F)">
         <Flag className="w-4 h-4" />
+      </Button>
+
+      <Button 
+        variant="outline" 
+        size="icon" 
+        onClick={onToggleFlags} 
+        title={showFlags ? "Hide Flags" : "Show Flags"}
+      >
+        {showFlags ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
       </Button>
 
       <Button variant="outline" size="icon" onClick={onExport} title="Export JSON">
