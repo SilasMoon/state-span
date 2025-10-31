@@ -64,6 +64,13 @@ export const GanttChart = () => {
     console.log('[GanttChart] selected state changed:', selected);
   }, [selected]);
 
+  // Focus container when swimlane is selected to enable keyboard shortcuts
+  React.useEffect(() => {
+    if (selected?.type === 'swimlane' && containerRef.current) {
+      containerRef.current.focus();
+    }
+  }, [selected]);
+
   const [linkDragStart, setLinkDragStart] = useState<{
     swimlaneId: string;
     itemId: string;

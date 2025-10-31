@@ -289,7 +289,10 @@ export const GanttRow = ({
           value={swimlane.name}
           onChange={(e) => onSwimlaneNameChange(swimlane.id, e.target.value)}
           className="bg-transparent border-none outline-none text-sm text-foreground cursor-text min-w-0 flex-1 focus:ring-1 focus:ring-primary/30 rounded px-1"
-          onClick={() => onSelect('swimlane', swimlane.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect('swimlane', swimlane.id);
+          }}
         />
         
         <div className="flex items-center gap-2 flex-shrink-0">
