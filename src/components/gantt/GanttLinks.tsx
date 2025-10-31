@@ -1,6 +1,5 @@
 import React from "react";
 import { GanttData, GanttLink, ZoomLevel } from "@/types/gantt";
-import { GridRouter } from "@/lib/gridRouter";
 
 interface GanttLinksProps {
   data: GanttData;
@@ -159,9 +158,9 @@ export const GanttLinks = ({
     return swimlaneColumnWidth + (totalHours / zoom) * columnWidth;
   };
 
-  // Collect all obstacles (bars) for pathfinding
-  const collectObstacles = () => {
-    const obstacles: Array<{ x: number; y: number; width: number; height: number }> = [];
+  // Collect all task bars with their horizontal spans
+  const collectTaskBars = () => {
+    const bars: Array<{ x: number; width: number; id: string }> = [];
     
     Object.entries(data.swimlanes).forEach(([swimlaneId, swimlane]) => {
       const items = [...(swimlane.activities || []), ...(swimlane.states || [])];
@@ -169,17 +168,165 @@ export const GanttLinks = ({
       items.forEach(item => {
         const pos = getItemPosition(swimlaneId, item.id);
         if (pos) {
-          obstacles.push({
+          bars.push({
             x: pos.x,
-            y: pos.y - BAR_HEIGHT / 2,
             width: pos.width,
-            height: BAR_HEIGHT
+            id: item.id
           });
         }
       });
     });
     
-    return obstacles;
+    return bars;
+  };
+
+  // Check if a horizontal span overlaps any task bar (except excluded ones)
+  const hasHorizontalOverlap = (x1: number, x2: number, excludeIds: string[]) => {
+    const bars = collectTaskBars();
+    const minX = Math.min(x1, x2);
+    const maxX = Math.max(x1, x2);
+    
+    return bars.some(bar => {
+      if (excludeIds.includes(bar.id)) return false;
+      const barRight = bar.x + bar.width;
+      // Check if horizontal spans overlap
+      return !(maxX < bar.x || minX > barRight);
+    });
+  };
+
+  // Find a clear vertical channel between start and end X
+  const findClearChannel = (startX: number, endX: number, excludeIds: string[]): number | null => {
+    const minX = Math.min(startX, endX);
+    const maxX = Math.max(startX, endX);
+    
+    // Try points along the path
+    const candidates = [
+      startX + 20, // Just right of start
+      endX - 20,   // Just left of end
+      (startX + endX) / 2, // Midpoint
+    ];
+    
+    for (const x of candidates) {
+      if (x >= minX && x <= maxX) {
+        // Check if this X coordinate is clear (no horizontal overlap from minX to maxX)
+        if (!hasHorizontalOverlap(minX, maxX, excludeIds)) {
+          return x;
+        }
+      }
+    }
+    
+    return null;
+  };
+
+  // Generate elbowed path following the functional requirements
+  const generateElbowedPath = (
+    start: { x: number; y: number },
+    end: { x: number; y: number },
+    fromId: string,
+    toId: string
+  ): { x: number; y: number }[] => {
+    const CLEARANCE = 20; // Horizontal clearance from tasks
+    
+    // FR-3.1: Special case - vertically aligned
+    if (Math.abs(start.x - end.x) < 5) {
+      return [start, end];
+    }
+    
+    // FR-2.4: Default C-shaped or S-shaped path
+    const excludeIds = [fromId, toId];
+    
+    // Determine horizontal direction
+    const goingRight = end.x > start.x;
+    
+    // Try direct path first (simple C-shape)
+    const directPath = hasHorizontalOverlap(start.x, end.x, excludeIds);
+    
+    if (!directPath) {
+      // Simple 3-point path: horizontal -> vertical -> horizontal
+      const midX = goingRight ? end.x : start.x;
+      return [
+        start,
+        { x: midX, y: start.y },
+        { x: midX, y: end.y },
+        end
+      ];
+    }
+    
+    // Complex path needed - find clear channel
+    const channel = findClearChannel(start.x, end.x, excludeIds);
+    
+    if (channel !== null) {
+      // Use the channel for vertical routing
+      return [
+        start,
+        { x: channel, y: start.y },
+        { x: channel, y: end.y },
+        end
+      ];
+    }
+    
+    // Fallback: route around obstacles using gutter space
+    const gutterOffset = goingRight ? CLEARANCE : -CLEARANCE;
+    const routeX = start.x + gutterOffset;
+    
+    return [
+      start,
+      { x: routeX, y: start.y },
+      { x: routeX, y: end.y },
+      { x: end.x, y: end.y },
+      end
+    ];
+  };
+
+  // Convert points to SVG path with rounded corners
+  const createSVGPath = (points: { x: number; y: number }[], cornerRadius: number = 8): string => {
+    if (points.length < 2) return '';
+    
+    // FR-3.1: Single vertical line case
+    if (points.length === 2 && Math.abs(points[0].x - points[1].x) < 5) {
+      return `M ${points[0].x},${points[0].y} L ${points[1].x},${points[1].y}`;
+    }
+    
+    let path = `M ${points[0].x},${points[0].y}`;
+    
+    for (let i = 1; i < points.length - 1; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const next = points[i + 1];
+      
+      // Calculate direction vectors
+      const dx1 = curr.x - prev.x;
+      const dy1 = curr.y - prev.y;
+      const dx2 = next.x - curr.x;
+      const dy2 = next.y - curr.y;
+      
+      // Calculate distances
+      const dist1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+      const dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+      
+      // Use smaller radius if segment is short
+      const r = Math.min(cornerRadius, dist1 / 2, dist2 / 2);
+      
+      if (r > 0 && dist1 > 0 && dist2 > 0) {
+        // Calculate corner points
+        const cornerStart = {
+          x: curr.x - (dx1 / dist1) * r,
+          y: curr.y - (dy1 / dist1) * r
+        };
+        const cornerEnd = {
+          x: curr.x + (dx2 / dist2) * r,
+          y: curr.y + (dy2 / dist2) * r
+        };
+        
+        path += ` L ${cornerStart.x},${cornerStart.y}`;
+        path += ` Q ${curr.x},${curr.y} ${cornerEnd.x},${cornerEnd.y}`;
+      } else {
+        path += ` L ${curr.x},${curr.y}`;
+      }
+    }
+    
+    path += ` L ${points[points.length - 1].x},${points[points.length - 1].y}`;
+    return path;
   };
 
   const renderLink = (link: GanttLink) => {
@@ -217,23 +364,9 @@ export const GanttLinks = ({
       return null;
     }
 
-    // Collect obstacles, excluding the connected items
-    const obstacles = collectObstacles().filter(obs => {
-      const isFromBar = Math.abs(obs.x - fromPos.x) < 1 && Math.abs(obs.y - (fromPos.y - BAR_HEIGHT / 2)) < 1;
-      const isToBar = Math.abs(obs.x - toPos.x) < 1 && Math.abs(obs.y - (toPos.y - BAR_HEIGHT / 2)) < 1;
-      return !isFromBar && !isToBar;
-    });
-
-    // Use grid-based A* routing
-    const chartWidth = calculateTotalWidth();
-    const chartHeight = calculateTotalHeight();
-    
-    const router = new GridRouter(chartWidth, chartHeight, GRID_SIZE, obstacles);
-    const pathPoints = router.findPath(start, end);
-    
-    if (!pathPoints) return null;
-
-    const path = GridRouter.createSVGPath(pathPoints, 8);
+    // Generate elbowed path following functional requirements
+    const pathPoints = generateElbowedPath(start, end, link.fromId, link.toId);
+    const path = createSVGPath(pathPoints, 8);
     
     const isSelected = selectedLink === link.id;
     const linkColor = link.color || "#00bcd4";
