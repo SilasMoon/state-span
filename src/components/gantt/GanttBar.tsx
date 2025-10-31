@@ -50,6 +50,9 @@ export const GanttBar = ({
   const [tempDuration, setTempDuration] = useState(item.duration);
   const [targetSwimlaneId, setTargetSwimlaneId] = useState(swimlaneId);
   const [modifierKeyState, setModifierKeyState] = useState(0);
+  const [isTooltipDragging, setIsTooltipDragging] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [tooltipDragOffset, setTooltipDragOffset] = useState({ x: 0, y: 0 });
 
   console.log('[GanttBar] Render', { itemId: item.id, isSelected, modifierKeyState });
 
@@ -79,6 +82,13 @@ export const GanttBar = ({
       setTempDuration(item.duration);
     }
   }, [item.start, item.duration, isDragging]);
+
+  // Reset tooltip position when selection changes
+  React.useEffect(() => {
+    if (!isSelected) {
+      setTooltipPos(null);
+    }
+  }, [isSelected]);
 
   const left = (tempStart / zoom.hoursPerColumn) * columnWidth;
   const width = (tempDuration / zoom.hoursPerColumn) * columnWidth;
@@ -208,6 +218,43 @@ export const GanttBar = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDragging, tempStart, tempDuration, targetSwimlaneId]);
 
+  const handleTooltipMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setIsTooltipDragging(true);
+    const tooltipElement = (e.currentTarget as HTMLElement);
+    const rect = tooltipElement.getBoundingClientRect();
+    setTooltipDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+  };
+
+  const handleTooltipMouseMove = (e: MouseEvent) => {
+    if (isTooltipDragging) {
+      setTooltipPos({
+        x: e.clientX - tooltipDragOffset.x,
+        y: e.clientY - tooltipDragOffset.y
+      });
+    }
+  };
+
+  const handleTooltipMouseUp = () => {
+    setIsTooltipDragging(false);
+  };
+
+  React.useEffect(() => {
+    if (isTooltipDragging) {
+      document.addEventListener('mousemove', handleTooltipMouseMove);
+      document.addEventListener('mouseup', handleTooltipMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleTooltipMouseMove);
+        document.removeEventListener('mouseup', handleTooltipMouseUp);
+      };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTooltipDragging, tooltipDragOffset]);
+
   return (
     <>
       <TooltipProvider>
@@ -276,7 +323,16 @@ export const GanttBar = ({
               )}
             </div>
           </TooltipTrigger>
-          <TooltipContent className="max-w-sm">
+          <TooltipContent 
+            className="max-w-sm cursor-move select-none z-[100]"
+            style={tooltipPos ? {
+              position: 'fixed',
+              left: `${tooltipPos.x}px`,
+              top: `${tooltipPos.y}px`,
+              transform: 'none'
+            } : undefined}
+            onMouseDown={handleTooltipMouseDown}
+          >
             <div className="space-y-2">
               {item.label && (
                 <div className="font-semibold text-base">
