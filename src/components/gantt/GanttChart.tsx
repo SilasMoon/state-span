@@ -340,56 +340,61 @@ export const GanttChart = () => {
       // Dynamically import html2canvas
       const html2canvas = await import('html2canvas').then(m => m.default);
       
-      // Get the inner chart container
-      const chartContainer = document.querySelector('.gantt-chart-container') as HTMLElement;
-      if (!chartContainer) {
-        toast.error("Chart container not found");
-        return;
-      }
-
-      // Get scroll container to calculate visible area
       const scrollContainer = containerRef.current;
       if (!scrollContainer) {
-        toast.error("Scroll container not found");
+        toast.error("Container not found");
         return;
       }
 
       toast.info("Generating image...");
       
-      // Capture the entire chart first
-      const fullCanvas = await html2canvas(chartContainer, {
+      // DRAMATIC SOLUTION: Clone the visible viewport portion into a temporary container
+      const chartContainer = scrollContainer.querySelector('.gantt-chart-container') as HTMLElement;
+      if (!chartContainer) {
+        toast.error("Chart container not found");
+        return;
+      }
+      
+      // Create a temporary container positioned off-screen
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = `${scrollContainer.clientWidth}px`;
+      tempContainer.style.height = `${scrollContainer.clientHeight}px`;
+      tempContainer.style.overflow = 'hidden';
+      tempContainer.style.backgroundColor = '#ffffff';
+      document.body.appendChild(tempContainer);
+      
+      // Clone the chart content
+      const clonedChart = chartContainer.cloneNode(true) as HTMLElement;
+      
+      // Adjust the clone's position to show only the visible portion
+      clonedChart.style.position = 'relative';
+      clonedChart.style.left = `-${scrollContainer.scrollLeft}px`;
+      clonedChart.style.top = `-${scrollContainer.scrollTop}px`;
+      
+      tempContainer.appendChild(clonedChart);
+      
+      // Small delay to ensure rendering
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Capture the temporary container
+      const canvas = await html2canvas(tempContainer, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
         useCORS: true,
         foreignObjectRendering: true,
         allowTaint: true,
+        width: scrollContainer.clientWidth,
+        height: scrollContainer.clientHeight,
       });
-
-      // Crop to visible viewport
-      const visibleWidth = scrollContainer.clientWidth;
-      const visibleHeight = scrollContainer.clientHeight;
-      const scrollLeft = scrollContainer.scrollLeft;
-      const scrollTop = scrollContainer.scrollTop;
       
-      // Create a new canvas with just the visible portion
-      const croppedCanvas = document.createElement('canvas');
-      croppedCanvas.width = visibleWidth * 2; // Account for scale: 2
-      croppedCanvas.height = visibleHeight * 2;
-      const ctx = croppedCanvas.getContext('2d');
-      
-      if (ctx) {
-        // Draw the cropped portion
-        ctx.drawImage(
-          fullCanvas,
-          scrollLeft * 2, scrollTop * 2, // Source x, y (scaled)
-          visibleWidth * 2, visibleHeight * 2, // Source width, height (scaled)
-          0, 0, // Destination x, y
-          visibleWidth * 2, visibleHeight * 2 // Destination width, height
-        );
-      }
+      // Remove the temporary container
+      document.body.removeChild(tempContainer);
 
-      croppedCanvas.toBlob((blob) => {
+      canvas.toBlob((blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");

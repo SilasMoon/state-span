@@ -87,12 +87,11 @@ export const GanttLinks = ({
       const svgRect = svgRef.current.getBoundingClientRect();
       
       // Convert to SVG coordinate system
-      // CRITICAL: SVG starts at swimlaneColumnWidth, so coordinates are already relative to SVG origin
+      // SVG now starts at left: 0, so coordinates include the swimlane column width
       x = barRect.left - svgRect.left;
       width = barRect.width;
       
-      // CRITICAL: Also get Y position from DOM for consistency
-      // The bar's visual center in SVG coordinates
+      // Get Y position from DOM for consistency
       const barCenterY = (barRect.top + barRect.height / 2) - svgRect.top;
       
       return {
@@ -103,9 +102,9 @@ export const GanttLinks = ({
         barCenterY
       };
     } else {
-      // Fallback: calculate from data (won't account for scroll)
-      // Since SVG starts AFTER swimlane column, x coordinates are already relative
-      x = (itemStart / zoom) * columnWidth;
+      // Fallback: calculate from data
+      // Add swimlaneColumnWidth since SVG now starts at left edge
+      x = swimlaneColumnWidth + (itemStart / zoom) * columnWidth;
       width = (itemDuration / zoom) * columnWidth;
     }
     
@@ -365,20 +364,35 @@ export const GanttLinks = ({
     );
   };
 
+  const chartWidth = calculateTotalWidth();
+  const chartHeight = calculateTotalHeight();
+
   return (
     <svg
       ref={svgRef}
       className="absolute pointer-events-none"
       style={{ 
         zIndex: 20, // Below the sidebar (z-30) so it gets masked
-        left: `${swimlaneColumnWidth}px`, // Start AFTER the sidebar
+        left: 0, // Start at left edge
         top: 0,
-        width: `calc(100% - ${swimlaneColumnWidth}px)`,
-        height: `${calculateTotalHeight()}px`,
-        clipPath: `inset(0 0 0 0)`, // Clip any content that overflows
+        width: '100%',
+        height: `${chartHeight}px`,
       }}
     >
-      {data.links.map(renderLink)}
+      {/* DRAMATIC SOLUTION: Explicit SVG clipPath to mask the sidebar area */}
+      <defs>
+        <clipPath id="gantt-sidebar-mask">
+          <rect 
+            x={swimlaneColumnWidth} 
+            y="0" 
+            width={chartWidth - swimlaneColumnWidth} 
+            height={chartHeight} 
+          />
+        </clipPath>
+      </defs>
+      <g clipPath="url(#gantt-sidebar-mask)">
+        {data.links.map(renderLink)}
+      </g>
     </svg>
   );
 };
