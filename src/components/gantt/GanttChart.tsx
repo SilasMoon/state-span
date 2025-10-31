@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { GanttToolbar } from "./GanttToolbar";
 import { GanttTimeline } from "./GanttTimeline";
+import { GanttFlagRow } from "./GanttFlagRow";
 import { GanttRow } from "./GanttRow";
 import { EditDialog } from "./EditDialog";
 import { LinkEditDialog } from "./LinkEditDialog";
 import { FlagEditDialog } from "./FlagEditDialog";
 import { GanttLinks } from "./GanttLinks";
-import { GanttFlags } from "./GanttFlags";
 import { useGanttData } from "@/hooks/useGanttData";
 import { ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
 import { toast } from "sonner";
@@ -988,6 +988,25 @@ export const GanttChart = () => {
             </div>
           </div>
 
+          {/* Dedicated Flag Row */}
+          <GanttFlagRow
+            flags={data.flags}
+            zoom={zoom}
+            totalHours={totalHours}
+            swimlaneColumnWidth={swimlaneColumnWidth}
+            selectedFlag={selectedFlag}
+            onFlagClick={(flagId) => {
+              setSelectedFlag(flagId);
+              setSelected(null);
+              setSelectedLink(null);
+              setFlagEditDialog(true);
+            }}
+            onFlagMove={(flagId, newPosition) => {
+              updateFlag(flagId, { position: newPosition });
+              toast.success("Flag moved");
+            }}
+          />
+
           {data.rootIds.length === 0 ? (
             <div className="flex items-center justify-center h-64 text-muted-foreground">
               Click "Add Swimlane" to get started
@@ -1015,24 +1034,6 @@ export const GanttChart = () => {
             }
           }}
           itemTempPositions={itemTempPositions}
-        />
-
-        {/* Render flags */}
-        <GanttFlags
-          flags={data.flags}
-          zoom={zoom}
-          swimlaneColumnWidth={swimlaneColumnWidth}
-          selectedFlag={selectedFlag}
-          onFlagClick={(flagId) => {
-            setSelectedFlag(flagId);
-            setSelected(null);
-            setSelectedLink(null);
-            setFlagEditDialog(true);
-          }}
-          onFlagMove={(flagId, newPosition) => {
-            updateFlag(flagId, { position: newPosition });
-            toast.success("Flag moved");
-          }}
         />
 
 
