@@ -349,21 +349,24 @@ export const GanttChart = () => {
 
       toast.info("Generating image...");
       
-      // Capture only the visible viewport area
+      // Temporarily scroll to capture position
+      const originalScrollLeft = scrollContainer.scrollLeft;
+      const originalScrollTop = scrollContainer.scrollTop;
+      
+      // Capture the current viewport - use x, y, width, height to crop
       const canvas = await html2canvas(scrollContainer, {
         backgroundColor: '#ffffff',
         scale: 2,
-        logging: false,
+        logging: true, // Enable logging to debug
         useCORS: true,
         foreignObjectRendering: true,
         allowTaint: true,
-        // Capture only what's visible in the viewport
+        x: originalScrollLeft,
+        y: originalScrollTop,
         width: scrollContainer.clientWidth,
         height: scrollContainer.clientHeight,
-        scrollX: -scrollContainer.scrollLeft,
-        scrollY: -scrollContainer.scrollTop,
-        windowWidth: scrollContainer.scrollWidth,
-        windowHeight: scrollContainer.scrollHeight,
+        scrollX: 0,
+        scrollY: 0,
       });
 
       canvas.toBlob((blob) => {

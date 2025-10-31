@@ -87,6 +87,7 @@ export const GanttLinks = ({
       const svgRect = svgRef.current.getBoundingClientRect();
       
       // Convert to SVG coordinate system
+      // CRITICAL: SVG starts at swimlaneColumnWidth, so coordinates are already relative to SVG origin
       x = barRect.left - svgRect.left;
       width = barRect.width;
       
@@ -103,6 +104,7 @@ export const GanttLinks = ({
       };
     } else {
       // Fallback: calculate from data (won't account for scroll)
+      // Since SVG starts AFTER swimlane column, x coordinates are already relative
       x = (itemStart / zoom) * columnWidth;
       width = (itemDuration / zoom) * columnWidth;
     }
@@ -373,6 +375,7 @@ export const GanttLinks = ({
         top: 0,
         width: `calc(100% - ${swimlaneColumnWidth}px)`,
         height: `${calculateTotalHeight()}px`,
+        overflow: 'hidden', // Prevent any overflow into sidebar
       }}
     >
       {data.links.map(renderLink)}
