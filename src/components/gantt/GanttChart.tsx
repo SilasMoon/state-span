@@ -64,12 +64,17 @@ export const GanttChart = () => {
     console.log('[GanttChart] selected state changed:', selected);
   }, [selected]);
 
-  // Focus container when swimlane is selected to enable keyboard shortcuts
+  // Focus container when item is selected to enable keyboard shortcuts
   React.useEffect(() => {
-    if (selected?.type === 'swimlane' && containerRef.current) {
-      console.log('[GanttChart] Focusing container for swimlane selection');
-      containerRef.current.focus();
-      console.log('[GanttChart] Container focused, activeElement:', document.activeElement);
+    if (selected && containerRef.current) {
+      console.log('[GanttChart] Focusing container for selection:', selected);
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        if (containerRef.current) {
+          containerRef.current.focus();
+          console.log('[GanttChart] Container focused, activeElement:', document.activeElement);
+        }
+      }, 10);
     }
   }, [selected]);
 

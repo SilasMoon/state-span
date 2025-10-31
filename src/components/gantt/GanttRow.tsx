@@ -290,12 +290,6 @@ export const GanttRow = ({
           onClick={(e) => {
             e.stopPropagation();
           }}
-          onFocus={(e) => {
-            e.stopPropagation();
-          }}
-          onBlur={() => {
-            onSelect('swimlane', swimlane.id);
-          }}
         />
         
         <div className="flex items-center gap-2 flex-shrink-0">
