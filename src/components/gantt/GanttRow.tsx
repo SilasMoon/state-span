@@ -261,19 +261,17 @@ export const GanttRow = ({
         style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px`, paddingLeft: `${level * 20 + 12}px` }}
         draggable
         onDragStart={handleDragStart}
-        onClick={(e) => {
-          // Only select if clicking on the header itself, not on interactive elements
-          if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === 'DIV') {
-            onSelect('swimlane', swimlane.id);
-          }
-        }}
+        onClick={() => onSelect('swimlane', swimlane.id)}
       >
         {hasChildren && (
           <Button
             variant="ghost"
             size="sm"
             className="h-6 w-6 p-0 flex-shrink-0"
-            onClick={() => onToggleExpand(swimlane.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleExpand(swimlane.id);
+            }}
           >
             {swimlane.expanded ? (
               <ChevronDown className="w-4 h-4" />
@@ -314,7 +312,12 @@ export const GanttRow = ({
           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6 p-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Plus className="w-3 h-3" />
                 </Button>
               </DropdownMenuTrigger>
