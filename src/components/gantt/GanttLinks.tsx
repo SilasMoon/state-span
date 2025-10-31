@@ -475,6 +475,9 @@ export const GanttLinks = ({
             <polygon
               points="0 0, 8 2.5, 0 5"
               fill={isSelected ? "hsl(var(--destructive))" : linkColor}
+              stroke="hsl(var(--background))"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
             />
           </marker>
         </defs>
