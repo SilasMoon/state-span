@@ -135,17 +135,13 @@ export const GanttToolbar = ({
         <Redo className="w-4 h-4" />
       </Button>
 
-      <div className="flex-1" />
-
       <input
         type="text"
         value={chartTitle}
         onChange={(e) => onChartTitleChange(e.target.value)}
-        className="text-xl font-bold bg-transparent border-none outline-none text-foreground text-center min-w-0 max-w-md focus:ring-2 focus:ring-primary/20 rounded px-3 py-1 transition-all"
+        className="flex-1 text-xl font-bold bg-transparent border-none outline-none text-foreground text-center min-w-0 mx-4 focus:ring-2 focus:ring-primary/20 rounded px-3 py-1 transition-all"
         placeholder="Enter chart title..."
       />
-
-      <div className="flex-1" />
 
       <ThemeToggle />
 
