@@ -667,6 +667,39 @@ export const GanttChart = () => {
     return () => container.removeEventListener('keydown', handleKeyDown);
   }, [selected, selectedLink, copiedItem, copyGhost, data.swimlanes, deleteSwimlane, deleteTask, deleteState, deleteLink, undo, redo, canUndo, canRedo]);
 
+  // Mouse wheel zoom handler
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Check if Ctrl/Cmd is pressed for zoom
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const modifier = isMac ? e.metaKey : e.ctrlKey;
+
+      if (modifier) {
+        e.preventDefault();
+        
+        // Wheel down (deltaY > 0) = zoom out
+        // Wheel up (deltaY < 0) = zoom in
+        if (e.deltaY < 0) {
+          // Zoom in
+          if (zoomIndex > 0) {
+            setZoomIndex(zoomIndex - 1);
+          }
+        } else if (e.deltaY > 0) {
+          // Zoom out
+          if (zoomIndex < ZOOM_LEVELS.length - 1) {
+            setZoomIndex(zoomIndex + 1);
+          }
+        }
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, [zoomIndex, setZoomIndex]);
+
   // Auto-focus container when item is selected
   React.useEffect(() => {
     if (selected && containerRef.current) {
