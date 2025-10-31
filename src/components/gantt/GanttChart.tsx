@@ -673,12 +673,11 @@ export const GanttChart = () => {
     if (!container) return;
 
     const handleWheel = (e: WheelEvent) => {
-      // Only zoom if scrolling horizontally (shift + wheel) or if Ctrl/Cmd is pressed
+      // Check if Ctrl/Cmd is pressed for zoom
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       const modifier = isMac ? e.metaKey : e.ctrlKey;
 
-      // Zoom when: Ctrl/Cmd is pressed OR shift is pressed (horizontal scroll)
-      if (modifier || e.shiftKey) {
+      if (modifier) {
         e.preventDefault();
         
         // Wheel down (deltaY > 0) = zoom out
