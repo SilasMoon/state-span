@@ -245,19 +245,6 @@ export const GanttRow = ({
   // Top-level swimlane with children gets a delimiter (visual separator)
   const isTopLevelParent = level === 0 && hasChildren;
   
-  // Debug log to check delimiter logic
-  if (level === 0) {
-    console.log('[GanttRow] Top-level swimlane:', {
-      name: swimlane.name,
-      id: swimlane.id,
-      level,
-      hasChildren,
-      childrenLength: swimlane.children.length,
-      isTopLevelParent,
-      willShowDelimiter: isTopLevelParent
-    });
-  }
-  
   return (
     <div
       className={`flex transition-colors relative ${
