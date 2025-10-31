@@ -5,71 +5,124 @@ let nextId = 1;
 const generateId = () => `item-${nextId++}`;
 
 const createDefaultData = (): GanttData => {
-  // Create parent swimlanes
+  // Product Launch Project Example
+  
+  // Planning & Strategy Phase
+  const planningPhase: GanttSwimlane = {
+    id: generateId(),
+    name: "Planning & Strategy",
+    type: "activity",
+    parentId: undefined,
+    children: [],
+    expanded: true,
+  };
+
+  const marketResearch: GanttSwimlane = {
+    id: generateId(),
+    name: "Market Research",
+    type: "activity",
+    parentId: planningPhase.id,
+    children: [],
+    expanded: true,
+    activities: [
+      { id: generateId(), start: 0, duration: 24, color: "#00bcd4", label: "Competitor Analysis", labelColor: "#ffffff", description: "Analyze market competitors" },
+      { id: generateId(), start: 24, duration: 16, color: "#0097a7", label: "Customer Surveys", labelColor: "#ffffff", description: "Conduct target audience surveys" },
+    ],
+  };
+
+  const productStrategy: GanttSwimlane = {
+    id: generateId(),
+    name: "Product Strategy",
+    type: "activity",
+    parentId: planningPhase.id,
+    children: [],
+    expanded: true,
+    activities: [
+      { id: generateId(), start: 40, duration: 20, color: "#4caf50", label: "Feature Definition", labelColor: "#ffffff", description: "Define core product features" },
+      { id: generateId(), start: 60, duration: 12, color: "#388e3c", label: "Pricing Strategy", labelColor: "#ffffff", description: "Determine pricing model" },
+    ],
+  };
+
+  planningPhase.children = [marketResearch.id, productStrategy.id];
+
+  // Development Phase
   const developmentPhase: GanttSwimlane = {
     id: generateId(),
-    name: "Development Phase",
+    name: "Development",
     type: "activity",
     parentId: undefined,
     children: [],
     expanded: true,
   };
 
-  const designSwimlane: GanttSwimlane = {
+  const productDev: GanttSwimlane = {
     id: generateId(),
-    name: "Design",
+    name: "Product Development",
     type: "activity",
     parentId: developmentPhase.id,
     children: [],
     expanded: true,
     activities: [
-      { id: generateId(), start: 0, duration: 16, color: "#00bcd4", label: "Wireframes", labelColor: "#ffffff", description: "Create initial wireframes" },
-      { id: generateId(), start: 16, duration: 24, color: "#4caf50", label: "UI Design", labelColor: "#ffffff", description: "Design user interface" },
+      { id: generateId(), start: 72, duration: 48, color: "#ff9800", label: "Core Features", labelColor: "#ffffff", description: "Build primary features" },
+      { id: generateId(), start: 120, duration: 24, color: "#f57c00", label: "Beta Testing", labelColor: "#ffffff", description: "Internal beta testing" },
     ],
   };
 
-  const backendSwimlane: GanttSwimlane = {
+  const uxDesign: GanttSwimlane = {
     id: generateId(),
-    name: "Backend Development",
+    name: "UX Design",
     type: "activity",
     parentId: developmentPhase.id,
     children: [],
     expanded: true,
     activities: [
-      { id: generateId(), start: 40, duration: 32, color: "#ff9800", label: "API Development", labelColor: "#ffffff", description: "Build REST APIs" },
-      { id: generateId(), start: 72, duration: 24, color: "#f44336", label: "Database Setup", labelColor: "#ffffff", description: "Configure database" },
+      { id: generateId(), start: 72, duration: 20, color: "#9c27b0", label: "Prototypes", labelColor: "#ffffff", description: "Create interactive prototypes" },
+      { id: generateId(), start: 92, duration: 28, color: "#7b1fa2", label: "User Testing", labelColor: "#ffffff", description: "Conduct user experience tests" },
     ],
   };
 
-  const frontendSwimlane: GanttSwimlane = {
-    id: generateId(),
-    name: "Frontend Development",
-    type: "activity",
-    parentId: developmentPhase.id,
-    children: [],
-    expanded: true,
-    activities: [
-      { id: generateId(), start: 40, duration: 40, color: "#9c27b0", label: "Components", labelColor: "#ffffff", description: "Build React components" },
-      { id: generateId(), start: 80, duration: 16, color: "#3f51b5", label: "Integration", labelColor: "#ffffff", description: "Integrate with API" },
-    ],
-  };
+  developmentPhase.children = [productDev.id, uxDesign.id];
 
-  developmentPhase.children = [designSwimlane.id, backendSwimlane.id, frontendSwimlane.id];
-
-  const testingPhase: GanttSwimlane = {
+  // Marketing & Launch Phase
+  const marketingPhase: GanttSwimlane = {
     id: generateId(),
-    name: "Testing & QA",
+    name: "Marketing & Launch",
     type: "activity",
     parentId: undefined,
     children: [],
     expanded: true,
+  };
+
+  const contentCreation: GanttSwimlane = {
+    id: generateId(),
+    name: "Content Creation",
+    type: "activity",
+    parentId: marketingPhase.id,
+    children: [],
+    expanded: true,
     activities: [
-      { id: generateId(), start: 96, duration: 24, color: "#e91e63", label: "Unit Tests", labelColor: "#ffffff", description: "Write unit tests" },
-      { id: generateId(), start: 120, duration: 16, color: "#673ab7", label: "Integration Tests", labelColor: "#ffffff", description: "Test integrations" },
+      { id: generateId(), start: 120, duration: 16, color: "#e91e63", label: "Landing Page", labelColor: "#ffffff", description: "Design landing page" },
+      { id: generateId(), start: 136, duration: 12, color: "#c2185b", label: "Marketing Videos", labelColor: "#ffffff", description: "Produce promotional videos" },
     ],
   };
 
-  // State swimlanes
+  const campaigns: GanttSwimlane = {
+    id: generateId(),
+    name: "Marketing Campaigns",
+    type: "activity",
+    parentId: marketingPhase.id,
+    children: [],
+    expanded: true,
+    activities: [
+      { id: generateId(), start: 148, duration: 20, color: "#673ab7", label: "Pre-Launch", labelColor: "#ffffff", description: "Pre-launch email campaign" },
+      { id: generateId(), start: 168, duration: 24, color: "#512da8", label: "Launch Event", labelColor: "#ffffff", description: "Product launch event" },
+      { id: generateId(), start: 192, duration: 48, color: "#311b92", label: "Post-Launch", labelColor: "#ffffff", description: "Post-launch marketing push" },
+    ],
+  };
+
+  marketingPhase.children = [contentCreation.id, campaigns.id];
+
+  // Project States
   const projectStatusParent: GanttSwimlane = {
     id: generateId(),
     name: "Project Status",
@@ -79,73 +132,115 @@ const createDefaultData = (): GanttData => {
     expanded: true,
   };
 
-  const approvalStatus: GanttSwimlane = {
+  const budgetStatus: GanttSwimlane = {
     id: generateId(),
-    name: "Approval Status",
+    name: "Budget Status",
     type: "state",
     parentId: projectStatusParent.id,
     children: [],
     expanded: true,
     states: [
-      { id: generateId(), start: 0, duration: 40, color: "#ff9800", label: "In Review", labelColor: "#ffffff", description: "Awaiting design review" },
-      { id: generateId(), start: 40, duration: 96, color: "#4caf50", label: "Approved", labelColor: "#ffffff", description: "Design approved" },
+      { id: generateId(), start: 0, duration: 72, color: "#4caf50", label: "On Budget", labelColor: "#ffffff", description: "Within budget limits" },
+      { id: generateId(), start: 72, duration: 96, color: "#ff9800", label: "Budget Review", labelColor: "#ffffff", description: "Under review" },
+      { id: generateId(), start: 168, duration: 72, color: "#4caf50", label: "Approved", labelColor: "#ffffff", description: "Additional budget approved" },
     ],
   };
 
-  const deploymentStatus: GanttSwimlane = {
+  const milestones: GanttSwimlane = {
     id: generateId(),
-    name: "Deployment Status",
+    name: "Milestones",
     type: "state",
     parentId: projectStatusParent.id,
     children: [],
     expanded: true,
     states: [
-      { id: generateId(), start: 96, duration: 20, color: "#2196f3", label: "Staging", labelColor: "#ffffff", description: "Deployed to staging" },
-      { id: generateId(), start: 116, duration: 20, color: "#00bcd4", label: "Production", labelColor: "#ffffff", description: "Deployed to production" },
+      { id: generateId(), start: 40, duration: 32, color: "#2196f3", label: "Strategy Complete", labelColor: "#ffffff", description: "Planning phase done" },
+      { id: generateId(), start: 144, duration: 24, color: "#03a9f4", label: "Product Ready", labelColor: "#ffffff", description: "Development complete" },
+      { id: generateId(), start: 168, duration: 24, color: "#00bcd4", label: "Launch Day", labelColor: "#ffffff", description: "Official product launch" },
     ],
   };
 
-  projectStatusParent.children = [approvalStatus.id, deploymentStatus.id];
+  projectStatusParent.children = [budgetStatus.id, milestones.id];
 
   // Create links between activities
   const links: GanttLink[] = [
-    // Design to Backend (Finish-to-Start)
+    // Market research to product strategy
     {
       id: generateId(),
-      fromSwimlaneId: designSwimlane.id,
-      fromId: designSwimlane.activities![1].id,
-      toSwimlaneId: backendSwimlane.id,
-      toId: backendSwimlane.activities![0].id,
+      fromSwimlaneId: marketResearch.id,
+      fromId: marketResearch.activities![1].id,
+      toSwimlaneId: productStrategy.id,
+      toId: productStrategy.activities![0].id,
       type: "FS",
       lag: 0,
     },
-    // Design to Frontend (Finish-to-Start)
+    // Product strategy to development
     {
       id: generateId(),
-      fromSwimlaneId: designSwimlane.id,
-      fromId: designSwimlane.activities![1].id,
-      toSwimlaneId: frontendSwimlane.id,
-      toId: frontendSwimlane.activities![0].id,
+      fromSwimlaneId: productStrategy.id,
+      fromId: productStrategy.activities![1].id,
+      toSwimlaneId: productDev.id,
+      toId: productDev.activities![0].id,
       type: "FS",
       lag: 0,
     },
-    // Backend to Testing (Finish-to-Start)
+    // Product strategy to UX design
     {
       id: generateId(),
-      fromSwimlaneId: backendSwimlane.id,
-      fromId: backendSwimlane.activities![1].id,
-      toSwimlaneId: testingPhase.id,
-      toId: testingPhase.activities![0].id,
+      fromSwimlaneId: productStrategy.id,
+      fromId: productStrategy.activities![1].id,
+      toSwimlaneId: uxDesign.id,
+      toId: uxDesign.activities![0].id,
       type: "FS",
       lag: 0,
     },
-    // Frontend to Testing (Finish-to-Start)
+    // UX prototypes to user testing
     {
       id: generateId(),
-      fromSwimlaneId: frontendSwimlane.id,
-      fromId: frontendSwimlane.activities![1].id,
-      toSwimlaneId: testingPhase.id,
-      toId: testingPhase.activities![1].id,
+      fromSwimlaneId: uxDesign.id,
+      fromId: uxDesign.activities![0].id,
+      toSwimlaneId: uxDesign.id,
+      toId: uxDesign.activities![1].id,
+      type: "FS",
+      lag: 0,
+    },
+    // Development to content creation (Start-to-Start)
+    {
+      id: generateId(),
+      fromSwimlaneId: productDev.id,
+      fromId: productDev.activities![1].id,
+      toSwimlaneId: contentCreation.id,
+      toId: contentCreation.activities![0].id,
+      type: "SS",
+      lag: 0,
+    },
+    // Content to pre-launch campaign
+    {
+      id: generateId(),
+      fromSwimlaneId: contentCreation.id,
+      fromId: contentCreation.activities![1].id,
+      toSwimlaneId: campaigns.id,
+      toId: campaigns.activities![0].id,
+      type: "FS",
+      lag: 0,
+    },
+    // Beta testing to launch event
+    {
+      id: generateId(),
+      fromSwimlaneId: productDev.id,
+      fromId: productDev.activities![1].id,
+      toSwimlaneId: campaigns.id,
+      toId: campaigns.activities![1].id,
+      type: "FS",
+      lag: 0,
+    },
+    // Launch event to post-launch
+    {
+      id: generateId(),
+      fromSwimlaneId: campaigns.id,
+      fromId: campaigns.activities![1].id,
+      toSwimlaneId: campaigns.id,
+      toId: campaigns.activities![2].id,
       type: "FS",
       lag: 0,
     },
@@ -153,16 +248,20 @@ const createDefaultData = (): GanttData => {
 
   return {
     swimlanes: {
+      [planningPhase.id]: planningPhase,
+      [marketResearch.id]: marketResearch,
+      [productStrategy.id]: productStrategy,
       [developmentPhase.id]: developmentPhase,
-      [designSwimlane.id]: designSwimlane,
-      [backendSwimlane.id]: backendSwimlane,
-      [frontendSwimlane.id]: frontendSwimlane,
-      [testingPhase.id]: testingPhase,
+      [productDev.id]: productDev,
+      [uxDesign.id]: uxDesign,
+      [marketingPhase.id]: marketingPhase,
+      [contentCreation.id]: contentCreation,
+      [campaigns.id]: campaigns,
       [projectStatusParent.id]: projectStatusParent,
-      [approvalStatus.id]: approvalStatus,
-      [deploymentStatus.id]: deploymentStatus,
+      [budgetStatus.id]: budgetStatus,
+      [milestones.id]: milestones,
     },
-    rootIds: [developmentPhase.id, testingPhase.id, projectStatusParent.id],
+    rootIds: [planningPhase.id, developmentPhase.id, marketingPhase.id, projectStatusParent.id],
     links,
   };
 };
