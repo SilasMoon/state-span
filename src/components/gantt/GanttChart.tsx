@@ -337,9 +337,9 @@ export const GanttChart = () => {
 
   const handleExportPNG = async () => {
     try {
-      const domtoimage = await import('dom-to-image-more').then(m => m.default);
+      const { domToPng } = await import('modern-screenshot');
       
-      const chartContainer = document.querySelector('.gantt-chart-container');
+      const chartContainer = document.querySelector('.gantt-chart-container') as HTMLElement;
       if (!chartContainer) {
         toast.error("Chart not found");
         return;
@@ -347,36 +347,34 @@ export const GanttChart = () => {
 
       toast.info("Generating image...");
       
-      // Clone the chart to remove SVG links
-      const clone = chartContainer.cloneNode(true) as HTMLElement;
-      clone.querySelectorAll('svg').forEach(el => el.remove());
-      
-      // Create temporary container
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'fixed';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      tempContainer.appendChild(clone);
-      document.body.appendChild(tempContainer);
-      
-      // Use dom-to-image to generate blob
-      const blob = await domtoimage.toBlob(clone, {
-        bgcolor: '#0a0a0a',
-        quality: 1,
-        style: {
-          transform: 'none',
+      // Remove SVG links temporarily
+      const svgs = chartContainer.querySelectorAll('svg');
+      const svgParents: { parent: Element; svg: Element; nextSibling: Node | null }[] = [];
+      svgs.forEach(svg => {
+        const parent = svg.parentElement;
+        if (parent) {
+          svgParents.push({ parent, svg, nextSibling: svg.nextSibling });
+          parent.removeChild(svg);
         }
       });
+      
+      // Capture with modern-screenshot
+      const dataUrl = await domToPng(chartContainer, {
+        quality: 1,
+        backgroundColor: '#0a0a0a',
+        scale: 2,
+      });
+      
+      // Restore SVGs
+      svgParents.forEach(({ parent, svg, nextSibling }) => {
+        parent.insertBefore(svg, nextSibling);
+      });
 
-      document.body.removeChild(tempContainer);
-
-      // Create download link
-      const url = URL.createObjectURL(blob);
+      // Download
       const a = document.createElement("a");
-      a.href = url;
+      a.href = dataUrl;
       a.download = `gantt-chart-${Date.now()}.png`;
       a.click();
-      URL.revokeObjectURL(url);
       toast.success("Image exported");
     } catch (error) {
       console.error('Export error:', error);
