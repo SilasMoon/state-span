@@ -133,7 +133,7 @@ export const GanttFlagRow = ({
           return (
             <div
               key={flag.id}
-              className="absolute top-0 bottom-0 cursor-move group"
+              className="absolute top-0 bottom-0 cursor-move group pointer-events-auto"
               style={{
                 left: `${left}px`,
                 transform: "translateX(-50%)",
@@ -153,9 +153,9 @@ export const GanttFlagRow = ({
                 }}
               />
 
-              {/* Flag icon and label */}
+              {/* Flag icon and label - clickable area */}
               <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 min-w-max pointer-events-none"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 min-w-max"
                 style={{
                   filter: isSelected ? `drop-shadow(0 0 4px ${flag.color})` : "none",
                 }}
