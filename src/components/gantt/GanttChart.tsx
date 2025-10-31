@@ -7,14 +7,15 @@ import { EditDialog } from "./EditDialog";
 import { LinkEditDialog } from "./LinkEditDialog";
 import { GanttLinks } from "./GanttLinks";
 import { useGanttData } from "@/hooks/useGanttData";
-import { ZoomLevel } from "@/types/gantt";
+import { ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
 import { toast } from "sonner";
 
 export const GanttChart = () => {
   const {
     data,
     zoom,
-    setZoom,
+    zoomIndex,
+    setZoomIndex,
     addSwimlane,
     deleteSwimlane,
     toggleExpanded,
@@ -170,18 +171,14 @@ export const GanttChart = () => {
   const totalHours = calculateTotalHours();
 
   const handleZoomIn = () => {
-    const levels: ZoomLevel[] = [24, 12, 8, 4, 2, 1, 0.5];
-    const currentIndex = levels.indexOf(zoom);
-    if (currentIndex < levels.length - 1) {
-      setZoom(levels[currentIndex + 1]);
+    if (zoomIndex > 0) {
+      setZoomIndex(zoomIndex - 1);
     }
   };
 
   const handleZoomOut = () => {
-    const levels: ZoomLevel[] = [0.5, 1, 2, 4, 8, 12, 24];
-    const currentIndex = levels.indexOf(zoom);
-    if (currentIndex < levels.length - 1) {
-      setZoom(levels[currentIndex + 1]);
+    if (zoomIndex < ZOOM_LEVELS.length - 1) {
+      setZoomIndex(zoomIndex + 1);
     }
   };
 
@@ -189,7 +186,7 @@ export const GanttChart = () => {
     const scrollContainer = document.querySelector('.overflow-auto');
     if (!scrollContainer) return;
 
-    const viewportWidth = scrollContainer.clientWidth - swimlaneColumnWidth; // Use dynamic width
+    const viewportWidth = scrollContainer.clientWidth - swimlaneColumnWidth;
     
     // Calculate actual timeline extent from all content
     let minStart = Infinity;
@@ -210,38 +207,34 @@ export const GanttChart = () => {
     
     // If no content, use default
     if (minStart === Infinity) {
-      setZoom(24);
+      setZoomIndex(24); // 24 hours zoom level
       toast.info("Timeline zoomed to fit");
       return;
     }
     
     const actualContentDuration = maxEnd - minStart;
     
-    // Calculate best zoom level to fit the actual content
-    // Iterate from smallest to largest to prefer more zoomed-in views
-    const levels: ZoomLevel[] = [0.5, 1, 2, 4, 8, 12, 24];
-    const columnWidths: Record<ZoomLevel, number> = { 0.5: 36, 1: 20, 2: 28, 4: 36, 8: 44, 12: 52, 24: 60 };
+    // Find best zoom level to fit the content
+    let bestZoomIndex = ZOOM_LEVELS.length - 1;
     
-    let bestZoom: ZoomLevel = 24;
-    
-    for (const level of levels) {
-      const columnWidth = columnWidths[level];
-      const columns = Math.ceil(actualContentDuration / level);
-      const requiredWidth = columns * columnWidth;
+    for (let i = 0; i < ZOOM_LEVELS.length; i++) {
+      const level = ZOOM_LEVELS[i];
+      const columns = Math.ceil(actualContentDuration / level.hoursPerColumn);
+      const requiredWidth = columns * level.columnWidth;
       
       if (requiredWidth <= viewportWidth) {
-        bestZoom = level;
+        bestZoomIndex = i;
         break;
       }
     }
     
-    setZoom(bestZoom);
+    setZoomIndex(bestZoomIndex);
     
     // Scroll to the start of content
     setTimeout(() => {
       if (scrollContainer && minStart > 0) {
-        const columnWidth = columnWidths[bestZoom];
-        const scrollTo = (minStart / bestZoom) * columnWidth;
+        const bestZoomConfig = ZOOM_LEVELS[bestZoomIndex];
+        const scrollTo = (minStart / bestZoomConfig.hoursPerColumn) * bestZoomConfig.columnWidth;
         scrollContainer.scrollLeft = scrollTo;
       }
     }, 0);
@@ -315,12 +308,12 @@ export const GanttChart = () => {
   };
 
   const handleAddTask = (swimlaneId: string, start: number) => {
-    addTask(swimlaneId, start, zoom * 2);
+    addTask(swimlaneId, start, zoom.hoursPerColumn * 2);
     toast.success("Task added");
   };
 
   const handleAddState = (swimlaneId: string, start: number) => {
-    addState(swimlaneId, start, zoom * 2);
+    addState(swimlaneId, start, zoom.hoursPerColumn * 2);
     toast.success("State added");
   };
 
@@ -732,10 +725,9 @@ export const GanttChart = () => {
     // Calculate start time based on cursor position
     const scrollContainer = document.querySelector('.overflow-auto');
     const scrollLeft = scrollContainer?.scrollLeft || 0;
-    const columnWidth = zoom === 0.5 ? 36 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
     
     const gridX = copyGhost.mouseX + scrollLeft - swimlaneColumnWidth;
-    const start = Math.max(0, Math.round((gridX / columnWidth) * zoom / zoom) * zoom);
+    const start = Math.max(0, Math.round((gridX / zoom.columnWidth) * zoom.hoursPerColumn / zoom.hoursPerColumn) * zoom.hoursPerColumn);
 
     // Check for overlap
     if (checkOverlap(targetSwimlaneId, '', start, copiedItem.duration)) {
@@ -864,6 +856,8 @@ export const GanttChart = () => {
         zoom={zoom}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
+        canZoomIn={zoomIndex > 0}
+        canZoomOut={zoomIndex < ZOOM_LEVELS.length - 1}
         onZoomToFit={handleZoomToFit}
         onAddTaskLane={handleAddTaskLane}
         onAddStateLane={handleAddStateLane}
@@ -931,11 +925,10 @@ export const GanttChart = () => {
         </div>
 
 
-        {/* Render links directly without clipping container */}
         <GanttLinks
           data={data}
           zoom={zoom}
-          columnWidth={zoom === 0.5 ? 36 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60}
+          columnWidth={zoom.columnWidth}
           swimlaneColumnWidth={swimlaneColumnWidth}
           selectedLink={selectedLink}
           onLinkSelect={(linkId) => {
@@ -954,12 +947,10 @@ export const GanttChart = () => {
 
         {/* Drag preview ghost bar */}
         {dragPreview && (() => {
-          const columnWidth = zoom === 0.5 ? 36 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
-          
           // Calculate position - ghost is portaled to body, so use viewport coordinates
           const left = dragPreview.mouseX - dragPreview.offsetX;
           const top = dragPreview.mouseY - dragPreview.offsetY;
-          const width = (dragPreview.tempDuration / zoom) * columnWidth;
+          const width = (dragPreview.tempDuration / zoom.hoursPerColumn) * zoom.columnWidth;
           
           return createPortal(
             <div
@@ -981,8 +972,7 @@ export const GanttChart = () => {
 
         {/* Copy ghost preview */}
         {copyGhost && (() => {
-          const columnWidth = zoom === 0.5 ? 36 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
-          const width = (copyGhost.duration / zoom) * columnWidth;
+          const width = (copyGhost.duration / zoom.hoursPerColumn) * zoom.columnWidth;
           
           return createPortal(
             <div

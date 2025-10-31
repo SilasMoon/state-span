@@ -1,4 +1,4 @@
-import { GanttTask, GanttState, ZoomLevel } from "@/types/gantt";
+import { GanttTask, GanttState, ZoomConfig } from "@/types/gantt";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import React, { useState } from "react";
 
@@ -6,7 +6,7 @@ interface GanttBarProps {
   item: GanttTask | GanttState;
   swimlaneId: string;
   swimlaneType: "task" | "state";
-  zoom: ZoomLevel;
+  zoom: ZoomConfig;
   columnWidth: number;
   isSelected: boolean;
   isSummary?: boolean;
@@ -80,11 +80,11 @@ export const GanttBar = ({
     }
   }, [item.start, item.duration, isDragging]);
 
-  const left = (tempStart / zoom) * columnWidth;
-  const width = (tempDuration / zoom) * columnWidth;
+  const left = (tempStart / zoom.hoursPerColumn) * columnWidth;
+  const width = (tempDuration / zoom.hoursPerColumn) * columnWidth;
 
   const snapToGrid = (value: number) => {
-    return Math.round(value / zoom) * zoom;
+    return Math.round(value / zoom.hoursPerColumn) * zoom.hoursPerColumn;
   };
 
   const handleResizeStart = (e: React.MouseEvent, handle: 'start' | 'end') => {
@@ -136,7 +136,7 @@ export const GanttBar = ({
     
     if (isDragging === 'move') {
       const deltaX = e.clientX - dragStart.x;
-      const hoursDelta = Math.round((deltaX / columnWidth) * zoom);
+      const hoursDelta = Math.round((deltaX / columnWidth) * zoom.hoursPerColumn);
       const newStart = snapToGrid(Math.max(0, item.start + hoursDelta));
       
       // Detect swimlane change by finding element under cursor
@@ -158,9 +158,9 @@ export const GanttBar = ({
       }
     } else if (isDragging === 'start') {
       const delta = e.clientX - dragStart.x;
-      const hoursDelta = Math.round((delta / columnWidth) * zoom);
+      const hoursDelta = Math.round((delta / columnWidth) * zoom.hoursPerColumn);
       const newStart = snapToGrid(Math.max(0, item.start + hoursDelta));
-      const newDuration = snapToGrid(Math.max(zoom, item.duration - hoursDelta));
+      const newDuration = snapToGrid(Math.max(zoom.hoursPerColumn, item.duration - hoursDelta));
       
       if (!checkOverlap(swimlaneId, item.id, newStart, newDuration)) {
         setTempStart(newStart);
@@ -168,8 +168,8 @@ export const GanttBar = ({
       }
     } else if (isDragging === 'end') {
       const delta = e.clientX - dragStart.x;
-      const hoursDelta = Math.round((delta / columnWidth) * zoom);
-      const newDuration = snapToGrid(Math.max(zoom, item.duration + hoursDelta));
+      const hoursDelta = Math.round((delta / columnWidth) * zoom.hoursPerColumn);
+      const newDuration = snapToGrid(Math.max(zoom.hoursPerColumn, item.duration + hoursDelta));
       
       if (!checkOverlap(swimlaneId, item.id, tempStart, newDuration)) {
         setTempDuration(newDuration);

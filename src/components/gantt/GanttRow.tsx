@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { GanttSwimlane, ZoomLevel } from "@/types/gantt";
+import { GanttSwimlane, ZoomConfig } from "@/types/gantt";
 import { ChevronRight, ChevronDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GanttBar } from "./GanttBar";
@@ -14,7 +14,7 @@ import {
 interface GanttRowProps {
   swimlane: GanttSwimlane;
   level: number;
-  zoom: ZoomLevel;
+  zoom: ZoomConfig;
   totalHours: number;
   swimlaneColumnWidth: number;
   selected: { type: "swimlane" | "task" | "state"; swimlaneId: string; itemId?: string } | null;
@@ -58,8 +58,8 @@ export const GanttRow = ({
   checkOverlap,
   onDragStateChange,
 }: GanttRowProps) => {
-  const columnWidth = zoom === 0.5 ? 36 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
-  const columns = Math.ceil(totalHours / zoom);
+  const columnWidth = zoom.columnWidth;
+  const columns = Math.ceil(totalHours / zoom.hoursPerColumn);
 
   const hasChildren = swimlane.children.length > 0;
 
@@ -113,7 +113,7 @@ export const GanttRow = ({
             e.preventDefault();
             e.stopPropagation();
             console.log('[GanttRow] Starting drag creation');
-            const hour = i * zoom;
+            const hour = i * zoom.hoursPerColumn;
             setDragCreation({ startHour: hour, currentHour: hour, hasMoved: false });
           }}
         />
@@ -131,7 +131,7 @@ export const GanttRow = ({
       const cell = target?.closest('[data-cell-index]');
       if (cell) {
         const cellIndex = parseInt(cell.getAttribute('data-cell-index') || '0');
-        const currentHour = cellIndex * zoom;
+        const currentHour = cellIndex * zoom.hoursPerColumn;
         setDragCreation(prev => {
           if (!prev) return null;
           const hasMoved = prev.startHour !== currentHour;
@@ -146,7 +146,7 @@ export const GanttRow = ({
         if (dragCreation.hasMoved) {
           const start = Math.min(dragCreation.startHour, dragCreation.currentHour);
           const end = Math.max(dragCreation.startHour, dragCreation.currentHour);
-          const duration = Math.max(zoom, end - start + zoom); // Minimum 1 column
+          const duration = Math.max(zoom.hoursPerColumn, end - start + zoom.hoursPerColumn); // Minimum 1 column
 
           // Check for overlap before creating
           if (!checkOverlap(swimlane.id, 'temp-creation', start, duration)) {
@@ -348,10 +348,10 @@ export const GanttRow = ({
         {dragCreation && (() => {
           const start = Math.min(dragCreation.startHour, dragCreation.currentHour);
           const end = Math.max(dragCreation.startHour, dragCreation.currentHour);
-          const duration = end - start + zoom;
+          const duration = end - start + zoom.hoursPerColumn;
           
-          const left = (start / zoom) * columnWidth;
-          const width = (duration / zoom) * columnWidth;
+          const left = (start / zoom.hoursPerColumn) * columnWidth;
+          const width = (duration / zoom.hoursPerColumn) * columnWidth;
           const isTaskLane = swimlane.type === 'task';
           const wouldOverlap = checkOverlap(swimlane.id, 'temp-creation', start, duration);
           

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GanttData, GanttSwimlane, GanttTask, GanttState, GanttLink, ZoomLevel } from "@/types/gantt";
+import { GanttData, GanttSwimlane, GanttTask, GanttState, GanttLink, ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
 
 let nextId = 1;
 const generateId = () => `item-${nextId++}`;
@@ -252,7 +252,8 @@ const createDefaultData = (): GanttData => {
 
 export const useGanttData = () => {
   const [data, setData] = useState<GanttData>(createDefaultData());
-  const [zoom, setZoom] = useState<ZoomLevel>(8);
+  const [zoomIndex, setZoomIndex] = useState<number>(16); // Default to 8 hours per column
+  const zoom: ZoomConfig = ZOOM_LEVELS[zoomIndex];
   const [history, setHistory] = useState<GanttData[]>([]);
   const [future, setFuture] = useState<GanttData[]>([]);
 
@@ -941,7 +942,8 @@ export const useGanttData = () => {
   return {
     data,
     zoom,
-    setZoom,
+    zoomIndex,
+    setZoomIndex,
     addSwimlane,
     deleteSwimlane,
     toggleExpanded,

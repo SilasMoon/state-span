@@ -1,9 +1,9 @@
 import React from "react";
-import { GanttData, GanttLink, ZoomLevel } from "@/types/gantt";
+import { GanttData, GanttLink, ZoomConfig } from "@/types/gantt";
 
 interface GanttLinksProps {
   data: GanttData;
-  zoom: ZoomLevel;
+  zoom: ZoomConfig;
   columnWidth: number;
   swimlaneColumnWidth: number;
   selectedLink: string | null;
@@ -76,8 +76,8 @@ export const GanttLinks = ({
     
     // Calculate position from data using zoom and columnWidth
     // This ensures arrows update immediately when zoom changes
-    const x = (itemStart / zoom) * columnWidth;
-    const width = (itemDuration / zoom) * columnWidth;
+    const x = (itemStart / zoom.hoursPerColumn) * columnWidth;
+    const width = (itemDuration / zoom.hoursPerColumn) * columnWidth;
     
     // Calculate barCenterY from row position
     const barCenterY = rowTop + (SWIMLANE_HEIGHT / 2);
@@ -155,7 +155,7 @@ export const GanttLinks = ({
       });
     });
     const totalHours = Math.ceil((maxHour * 1.2) / 24) * 24;
-    return swimlaneColumnWidth + (totalHours / zoom) * columnWidth;
+    return swimlaneColumnWidth + (totalHours / zoom.hoursPerColumn) * columnWidth;
   };
 
   // Collect all task bars with their positions

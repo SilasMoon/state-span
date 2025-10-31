@@ -1,20 +1,20 @@
-import { ZoomLevel } from "@/types/gantt";
+import { ZoomConfig } from "@/types/gantt";
 
 interface GanttTimelineProps {
-  zoom: ZoomLevel;
+  zoom: ZoomConfig;
   totalHours: number;
 }
 
 export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
-  const columnWidth = zoom === 0.5 ? 36 : zoom === 1 ? 20 : zoom === 2 ? 28 : zoom === 4 ? 36 : zoom === 8 ? 44 : zoom === 12 ? 52 : 60;
-  const columns = Math.ceil(totalHours / zoom);
+  const columnWidth = zoom.columnWidth;
+  const columns = Math.ceil(totalHours / zoom.hoursPerColumn);
 
   const renderTimeLabels = () => {
     const labels = [];
     let lastDay = -1;
     
     for (let i = 0; i < columns; i++) {
-      const hour = i * zoom;
+      const hour = i * zoom.hoursPerColumn;
       const day = Math.floor(hour / 24);
       const hourInDay = hour % 24;
 
@@ -22,7 +22,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
       lastDay = day;
 
       // Format hour display - use decimal for 0.5 zoom level only when not a whole number
-      const hourDisplay = zoom === 0.5 
+      const hourDisplay = zoom.hoursPerColumn === 0.5 
         ? (hourInDay % 1 === 0 ? hourInDay.toString() : hourInDay.toFixed(1))
         : hourInDay.toString();
 

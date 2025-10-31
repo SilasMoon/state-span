@@ -7,13 +7,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { ZoomLevel } from "@/types/gantt";
+import { ZoomConfig } from "@/types/gantt";
 import { useRef } from "react";
 
 interface GanttToolbarProps {
-  zoom: ZoomLevel;
+  zoom: ZoomConfig;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  canZoomIn: boolean;
+  canZoomOut: boolean;
   onZoomToFit: () => void;
   onAddTaskLane: () => void;
   onAddStateLane: () => void;
@@ -33,6 +35,8 @@ export const GanttToolbar = ({
   zoom,
   onZoomIn,
   onZoomOut,
+  canZoomIn,
+  canZoomOut,
   onZoomToFit,
   onAddTaskLane,
   onAddStateLane,
@@ -66,10 +70,7 @@ export const GanttToolbar = ({
   };
 
   const getZoomLabel = () => {
-    if (zoom === 0.5) return "0.5";
-    if (zoom === 1) return "1";
-    if (zoom === 24) return "1d";
-    return `${zoom}`;
+    return zoom.label;
   };
 
   return (
@@ -160,7 +161,7 @@ export const GanttToolbar = ({
         variant="outline"
         size="sm"
         onClick={onZoomOut}
-        disabled={zoom === 24}
+        disabled={!canZoomOut}
       >
         <ZoomOut className="w-4 h-4" />
       </Button>
@@ -168,7 +169,7 @@ export const GanttToolbar = ({
         variant="outline"
         size="sm"
         onClick={onZoomIn}
-        disabled={zoom === 0.5}
+        disabled={!canZoomIn}
       >
         <ZoomIn className="w-4 h-4" />
       </Button>
