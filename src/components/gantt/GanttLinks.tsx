@@ -406,7 +406,7 @@ export const GanttLinks = ({
     // Subtract half the stroke width (1px for 2px stroke) to align with bar edge
     const STROKE_OFFSET = 1; // Half of the 2px stroke width
     const startX = swimlaneColumnWidth + fromPos.x + fromPos.width - STROKE_OFFSET; // Finish handle (right edge)
-    const endX = swimlaneColumnWidth + toPos.x + STROKE_OFFSET; // Start handle (left edge)
+    const endX = swimlaneColumnWidth + toPos.x - STROKE_OFFSET; // Start handle (left edge)
 
     // Use barCenterY for exact vertical center attachment
     const start = { x: startX, y: fromPos.barCenterY };
