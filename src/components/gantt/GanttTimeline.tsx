@@ -24,7 +24,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
       labels.push(
         <div
           key={i}
-          className="flex flex-col items-center justify-center border-r border-gantt-grid text-xs"
+          className="flex flex-col items-start justify-center border-r border-gantt-grid text-xs pl-1"
           style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
         >
           {showDay && <div className="text-gantt-text font-semibold">D{day}</div>}

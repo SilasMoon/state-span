@@ -78,7 +78,7 @@ export const GanttRow = ({
         <div
           key={i}
           data-cell-index={i}
-          className="border-r border-gantt-grid h-full cursor-crosshair"
+          className="border-r border-gantt-grid h-full cursor-crosshair pl-1"
           style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
           onMouseDown={(e) => {
             if (e.button !== 0) return; // Only left click
