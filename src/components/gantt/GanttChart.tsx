@@ -928,7 +928,7 @@ export const GanttChart = () => {
         <div className="inline-block min-w-full gantt-chart-container">
           <div className="flex">
             <div 
-              className="sticky left-0 z-30 bg-gantt-header border-r border-border relative"
+              className="sticky left-0 z-40 bg-gantt-header border-r border-border relative"
               style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px` }}
             >
               <div
