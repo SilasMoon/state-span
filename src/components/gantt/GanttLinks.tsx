@@ -500,7 +500,22 @@ export const GanttLinks = ({
           style={{ pointerEvents: 'all' }}
           onClick={(e) => {
             e.stopPropagation();
-            onLinkSelect(isSelected ? "" : link.id);
+            
+            // If in manual mode and selected, add waypoint instead of deselecting
+            if (link.routingMode === 'manual' && isSelected && onUpdateWaypoints) {
+              const rect = svgRef.current?.getBoundingClientRect();
+              if (!rect) return;
+              
+              const svgX = e.clientX - rect.left;
+              const svgY = e.clientY - rect.top;
+              const newWaypoint = { x: svgX, y: svgY };
+              
+              const currentWaypoints = link.waypoints || [];
+              onUpdateWaypoints(link.id, [...currentWaypoints, newWaypoint]);
+            } else {
+              // Otherwise toggle selection
+              onLinkSelect(isSelected ? "" : link.id);
+            }
           }}
           onDoubleClick={(e) => {
             e.stopPropagation();
