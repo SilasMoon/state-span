@@ -194,9 +194,19 @@ export const GanttLinks = ({
     //   - Start: left - 12px  → center at: left - 12 + 10 = left - 2
     const HANDLE_OFFSET = 2; // Handles are 2px inward from bar edges
     
-    // Always use Finish-to-Start style
-    const startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Finish handle center of from bar
-    const endX = toPos.x - HANDLE_OFFSET; // Start handle center of to bar
+    // Determine direction: if target is to the right, use finish→start; if to the left, use start→finish
+    const targetIsRight = toPos.x >= fromPos.x;
+    
+    let startX: number, endX: number;
+    if (targetIsRight) {
+      // Target is to the right: start from finish handle (right), end at start handle (left)
+      startX = fromPos.x + fromPos.width - HANDLE_OFFSET;
+      endX = toPos.x - HANDLE_OFFSET;
+    } else {
+      // Target is to the left: start from start handle (left), end at finish handle (right)
+      startX = fromPos.x - HANDLE_OFFSET;
+      endX = toPos.x + toPos.width - HANDLE_OFFSET;
+    }
 
     // Use barCenterY for exact vertical center attachment
     const start = { x: startX, y: fromPos.barCenterY };
