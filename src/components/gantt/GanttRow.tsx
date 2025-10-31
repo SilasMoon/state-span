@@ -242,16 +242,13 @@ export const GanttRow = ({
     setDragOver(null);
   };
 
-  // Top-level swimlane with children gets a delimiter (visual separator)
-  const isTopLevelParent = level === 0 && hasChildren;
-  
   return (
     <div
       className={`flex transition-colors relative ${
         dragOver === 'top' ? 'border-t-4 border-t-primary' : ''
       } ${dragOver === 'bottom' ? 'border-b-4 border-b-primary' : ''} ${
         dragOver === 'inside' ? 'bg-primary/10' : ''
-      } ${isTopLevelParent ? 'border-t-2 border-t-border mt-2 pt-1' : ''}`}
+      }`}
       data-swimlane-id={swimlane.id}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -306,18 +303,15 @@ export const GanttRow = ({
         />
         
         <div className="flex items-center gap-2 flex-shrink-0 relative z-10">
-          {/* Hide type label for top-level swimlanes with children */}
-          {!isTopLevelParent && (
-            <span
-              className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
-                swimlane.type === "task"
-                  ? "bg-primary/20 text-primary"
-                  : "bg-secondary/20 text-secondary"
-              }`}
-            >
-              {swimlane.type}
-            </span>
-          )}
+          <span
+            className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
+              swimlane.type === "task"
+                ? "bg-primary/20 text-primary"
+                : "bg-secondary/20 text-secondary"
+            }`}
+          >
+            {swimlane.type}
+          </span>
 
           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
             <DropdownMenu>
