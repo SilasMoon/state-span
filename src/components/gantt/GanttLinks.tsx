@@ -31,6 +31,7 @@ export const GanttLinks = ({
   itemTempPositions = {},
 }: GanttLinksProps) => {
   const SWIMLANE_HEIGHT = 32;
+  const FLAG_ROW_HEIGHT = 64;
   const BAR_HEIGHT = 24;
   const GRID_SIZE = 12; // Grid cell size for pathfinding
 
@@ -92,7 +93,7 @@ export const GanttLinks = ({
   };
 
   const findYPosition = (swimlaneId: string): number | null => {
-    let currentY = SWIMLANE_HEIGHT; // Start after header
+    let currentY = SWIMLANE_HEIGHT + FLAG_ROW_HEIGHT; // Start after header and flag row
     
     for (const rootId of data.rootIds) {
       const result = traverseSwimlane(rootId, swimlaneId, currentY);
@@ -135,7 +136,7 @@ export const GanttLinks = ({
   };
 
   const calculateTotalHeight = () => {
-    let height = SWIMLANE_HEIGHT; // Header
+    let height = SWIMLANE_HEIGHT + FLAG_ROW_HEIGHT; // Header and flag row
     data.rootIds.forEach(id => {
       height += getVisibleHeight(id);
     });
