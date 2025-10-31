@@ -347,56 +347,54 @@ export const GanttChart = () => {
 
       toast.info("Generating image...");
       
-      // FUNDAMENTAL FIX: Create completely new static DOM without sticky positioning
-      const exportContainer = document.createElement('div');
-      exportContainer.style.position = 'absolute';
-      exportContainer.style.left = '-99999px';
-      exportContainer.style.top = '0';
-      exportContainer.style.background = '#ffffff';
-      exportContainer.style.padding = '0';
-      exportContainer.style.margin = '0';
+      // Create wrapper with padding to prevent text cutoff
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'absolute';
+      wrapper.style.left = '-99999px';
+      wrapper.style.top = '0';
+      wrapper.style.background = '#ffffff';
+      wrapper.style.padding = '40px'; // CRITICAL: Padding to ensure text isn't cut off
+      wrapper.style.boxSizing = 'content-box';
       
-      // Clone and strip all sticky/fixed positioning
+      // Clone the chart
       const clone = chartContainer.cloneNode(true) as HTMLElement;
       
-      // Remove all sticky/fixed positioning and transforms
-      const removeSticky = (el: Element) => {
+      // Remove positioning that causes rendering issues
+      const fixElement = (el: Element) => {
         if (el instanceof HTMLElement) {
-          const computedStyle = window.getComputedStyle(el);
-          if (computedStyle.position === 'sticky' || computedStyle.position === 'fixed') {
+          const style = window.getComputedStyle(el);
+          // Convert sticky/fixed to relative
+          if (style.position === 'sticky' || style.position === 'fixed') {
             el.style.position = 'relative';
           }
+          // Remove transforms
           el.style.transform = 'none';
         }
-        Array.from(el.children).forEach(removeSticky);
+        Array.from(el.children).forEach(fixElement);
       };
-      removeSticky(clone);
+      fixElement(clone);
       
-      // Remove the overlay mask and SVG (we only want the static content)
-      const overlay = clone.querySelector('[style*="zIndex: 25"]');
-      if (overlay) overlay.remove();
-      const svg = clone.querySelector('svg');
-      if (svg) svg.remove();
+      // Remove SVG and overlays (export static content only)
+      clone.querySelectorAll('svg, [style*="zIndex: 25"]').forEach(el => el.remove());
       
-      exportContainer.appendChild(clone);
-      document.body.appendChild(exportContainer);
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
       
-      // Wait for layout
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Wait for fonts and layout
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Capture with explicit dimensions
-      const canvas = await html2canvas(exportContainer, {
+      // Capture with text-optimized settings
+      const canvas = await html2canvas(wrapper, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
+        imageTimeout: 0,
       });
 
-      // Cleanup
-      document.body.removeChild(exportContainer);
+      document.body.removeChild(wrapper);
 
-      // Download
       canvas.toBlob((blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
@@ -981,25 +979,37 @@ export const GanttChart = () => {
         </div>
 
 
-        {/* Render links - INSIDE scroll container for natural masking */}
-        <GanttLinks
-          data={data}
-          zoom={zoom}
-          columnWidth={zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80}
-          swimlaneColumnWidth={swimlaneColumnWidth}
-          selectedLink={selectedLink}
-          onLinkSelect={(linkId) => {
-            setSelectedLink(linkId === "" ? null : linkId);
-            if (linkId) setSelected(null);
+        {/* Render links with proper masking container */}
+        <div 
+          className="absolute pointer-events-none"
+          style={{
+            left: `${swimlaneColumnWidth}px`,
+            top: 0,
+            width: `calc(100% - ${swimlaneColumnWidth}px)`,
+            height: '100%',
+            overflow: 'hidden', // CRITICAL: clips any content trying to render outside
+            zIndex: 20,
           }}
-          onLinkDoubleClick={(linkId) => {
-            const link = data.links.find(l => l.id === linkId);
-            if (link) {
-              setLinkEditDialog({ linkId });
-            }
-          }}
-          itemTempPositions={itemTempPositions}
-        />
+        >
+          <GanttLinks
+            data={data}
+            zoom={zoom}
+            columnWidth={zoom === 1 ? 30 : zoom === 2 ? 40 : zoom === 4 ? 50 : zoom === 8 ? 60 : zoom === 12 ? 70 : 80}
+            swimlaneColumnWidth={swimlaneColumnWidth}
+            selectedLink={selectedLink}
+            onLinkSelect={(linkId) => {
+              setSelectedLink(linkId === "" ? null : linkId);
+              if (linkId) setSelected(null);
+            }}
+            onLinkDoubleClick={(linkId) => {
+              const link = data.links.find(l => l.id === linkId);
+              if (link) {
+                setLinkEditDialog({ linkId });
+              }
+            }}
+            itemTempPositions={itemTempPositions}
+          />
+        </div>
 
 
         {/* Drag preview ghost bar */}

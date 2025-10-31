@@ -86,9 +86,10 @@ export const GanttLinks = ({
       const barRect = barElement.getBoundingClientRect();
       const svgRect = svgRef.current.getBoundingClientRect();
       
-      // Convert to SVG coordinate system
-      // SVG starts AFTER sidebar at swimlaneColumnWidth, so subtract that offset
-      x = barRect.left - svgRect.left;
+      // Convert to SVG coordinate system  
+      // SVG is at 0,0 within container that starts at swimlaneColumnWidth
+      // So we need to subtract swimlaneColumnWidth from bar position
+      x = barRect.left - svgRect.left - swimlaneColumnWidth;
       width = barRect.width;
       
       // Get Y position from DOM for consistency
@@ -366,17 +367,16 @@ export const GanttLinks = ({
 
   const totalHeight = calculateTotalHeight();
   
-  // FUNDAMENTAL FIX: SVG should ONLY render in timeline area, never in sidebar
-  // Position it starting AFTER the sidebar column
+  // SVG positioned at 0,0 WITHIN the clipping container
+  // Container starts at swimlaneColumnWidth with overflow:hidden to prevent bleeding
   return (
     <svg
       ref={svgRef}
       className="absolute pointer-events-none"
       style={{ 
-        zIndex: 20,
-        left: `${swimlaneColumnWidth}px`, // Start AFTER sidebar - physically cannot render there
+        left: 0,
         top: 0,
-        width: `calc(100% - ${swimlaneColumnWidth}px)`, // Only cover timeline area
+        width: '100%',
         height: `${totalHeight}px`,
       }}
     >
