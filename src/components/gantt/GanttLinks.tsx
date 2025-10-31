@@ -375,7 +375,7 @@ export const GanttLinks = ({
         top: 0,
         width: `calc(100% - ${swimlaneColumnWidth}px)`,
         height: `${calculateTotalHeight()}px`,
-        overflow: 'hidden', // Prevent any overflow into sidebar
+        clipPath: `inset(0 0 0 0)`, // Clip any content that overflows
       }}
     >
       {data.links.map(renderLink)}

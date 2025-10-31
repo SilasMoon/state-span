@@ -340,36 +340,56 @@ export const GanttChart = () => {
       // Dynamically import html2canvas
       const html2canvas = await import('html2canvas').then(m => m.default);
       
-      // Get the scrollable container (the visible viewport)
+      // Get the inner chart container
+      const chartContainer = document.querySelector('.gantt-chart-container') as HTMLElement;
+      if (!chartContainer) {
+        toast.error("Chart container not found");
+        return;
+      }
+
+      // Get scroll container to calculate visible area
       const scrollContainer = containerRef.current;
       if (!scrollContainer) {
-        toast.error("Container not found");
+        toast.error("Scroll container not found");
         return;
       }
 
       toast.info("Generating image...");
       
-      // Temporarily scroll to capture position
-      const originalScrollLeft = scrollContainer.scrollLeft;
-      const originalScrollTop = scrollContainer.scrollTop;
-      
-      // Capture the current viewport - use x, y, width, height to crop
-      const canvas = await html2canvas(scrollContainer, {
+      // Capture the entire chart first
+      const fullCanvas = await html2canvas(chartContainer, {
         backgroundColor: '#ffffff',
         scale: 2,
-        logging: true, // Enable logging to debug
+        logging: false,
         useCORS: true,
         foreignObjectRendering: true,
         allowTaint: true,
-        x: originalScrollLeft,
-        y: originalScrollTop,
-        width: scrollContainer.clientWidth,
-        height: scrollContainer.clientHeight,
-        scrollX: 0,
-        scrollY: 0,
       });
 
-      canvas.toBlob((blob) => {
+      // Crop to visible viewport
+      const visibleWidth = scrollContainer.clientWidth;
+      const visibleHeight = scrollContainer.clientHeight;
+      const scrollLeft = scrollContainer.scrollLeft;
+      const scrollTop = scrollContainer.scrollTop;
+      
+      // Create a new canvas with just the visible portion
+      const croppedCanvas = document.createElement('canvas');
+      croppedCanvas.width = visibleWidth * 2; // Account for scale: 2
+      croppedCanvas.height = visibleHeight * 2;
+      const ctx = croppedCanvas.getContext('2d');
+      
+      if (ctx) {
+        // Draw the cropped portion
+        ctx.drawImage(
+          fullCanvas,
+          scrollLeft * 2, scrollTop * 2, // Source x, y (scaled)
+          visibleWidth * 2, visibleHeight * 2, // Source width, height (scaled)
+          0, 0, // Destination x, y
+          visibleWidth * 2, visibleHeight * 2 // Destination width, height
+        );
+      }
+
+      croppedCanvas.toBlob((blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
