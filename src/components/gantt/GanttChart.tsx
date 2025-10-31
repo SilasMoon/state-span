@@ -1029,6 +1029,10 @@ export const GanttChart = () => {
             setSelectedLink(null);
             setFlagEditDialog(true);
           }}
+          onFlagMove={(flagId, newPosition) => {
+            updateFlag(flagId, { position: newPosition });
+            toast.success("Flag moved");
+          }}
         />
 
 

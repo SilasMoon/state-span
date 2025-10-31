@@ -1,3 +1,4 @@
+import React, { useState, useRef } from "react";
 import { GanttFlag, ZoomConfig } from "@/types/gantt";
 import { Flag, CheckCircle, AlertCircle, Star, Target, Zap, Trophy, Rocket } from "lucide-react";
 import * as LucideIcons from "lucide-react";
@@ -8,6 +9,7 @@ interface GanttFlagsProps {
   swimlaneColumnWidth: number;
   selectedFlag: string | null;
   onFlagClick: (flagId: string) => void;
+  onFlagMove: (flagId: string, newPosition: number) => void;
 }
 
 const iconMap: Record<string, React.ComponentType<any>> = {
@@ -27,26 +29,92 @@ export const GanttFlags = ({
   swimlaneColumnWidth,
   selectedFlag,
   onFlagClick,
+  onFlagMove,
 }: GanttFlagsProps) => {
+  const [draggingFlag, setDraggingFlag] = useState<{
+    id: string;
+    startX: number;
+    startPosition: number;
+  } | null>(null);
+  const [tempPosition, setTempPosition] = useState<number | null>(null);
+  const isDraggingRef = useRef(false);
+  const handleMouseDown = (flag: GanttFlag, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    isDraggingRef.current = false;
+    
+    const scrollContainer = document.querySelector('.overflow-auto');
+    const scrollLeft = scrollContainer?.scrollLeft || 0;
+    
+    setDraggingFlag({
+      id: flag.id,
+      startX: e.clientX + scrollLeft,
+      startPosition: flag.position,
+    });
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!draggingFlag) return;
+    
+    const scrollContainer = document.querySelector('.overflow-auto');
+    const scrollLeft = scrollContainer?.scrollLeft || 0;
+    
+    const currentX = e.clientX + scrollLeft;
+    const deltaX = currentX - draggingFlag.startX;
+    const deltaHours = (deltaX / zoom.columnWidth) * zoom.hoursPerColumn;
+    const newPosition = Math.max(0, Math.round((draggingFlag.startPosition + deltaHours) / zoom.hoursPerColumn) * zoom.hoursPerColumn);
+    
+    if (Math.abs(deltaX) > 5) {
+      isDraggingRef.current = true;
+    }
+    
+    setTempPosition(newPosition);
+  };
+
+  const handleMouseUp = (e: MouseEvent) => {
+    if (draggingFlag && tempPosition !== null && isDraggingRef.current) {
+      onFlagMove(draggingFlag.id, tempPosition);
+    } else if (draggingFlag && !isDraggingRef.current) {
+      // It was a click, not a drag
+      onFlagClick(draggingFlag.id);
+    }
+    
+    setDraggingFlag(null);
+    setTempPosition(null);
+    isDraggingRef.current = false;
+  };
+
+  // Attach mouse move and up listeners when dragging
+  React.useEffect(() => {
+    if (draggingFlag) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [draggingFlag, tempPosition]);
+
   return (
     <div className="absolute inset-0 pointer-events-none" style={{ left: `${swimlaneColumnWidth}px` }}>
       {flags.map((flag) => {
-        const left = (flag.position / zoom.hoursPerColumn) * zoom.columnWidth;
+        const isDragging = draggingFlag?.id === flag.id;
+        const displayPosition = isDragging && tempPosition !== null ? tempPosition : flag.position;
+        const left = (displayPosition / zoom.hoursPerColumn) * zoom.columnWidth;
         const IconComponent = flag.icon && iconMap[flag.icon] ? iconMap[flag.icon] : Flag;
         const isSelected = selectedFlag === flag.id;
 
         return (
           <div
             key={flag.id}
-            className="absolute top-0 bottom-0 pointer-events-auto cursor-pointer group"
+            className="absolute top-0 bottom-0 pointer-events-auto cursor-move group"
             style={{
               left: `${left}px`,
               transform: "translateX(-50%)",
+              opacity: isDragging ? 0.7 : 1,
             }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onFlagClick(flag.id);
-            }}
+            onMouseDown={(e) => handleMouseDown(flag, e)}
           >
             {/* Vertical line */}
             <div
