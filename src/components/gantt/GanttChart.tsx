@@ -339,7 +339,7 @@ export const GanttChart = () => {
     try {
       const html2canvas = await import('html2canvas').then(m => m.default);
       
-      const scrollContainer = containerRef.current;
+      const scrollContainer = document.querySelector('.overflow-auto');
       if (!scrollContainer) {
         toast.error("Container not found");
         return;
@@ -347,18 +347,36 @@ export const GanttChart = () => {
 
       toast.info("Generating image...");
       
-      // Capture with settings optimized for text rendering
-      const canvas = await html2canvas(scrollContainer, {
+      // DRAMATIC FIX: Create a temporary clone with fixed positioning
+      const clone = scrollContainer.cloneNode(true) as HTMLElement;
+      
+      // Style the clone for proper rendering
+      clone.style.position = 'absolute';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.width = `${scrollContainer.scrollWidth}px`;
+      clone.style.height = `${scrollContainer.scrollHeight}px`;
+      clone.style.overflow = 'visible';
+      clone.style.transform = 'none';
+      
+      document.body.appendChild(clone);
+      
+      // Wait for layout to settle
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Capture the clone
+      const canvas = await html2canvas(clone, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        windowHeight: scrollContainer.scrollHeight,
-        windowWidth: scrollContainer.scrollWidth,
-        scrollY: 0,
-        scrollX: 0,
+        width: scrollContainer.scrollWidth,
+        height: scrollContainer.scrollHeight,
       });
+
+      // Remove the clone
+      document.body.removeChild(clone);
 
       // Download the image
       canvas.toBlob((blob) => {
@@ -963,6 +981,18 @@ export const GanttChart = () => {
             }
           }}
           itemTempPositions={itemTempPositions}
+        />
+
+        {/* DRAMATIC FIX: Full-height solid sidebar mask overlay */}
+        {/* This div sits between arrows (z-20) and content (z-30) to block arrow bleeding */}
+        <div 
+          className="absolute left-0 top-0 pointer-events-none bg-card border-r-2 border-border"
+          style={{
+            width: `${swimlaneColumnWidth}px`,
+            height: '100%',
+            minHeight: '100vh',
+            zIndex: 25,
+          }}
         />
 
         {/* Drag preview ghost bar */}
