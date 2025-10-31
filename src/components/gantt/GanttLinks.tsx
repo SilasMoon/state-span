@@ -158,9 +158,9 @@ export const GanttLinks = ({
     return swimlaneColumnWidth + (totalHours / zoom) * columnWidth;
   };
 
-  // Collect all task bars with their horizontal spans
+  // Collect all task bars with their positions
   const collectTaskBars = () => {
-    const bars: Array<{ x: number; width: number; id: string }> = [];
+    const bars: Array<{ x: number; y: number; width: number; height: number; id: string }> = [];
     
     Object.entries(data.swimlanes).forEach(([swimlaneId, swimlane]) => {
       const items = [...(swimlane.activities || []), ...(swimlane.states || [])];
@@ -170,7 +170,9 @@ export const GanttLinks = ({
         if (pos) {
           bars.push({
             x: pos.x,
+            y: pos.barCenterY,
             width: pos.width,
+            height: BAR_HEIGHT,
             id: item.id
           });
         }
@@ -180,42 +182,72 @@ export const GanttLinks = ({
     return bars;
   };
 
-  // Check if a horizontal span overlaps any task bar (except excluded ones)
-  const hasHorizontalOverlap = (x1: number, x2: number, excludeIds: string[]) => {
+  // Check if a horizontal line segment crosses any task bar
+  const horizontalSegmentCrossesTasks = (
+    x1: number, 
+    x2: number, 
+    y: number, 
+    excludeIds: string[]
+  ): boolean => {
     const bars = collectTaskBars();
     const minX = Math.min(x1, x2);
     const maxX = Math.max(x1, x2);
     
     return bars.some(bar => {
       if (excludeIds.includes(bar.id)) return false;
+      
+      // Check if horizontal segment overlaps bar's horizontal span
       const barRight = bar.x + bar.width;
-      // Check if horizontal spans overlap
-      return !(maxX < bar.x || minX > barRight);
+      const horizontalOverlap = !(maxX <= bar.x || minX >= barRight);
+      
+      // Check if the Y coordinate is within the bar's vertical span
+      const barTop = bar.y - bar.height / 2;
+      const barBottom = bar.y + bar.height / 2;
+      const verticalOverlap = y >= barTop && y <= barBottom;
+      
+      return horizontalOverlap && verticalOverlap;
     });
   };
 
-  // Find a clear vertical channel between start and end X
-  const findClearChannel = (startX: number, endX: number, excludeIds: string[]): number | null => {
-    const minX = Math.min(startX, endX);
-    const maxX = Math.max(startX, endX);
+  // Find clear gutter Y positions (between rows where no tasks exist)
+  const findGutterPositions = (): number[] => {
+    const gutters: number[] = [];
+    const rowYPositions: number[] = [];
     
-    // Try points along the path
-    const candidates = [
-      startX + 20, // Just right of start
-      endX - 20,   // Just left of end
-      (startX + endX) / 2, // Midpoint
-    ];
-    
-    for (const x of candidates) {
-      if (x >= minX && x <= maxX) {
-        // Check if this X coordinate is clear (no horizontal overlap from minX to maxX)
-        if (!hasHorizontalOverlap(minX, maxX, excludeIds)) {
-          return x;
-        }
-      }
+    // Collect all row Y positions
+    for (const rootId of data.rootIds) {
+      collectRowYPositions(rootId, rowYPositions);
     }
     
-    return null;
+    rowYPositions.sort((a, b) => a - b);
+    
+    // Gutters are midpoints between consecutive rows
+    for (let i = 0; i < rowYPositions.length - 1; i++) {
+      const gutterY = (rowYPositions[i] + rowYPositions[i + 1]) / 2;
+      gutters.push(gutterY);
+    }
+    
+    // Add gutters above first and below last row
+    if (rowYPositions.length > 0) {
+      gutters.unshift(rowYPositions[0] - SWIMLANE_HEIGHT / 2);
+      gutters.push(rowYPositions[rowYPositions.length - 1] + SWIMLANE_HEIGHT / 2);
+    }
+    
+    return gutters;
+  };
+
+  const collectRowYPositions = (swimlaneId: string, positions: number[]) => {
+    const y = findYPosition(swimlaneId);
+    if (y !== null) {
+      positions.push(y + SWIMLANE_HEIGHT / 2);
+    }
+    
+    const swimlane = data.swimlanes[swimlaneId];
+    if (swimlane && swimlane.expanded && swimlane.children.length > 0) {
+      swimlane.children.forEach(childId => {
+        collectRowYPositions(childId, positions);
+      });
+    }
   };
 
   // Generate elbowed path following the functional requirements
@@ -225,55 +257,70 @@ export const GanttLinks = ({
     fromId: string,
     toId: string
   ): { x: number; y: number }[] => {
-    const CLEARANCE = 20; // Horizontal clearance from tasks
+    const excludeIds = [fromId, toId];
+    const HORIZONTAL_CLEARANCE = 30;
     
     // FR-3.1: Special case - vertically aligned
     if (Math.abs(start.x - end.x) < 5) {
       return [start, end];
     }
     
-    // FR-2.4: Default C-shaped or S-shaped path
-    const excludeIds = [fromId, toId];
-    
-    // Determine horizontal direction
     const goingRight = end.x > start.x;
     
-    // Try direct path first (simple C-shape)
-    const directPath = hasHorizontalOverlap(start.x, end.x, excludeIds);
-    
-    if (!directPath) {
-      // Simple 3-point path: horizontal -> vertical -> horizontal
-      const midX = goingRight ? end.x : start.x;
+    // Check if we can route horizontally at start Y
+    if (!horizontalSegmentCrossesTasks(start.x, end.x, start.y, excludeIds)) {
+      // Simple path at start level
       return [
         start,
-        { x: midX, y: start.y },
-        { x: midX, y: end.y },
+        { x: end.x, y: start.y },
         end
       ];
     }
     
-    // Complex path needed - find clear channel
-    const channel = findClearChannel(start.x, end.x, excludeIds);
-    
-    if (channel !== null) {
-      // Use the channel for vertical routing
+    // Check if we can route horizontally at end Y
+    if (!horizontalSegmentCrossesTasks(start.x, end.x, end.y, excludeIds)) {
+      // Simple path at end level
       return [
         start,
-        { x: channel, y: start.y },
-        { x: channel, y: end.y },
+        { x: start.x, y: end.y },
         end
       ];
     }
     
-    // Fallback: route around obstacles using gutter space
-    const gutterOffset = goingRight ? CLEARANCE : -CLEARANCE;
-    const routeX = start.x + gutterOffset;
+    // Need to route through a gutter
+    const gutters = findGutterPositions();
+    
+    // Find a suitable gutter Y that doesn't cross tasks
+    for (const gutterY of gutters) {
+      const startToGutterClear = !horizontalSegmentCrossesTasks(start.x, start.x + (goingRight ? HORIZONTAL_CLEARANCE : -HORIZONTAL_CLEARANCE), start.y, excludeIds);
+      const gutterToEndClear = !horizontalSegmentCrossesTasks(end.x - (goingRight ? HORIZONTAL_CLEARANCE : -HORIZONTAL_CLEARANCE), end.x, end.y, excludeIds);
+      const gutterHorizontalClear = !horizontalSegmentCrossesTasks(start.x, end.x, gutterY, excludeIds);
+      
+      if (startToGutterClear && gutterToEndClear && gutterHorizontalClear) {
+        // Route through this gutter
+        const exitX = start.x + (goingRight ? HORIZONTAL_CLEARANCE : -HORIZONTAL_CLEARANCE);
+        const entryX = end.x - (goingRight ? HORIZONTAL_CLEARANCE : -HORIZONTAL_CLEARANCE);
+        
+        return [
+          start,
+          { x: exitX, y: start.y },
+          { x: exitX, y: gutterY },
+          { x: entryX, y: gutterY },
+          { x: entryX, y: end.y },
+          end
+        ];
+      }
+    }
+    
+    // Fallback: Use closest gutter and route far around
+    const midGutterY = gutters.length > 0 ? gutters[Math.floor(gutters.length / 2)] : (start.y + end.y) / 2;
+    const farX = goingRight ? Math.max(start.x, end.x) + 50 : Math.min(start.x, end.x) - 50;
     
     return [
       start,
-      { x: routeX, y: start.y },
-      { x: routeX, y: end.y },
-      { x: end.x, y: end.y },
+      { x: farX, y: start.y },
+      { x: farX, y: midGutterY },
+      { x: farX, y: end.y },
       end
     ];
   };
