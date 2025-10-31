@@ -28,8 +28,6 @@ export interface GanttLink {
   toSwimlaneId: string;
   color?: string;
   label?: string;
-  waypoints?: { x: number; y: number }[]; // Manual routing control points
-  routingMode?: 'auto' | 'manual'; // Track which mode is active
 }
 
 export interface GanttSwimlane {

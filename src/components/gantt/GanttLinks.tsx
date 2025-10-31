@@ -9,7 +9,6 @@ interface GanttLinksProps {
   selectedLink: string | null;
   onLinkSelect: (linkId: string) => void;
   onLinkDoubleClick: (linkId: string) => void;
-  onUpdateWaypoints?: (linkId: string, waypoints: { x: number; y: number }[]) => void;
   itemTempPositions?: Record<string, { start: number; duration: number; swimlaneId: string }>;
 }
 
@@ -29,7 +28,6 @@ export const GanttLinks = ({
   selectedLink, 
   onLinkSelect, 
   onLinkDoubleClick,
-  onUpdateWaypoints,
   itemTempPositions = {},
 }: GanttLinksProps) => {
   const SWIMLANE_HEIGHT = 48;
@@ -39,33 +37,21 @@ export const GanttLinks = ({
   // Ref to SVG element to get its position for coordinate transformation
   const svgRef = React.useRef<SVGSVGElement>(null);
   
-  // Force re-render when positions change (for zoom/resize only, not scroll)
+  // Force re-render when positions change (for scroll/resize)
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
   
-  // Waypoint dragging state
-  const [draggingWaypoint, setDraggingWaypoint] = React.useState<{
-    linkId: string;
-    index: number;
-    startX: number;
-    startY: number;
-  } | null>(null);
-  
-  // Update positions only on resize (not scroll - SVG coordinates are absolute)
+  // Update positions when chart scrolls or resizes
   React.useEffect(() => {
-    let resizeTimeout: number;
+    const container = document.querySelector('.overflow-auto');
+    if (!container) return;
     
-    const handleResize = () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = window.setTimeout(() => {
-        forceUpdate();
-      }, 100);
-    };
-    
-    window.addEventListener('resize', handleResize);
+    const handleUpdate = () => forceUpdate();
+    container.addEventListener('scroll', handleUpdate);
+    window.addEventListener('resize', handleUpdate);
     
     return () => {
-      clearTimeout(resizeTimeout);
-      window.removeEventListener('resize', handleResize);
+      container.removeEventListener('scroll', handleUpdate);
+      window.removeEventListener('resize', handleUpdate);
     };
   }, []);
 
@@ -435,58 +421,13 @@ export const GanttLinks = ({
       return null;
     }
 
-    // Use manual waypoints if available, otherwise generate automatic path
-    let pathPoints: { x: number; y: number }[];
-    if (link.routingMode === 'manual' && link.waypoints && link.waypoints.length > 0) {
-      // Manual mode: use waypoints directly
-      pathPoints = [start, ...link.waypoints, end];
-    } else {
-      // Auto mode: generate elbowed path
-      pathPoints = generateElbowedPath(start, end, link.fromId, link.toId);
-    }
-    
+    // Generate elbowed path following functional requirements
+    const pathPoints = generateElbowedPath(start, end, link.fromId, link.toId);
     const path = createSVGPath(pathPoints, 8);
     
     const isSelected = selectedLink === link.id;
     const linkColor = link.color || "#00bcd4";
     const markerId = `arrowhead-${link.id}`;
-
-    const handleWaypointMouseDown = (e: React.MouseEvent, index: number) => {
-      e.stopPropagation();
-      const rect = svgRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      
-      setDraggingWaypoint({
-        linkId: link.id,
-        index,
-        startX: e.clientX - rect.left,
-        startY: e.clientY - rect.top,
-      });
-    };
-
-    const handleLinkClick = (e: React.MouseEvent) => {
-      if (link.routingMode === 'manual' && isSelected && onUpdateWaypoints) {
-        e.stopPropagation();
-        const rect = svgRef.current?.getBoundingClientRect();
-        if (!rect) return;
-        
-        // Add waypoint at click position
-        const svgX = e.clientX - rect.left;
-        const svgY = e.clientY - rect.top;
-        const newWaypoint = { x: svgX, y: svgY };
-        
-        const currentWaypoints = link.waypoints || [];
-        onUpdateWaypoints(link.id, [...currentWaypoints, newWaypoint]);
-      }
-    };
-
-    const handleRemoveWaypoint = (e: React.MouseEvent, index: number) => {
-      e.stopPropagation();
-      if (!link.waypoints || link.waypoints.length <= 1 || !onUpdateWaypoints) return;
-      
-      const newWaypoints = link.waypoints.filter((_, i) => i !== index);
-      onUpdateWaypoints(link.id, newWaypoints);
-    };
 
     return (
       <g key={link.id}>
@@ -500,22 +441,7 @@ export const GanttLinks = ({
           style={{ pointerEvents: 'all' }}
           onClick={(e) => {
             e.stopPropagation();
-            
-            // If in manual mode and selected, add waypoint instead of deselecting
-            if (link.routingMode === 'manual' && isSelected && onUpdateWaypoints) {
-              const rect = svgRef.current?.getBoundingClientRect();
-              if (!rect) return;
-              
-              const svgX = e.clientX - rect.left;
-              const svgY = e.clientY - rect.top;
-              const newWaypoint = { x: svgX, y: svgY };
-              
-              const currentWaypoints = link.waypoints || [];
-              onUpdateWaypoints(link.id, [...currentWaypoints, newWaypoint]);
-            } else {
-              // Otherwise toggle selection
-              onLinkSelect(isSelected ? "" : link.id);
-            }
+            onLinkSelect(isSelected ? "" : link.id);
           }}
           onDoubleClick={(e) => {
             e.stopPropagation();
@@ -573,60 +499,12 @@ export const GanttLinks = ({
             </div>
           </foreignObject>
         )}
-        
-         {/* Waypoints - only show when selected and in manual mode */}
-         {isSelected && link.routingMode === 'manual' && (
-           <>
-             {/* Render existing waypoints */}
-             {link.waypoints && link.waypoints.map((waypoint, index) => (
-               <React.Fragment key={`waypoint-${index}`}>
-                 {/* Waypoint control point */}
-                 <circle
-                   cx={waypoint.x}
-                   cy={waypoint.y}
-                   r="8"
-                   fill="hsl(var(--primary))"
-                   stroke="hsl(var(--background))"
-                   strokeWidth="2"
-                   className="cursor-move hover:scale-110 transition-transform"
-                   style={{ pointerEvents: 'all' }}
-                   onMouseDown={(e) => handleWaypointMouseDown(e, index)}
-                   onDoubleClick={(e) => handleRemoveWaypoint(e, index)}
-                 >
-                   <title>Drag to move • Double-click to remove</title>
-                 </circle>
-               </React.Fragment>
-             ))}
-          </>
-        )}
       </g>
     );
   };
 
   const totalHeight = calculateTotalHeight();
   const totalWidth = calculateTotalWidth();
-  
-  // Handle waypoint dragging
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!draggingWaypoint || !onUpdateWaypoints) return;
-    
-    const rect = svgRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    const link = data.links.find(l => l.id === draggingWaypoint.linkId);
-    if (!link || !link.waypoints) return;
-    
-    const newWaypoints = [...link.waypoints];
-    newWaypoints[draggingWaypoint.index] = { x, y };
-    onUpdateWaypoints(link.id, newWaypoints);
-  };
-  
-  const handleMouseUp = () => {
-    setDraggingWaypoint(null);
-  };
   
   // SVG positioned at 0,0 covering the full chart area including swimlane column
   // Coordinates in renderLink are adjusted by swimlaneColumnWidth
@@ -641,9 +519,6 @@ export const GanttLinks = ({
         height: `${totalHeight}px`,
         zIndex: 20,
       }}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
     >
       {data.links.map(renderLink)}
     </svg>

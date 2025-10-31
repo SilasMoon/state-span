@@ -918,28 +918,6 @@ export const useGanttData = () => {
     nextId = 1;
   };
 
-  const updateLinkWaypoints = (linkId: string, waypoints: { x: number; y: number }[]) => {
-    updateData((prev) => ({
-      ...prev,
-      links: prev.links.map(link =>
-        link.id === linkId
-          ? { ...link, waypoints, routingMode: 'manual' as const }
-          : link
-      ),
-    }));
-  };
-
-  const updateLinkRoutingMode = (linkId: string, mode: 'auto' | 'manual') => {
-    updateData((prev) => ({
-      ...prev,
-      links: prev.links.map(link =>
-        link.id === linkId
-          ? { ...link, routingMode: mode, waypoints: mode === 'auto' ? undefined : link.waypoints }
-          : link
-      ),
-    }));
-  };
-
   const exportData = () => {
     return JSON.stringify(data, null, 2);
   };
@@ -979,8 +957,6 @@ export const useGanttData = () => {
     addLink,
     deleteLink,
     updateLink,
-    updateLinkWaypoints,
-    updateLinkRoutingMode,
     updateSwimlane,
     clearAll,
     exportData,

@@ -30,8 +30,6 @@ export const GanttChart = () => {
     addLink,
     deleteLink,
     updateLink,
-    updateLinkWaypoints,
-    updateLinkRoutingMode,
     updateSwimlane,
     clearAll,
     exportData,
@@ -952,9 +950,6 @@ export const GanttChart = () => {
               setLinkEditDialog({ linkId });
             }
           }}
-          onUpdateWaypoints={(linkId, waypoints) => {
-            updateLinkWaypoints(linkId, waypoints);
-          }}
           itemTempPositions={itemTempPositions}
         />
 
@@ -1123,18 +1118,8 @@ export const GanttChart = () => {
             onClose={() => setLinkEditDialog(null)}
             initialLabel={link.label || ""}
             initialColor={link.color || "#00bcd4"}
-            initialRoutingMode={link.routingMode || 'auto'}
-            onSave={(label: string, color: string, routingMode: 'auto' | 'manual') => {
-              // When switching to manual mode, initialize waypoints from current auto path if needed
-              if (routingMode === 'manual' && !link.waypoints) {
-                // Convert to manual with empty waypoints initially - user can add them via UI
-                updateLink(linkEditDialog.linkId, { label, color, routingMode, waypoints: [] });
-              } else if (routingMode === 'auto') {
-                // Clear waypoints when switching to auto
-                updateLink(linkEditDialog.linkId, { label, color, routingMode, waypoints: undefined });
-              } else {
-                updateLink(linkEditDialog.linkId, { label, color, routingMode });
-              }
+            onSave={(label: string, color: string) => {
+              updateLink(linkEditDialog.linkId, { label, color });
               toast.success("Link updated");
               setLinkEditDialog(null);
             }}
