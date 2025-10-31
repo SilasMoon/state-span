@@ -39,7 +39,7 @@ export const GanttLinks = ({
   // Ref to SVG element to get its position for coordinate transformation
   const svgRef = React.useRef<SVGSVGElement>(null);
   
-  // Force re-render when positions change (for scroll/resize)
+  // Force re-render when positions change (for zoom/resize only, not scroll)
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
   
   // Waypoint dragging state
@@ -50,43 +50,22 @@ export const GanttLinks = ({
     startY: number;
   } | null>(null);
   
-  // Update positions when chart scrolls or resizes (with throttling)
+  // Update positions only on resize (not scroll - SVG coordinates are absolute)
   React.useEffect(() => {
-    const container = document.querySelector('.overflow-auto');
-    if (!container) return;
+    let resizeTimeout: number;
     
-    let rafId: number | null = null;
-    let lastUpdate = 0;
-    const THROTTLE_MS = 16; // ~60fps
-    
-    const handleUpdate = () => {
-      const now = Date.now();
-      
-      // Cancel any pending animation frame
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
-      
-      // Throttle updates
-      if (now - lastUpdate < THROTTLE_MS) {
-        rafId = requestAnimationFrame(handleUpdate);
-        return;
-      }
-      
-      lastUpdate = now;
-      rafId = null;
-      forceUpdate();
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = window.setTimeout(() => {
+        forceUpdate();
+      }, 100);
     };
     
-    container.addEventListener('scroll', handleUpdate);
-    window.addEventListener('resize', handleUpdate);
+    window.addEventListener('resize', handleResize);
     
     return () => {
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
-      container.removeEventListener('scroll', handleUpdate);
-      window.removeEventListener('resize', handleUpdate);
+      clearTimeout(resizeTimeout);
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
