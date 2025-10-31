@@ -452,7 +452,7 @@ export const GanttLinks = ({
           strokeWidth={isSelected ? "3" : "2"}
           fill="none"
           markerEnd={`url(#${markerId})`}
-          opacity={isSelected ? "1" : "0.7"}
+          opacity="1"
           className="pointer-events-none transition-all duration-200"
           style={{
             filter: isSelected ? 'drop-shadow(0 0 4px hsl(var(--destructive)))' : undefined
