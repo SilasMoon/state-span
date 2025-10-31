@@ -341,7 +341,7 @@ export const GanttRow = ({
         </div>
       </div>
 
-      <div className="relative flex h-12" style={{ minWidth: `${columns * columnWidth}px` }}>
+      <div className="relative flex h-8" style={{ minWidth: `${columns * columnWidth}px` }}>
         <div className="absolute inset-0 flex">{renderGrid()}</div>
         
         {/* Drag creation preview */}

@@ -30,7 +30,7 @@ export const GanttLinks = ({
   onLinkDoubleClick,
   itemTempPositions = {},
 }: GanttLinksProps) => {
-  const SWIMLANE_HEIGHT = 48;
+  const SWIMLANE_HEIGHT = 32;
   const BAR_HEIGHT = 24;
   const GRID_SIZE = 12; // Grid cell size for pathfinding
 

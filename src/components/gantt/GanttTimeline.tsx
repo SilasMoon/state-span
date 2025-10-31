@@ -43,7 +43,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
 
   return (
     <div className="sticky top-0 z-20 bg-gantt-header border-b border-border">
-      <div className="flex h-12">{renderTimeLabels()}</div>
+      <div className="flex h-8">{renderTimeLabels()}</div>
     </div>
   );
 };
