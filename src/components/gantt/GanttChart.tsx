@@ -899,7 +899,7 @@ export const GanttChart = () => {
               style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px` }}
             >
               <div
-                className="h-12 flex items-center px-4 font-semibold text-foreground border-b border-border"
+                className="h-8 flex items-center px-4 font-semibold text-foreground border-b border-border"
               >
                 Swimlanes
               </div>
