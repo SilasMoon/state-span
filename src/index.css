@@ -8,6 +8,53 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    --primary: 189 100% 42%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 160 60% 45%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 189 100% 42%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 189 100% 42%;
+
+    --radius: 0.375rem;
+
+    /* Gantt-specific colors - light mode */
+    --gantt-bg: 0 0% 98%;
+    --gantt-grid: 0 0% 88%;
+    --gantt-header: 0 0% 94%;
+    --gantt-row-hover: 0 0% 96%;
+    --gantt-activity: 189 100% 42%;
+    --gantt-state: 280 70% 55%;
+    --gantt-link: 189 80% 40%;
+    --gantt-text: 0 0% 15%;
+    --gantt-text-muted: 0 0% 50%;
+
+    /* Transitions */
+    --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s ease;
+  }
+
+  .dark {
     --background: 0 0% 6%;
     --foreground: 0 0% 95%;
 
@@ -36,9 +83,7 @@ All colors MUST be HSL.
     --input: 0 0% 20%;
     --ring: 189 100% 42%;
 
-    --radius: 0.375rem;
-
-    /* Gantt-specific colors */
+    /* Gantt-specific colors - dark mode */
     --gantt-bg: 0 0% 6%;
     --gantt-grid: 0 0% 12%;
     --gantt-header: 0 0% 10%;
@@ -48,10 +93,6 @@ All colors MUST be HSL.
     --gantt-link: 189 80% 50%;
     --gantt-text: 0 0% 85%;
     --gantt-text-muted: 0 0% 50%;
-
-    /* Transitions */
-    --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-fast: all 0.15s ease;
   }
 }
 
