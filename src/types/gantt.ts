@@ -20,15 +20,12 @@ export interface GanttActivity {
   description?: string;
 }
 
-export type LinkType = "FS" | "SS" | "FF" | "SF";
-
 export interface GanttLink {
   id: string;
   fromId: string;
   toId: string;
   fromSwimlaneId: string;
   toSwimlaneId: string;
-  type: LinkType; // FS=Finish-to-Start, SS=Start-to-Start, FF=Finish-to-Finish, SF=Start-to-Finish
   color?: string;
   label?: string;
   lag?: number; // in hours

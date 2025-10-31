@@ -7,7 +7,7 @@ import { EditDialog } from "./EditDialog";
 import { LinkEditDialog } from "./LinkEditDialog";
 import { GanttLinks } from "./GanttLinks";
 import { useGanttData } from "@/hooks/useGanttData";
-import { LinkType, ZoomLevel } from "@/types/gantt";
+import { ZoomLevel } from "@/types/gantt";
 import { toast } from "sonner";
 
 export const GanttChart = () => {
@@ -452,35 +452,14 @@ export const GanttChart = () => {
           
           if (toSwimlaneId && toItemId && 
               (linkDragStart.swimlaneId !== toSwimlaneId || linkDragStart.itemId !== toItemId)) {
-            // Determine link type based on which handle was dragged from and to
-            const toHandleElement = target?.closest('[data-handle-type]');
-            const toHandleType = toHandleElement?.getAttribute('data-handle-type') as 'start' | 'finish' | null;
-            
-            // Default to 'finish' if we didn't drop on a specific handle
-            const finalToHandleType = toHandleType || 'start';
-            
-            // Determine link type
-            let linkType: "FS" | "SS" | "FF" | "SF" = "FS";
-            if (linkDragStart.handleType === 'finish' && finalToHandleType === 'start') {
-              linkType = "FS";
-            } else if (linkDragStart.handleType === 'start' && finalToHandleType === 'start') {
-              linkType = "SS";
-            } else if (linkDragStart.handleType === 'finish' && finalToHandleType === 'finish') {
-              linkType = "FF";
-            } else if (linkDragStart.handleType === 'start' && finalToHandleType === 'finish') {
-              linkType = "SF";
-            }
             
             console.log('[GanttChart] Creating link:', {
               from: { swimlaneId: linkDragStart.swimlaneId, itemId: linkDragStart.itemId },
-              to: { swimlaneId: toSwimlaneId, itemId: toItemId },
-              linkType,
-              fromHandle: linkDragStart.handleType,
-              toHandle: finalToHandleType
+              to: { swimlaneId: toSwimlaneId, itemId: toItemId }
             });
             
-            addLink(linkDragStart.swimlaneId, linkDragStart.itemId, toSwimlaneId, toItemId, linkType);
-            toast.success(`${linkType} link created`);
+            addLink(linkDragStart.swimlaneId, linkDragStart.itemId, toSwimlaneId, toItemId);
+            toast.success("Link created");
           }
         }
         
@@ -1144,12 +1123,11 @@ export const GanttChart = () => {
           <LinkEditDialog
             open={true}
             onClose={() => setLinkEditDialog(null)}
-            initialType={link.type}
             initialLabel={link.label || ""}
             initialLag={link.lag || 0}
             initialColor={link.color || "#00bcd4"}
-            onSave={(type: LinkType, label: string, lag: number, color: string) => {
-              updateLink(linkEditDialog.linkId, { type, label, lag, color });
+            onSave={(label: string, lag: number, color: string) => {
+              updateLink(linkEditDialog.linkId, { label, lag, color });
               toast.success("Link updated");
               setLinkEditDialog(null);
             }}

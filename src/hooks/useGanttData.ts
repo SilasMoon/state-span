@@ -171,7 +171,6 @@ const createDefaultData = (): GanttData => {
       fromId: marketResearch.activities![1].id,
       toSwimlaneId: productStrategy.id,
       toId: productStrategy.activities![0].id,
-      type: "FS",
       lag: 0,
     },
     // Product strategy to development
@@ -181,7 +180,6 @@ const createDefaultData = (): GanttData => {
       fromId: productStrategy.activities![1].id,
       toSwimlaneId: productDev.id,
       toId: productDev.activities![0].id,
-      type: "FS",
       lag: 0,
     },
     // Product strategy to UX design
@@ -191,7 +189,6 @@ const createDefaultData = (): GanttData => {
       fromId: productStrategy.activities![1].id,
       toSwimlaneId: uxDesign.id,
       toId: uxDesign.activities![0].id,
-      type: "FS",
       lag: 0,
     },
     // UX prototypes to user testing
@@ -201,17 +198,15 @@ const createDefaultData = (): GanttData => {
       fromId: uxDesign.activities![0].id,
       toSwimlaneId: uxDesign.id,
       toId: uxDesign.activities![1].id,
-      type: "FS",
       lag: 0,
     },
-    // Development to content creation (Start-to-Start)
+    // Development to content creation
     {
       id: generateId(),
       fromSwimlaneId: productDev.id,
       fromId: productDev.activities![1].id,
       toSwimlaneId: contentCreation.id,
       toId: contentCreation.activities![0].id,
-      type: "SS",
       lag: 0,
     },
     // Content to pre-launch campaign
@@ -221,7 +216,6 @@ const createDefaultData = (): GanttData => {
       fromId: contentCreation.activities![1].id,
       toSwimlaneId: campaigns.id,
       toId: campaigns.activities![0].id,
-      type: "FS",
       lag: 0,
     },
     // Beta testing to launch event
@@ -231,7 +225,6 @@ const createDefaultData = (): GanttData => {
       fromId: productDev.activities![1].id,
       toSwimlaneId: campaigns.id,
       toId: campaigns.activities![1].id,
-      type: "FS",
       lag: 0,
     },
     // Launch event to post-launch
@@ -241,7 +234,6 @@ const createDefaultData = (): GanttData => {
       fromId: campaigns.activities![1].id,
       toSwimlaneId: campaigns.id,
       toId: campaigns.activities![2].id,
-      type: "FS",
       lag: 0,
     },
   ];
@@ -549,37 +541,34 @@ export const useGanttData = () => {
     let newData = { ...data };
 
     affectedLinks.forEach(link => {
-      // Only FS (Finish-to-Start) and FF (Finish-to-Finish) are affected by duration changes
-      if (link.type === "FS" || link.type === "FF") {
-        const toSwimlane = newData.swimlanes[link.toSwimlaneId];
-        if (!toSwimlane) return;
+      const toSwimlane = newData.swimlanes[link.toSwimlaneId];
+      if (!toSwimlane) return;
 
-        // Update the target activity/state
-        if (toSwimlane.activities) {
-          newData.swimlanes[link.toSwimlaneId] = {
-            ...toSwimlane,
-            activities: toSwimlane.activities.map(act => 
-              act.id === link.toId 
-                ? { ...act, start: act.start + durationDelta }
-                : act
-            ),
-          };
+      // Update the target activity/state
+      if (toSwimlane.activities) {
+        newData.swimlanes[link.toSwimlaneId] = {
+          ...toSwimlane,
+          activities: toSwimlane.activities.map(act => 
+            act.id === link.toId 
+              ? { ...act, start: act.start + durationDelta }
+              : act
+          ),
+        };
 
-          // Recursively propagate to activities linked from this one
-          newData = propagateDurationChange(newData, link.toSwimlaneId, link.toId, durationDelta);
-        } else if (toSwimlane.states) {
-          newData.swimlanes[link.toSwimlaneId] = {
-            ...toSwimlane,
-            states: toSwimlane.states.map(state => 
-              state.id === link.toId 
-                ? { ...state, start: state.start + durationDelta }
-                : state
-            ),
-          };
+        // Recursively propagate to activities linked from this one
+        newData = propagateDurationChange(newData, link.toSwimlaneId, link.toId, durationDelta);
+      } else if (toSwimlane.states) {
+        newData.swimlanes[link.toSwimlaneId] = {
+          ...toSwimlane,
+          states: toSwimlane.states.map(state => 
+            state.id === link.toId 
+              ? { ...state, start: state.start + durationDelta }
+              : state
+          ),
+        };
 
-          // Recursively propagate to states linked from this one
-          newData = propagateDurationChange(newData, link.toSwimlaneId, link.toId, durationDelta);
-        }
+        // Recursively propagate to states linked from this one
+        newData = propagateDurationChange(newData, link.toSwimlaneId, link.toId, durationDelta);
       }
     });
 
@@ -668,7 +657,7 @@ export const useGanttData = () => {
     });
   };
 
-  const addLink = (fromSwimlaneId: string, fromId: string, toSwimlaneId: string, toId: string, type: "FS" | "SS" | "FF" | "SF" = "FS") => {
+  const addLink = (fromSwimlaneId: string, fromId: string, toSwimlaneId: string, toId: string) => {
     const id = generateId();
     
     updateData((prev) => {
@@ -689,7 +678,6 @@ export const useGanttData = () => {
         toId,
         fromSwimlaneId,
         toSwimlaneId,
-        type,
         color,
         label: "",
         lag: 0,

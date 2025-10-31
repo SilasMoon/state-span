@@ -219,32 +219,13 @@ export const GanttLinks = ({
 
     // CRITICAL: Match EXACT handle center positions from GanttBar.tsx
     // Handles are w-5 (20px) with left edge at:
-    //   - Start: left - 12px  → center at: left - 12 + 10 = left - 2
     //   - Finish: left + width - 12px  → center at: left + width - 12 + 10 = left + width - 2
+    //   - Start: left - 12px  → center at: left - 12 + 10 = left - 2
     const HANDLE_OFFSET = 2; // Handles are 2px inward from bar edges
     
-    let startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Default: finish handle center
-    let endX = toPos.x - HANDLE_OFFSET; // Default: start handle center
-
-    switch (link.type) {
-      case 'SS': // Start-to-Start
-        startX = fromPos.x - HANDLE_OFFSET; // Start handle center of from bar
-        endX = toPos.x - HANDLE_OFFSET; // Start handle center of to bar
-        break;
-      case 'SF': // Start-to-Finish
-        startX = fromPos.x - HANDLE_OFFSET; // Start handle center of from bar
-        endX = toPos.x + toPos.width - HANDLE_OFFSET; // Finish handle center of to bar
-        break;
-      case 'FF': // Finish-to-Finish
-        startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Finish handle center of from bar
-        endX = toPos.x + toPos.width - HANDLE_OFFSET; // Finish handle center of to bar
-        break;
-      case 'FS': // Finish-to-Start (default)
-      default:
-        startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Finish handle center of from bar
-        endX = toPos.x - HANDLE_OFFSET; // Start handle center of to bar
-        break;
-    }
+    // Always use Finish-to-Start style
+    const startX = fromPos.x + fromPos.width - HANDLE_OFFSET; // Finish handle center of from bar
+    const endX = toPos.x - HANDLE_OFFSET; // Start handle center of to bar
 
     // Use barCenterY for exact vertical center attachment
     const start = { x: startX, y: fromPos.barCenterY };
@@ -340,23 +321,6 @@ export const GanttLinks = ({
             <div className="flex items-center justify-center">
               <span className="text-xs font-medium px-2 py-1 bg-background border border-border rounded shadow-sm">
                 {link.label}
-              </span>
-            </div>
-          </foreignObject>
-        )}
-        
-        {/* Link type badge */}
-        {link.type !== 'FS' && (
-          <foreignObject
-            x={start.x + (end.x - start.x) / 2 - 15}
-            y={start.y + (end.y - start.y) / 2 + 12}
-            width="30"
-            height="20"
-            className="pointer-events-none"
-          >
-            <div className="flex items-center justify-center">
-              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-primary text-primary-foreground rounded">
-                {link.type}
               </span>
             </div>
           </foreignObject>
