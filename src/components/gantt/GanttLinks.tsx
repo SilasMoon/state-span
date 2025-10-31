@@ -38,10 +38,10 @@ export const GanttLinks = ({
   // Ref to SVG element to get its position for coordinate transformation
   const svgRef = React.useRef<SVGSVGElement>(null);
   
-  // Force re-render when positions change (for scroll/resize)
+  // Force re-render when positions change (for scroll/resize/zoom)
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
   
-  // Update positions when chart scrolls or resizes
+  // Update positions when chart scrolls, resizes, or zoom changes
   React.useEffect(() => {
     const container = document.querySelector('.overflow-auto');
     if (!container) return;
@@ -55,6 +55,14 @@ export const GanttLinks = ({
       window.removeEventListener('resize', handleUpdate);
     };
   }, []);
+  
+  // Force update when zoom or columnWidth changes
+  // Use requestAnimationFrame to ensure bars have painted at new positions
+  React.useEffect(() => {
+    requestAnimationFrame(() => {
+      forceUpdate();
+    });
+  }, [zoom, columnWidth]);
 
   // Get item position with support for temp positions during drag
   const getItemPosition = (swimlaneId: string, itemId: string): ItemPosition | null => {
