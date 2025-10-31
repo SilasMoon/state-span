@@ -403,8 +403,10 @@ export const GanttLinks = ({
     // FIXED ANCHOR POINTS: Always use Finish-to-Start (right side of predecessor to left side of successor)
     // Anchor points never change regardless of task positions
     // Add swimlaneColumnWidth offset because SVG coordinate system starts at chart origin (0,0)
-    const startX = swimlaneColumnWidth + fromPos.x + fromPos.width; // Finish handle (right edge)
-    const endX = swimlaneColumnWidth + toPos.x; // Start handle (left edge)
+    // Subtract half the stroke width (1px for 2px stroke) to align with bar edge
+    const STROKE_OFFSET = 1; // Half of the 2px stroke width
+    const startX = swimlaneColumnWidth + fromPos.x + fromPos.width - STROKE_OFFSET; // Finish handle (right edge)
+    const endX = swimlaneColumnWidth + toPos.x + STROKE_OFFSET; // Start handle (left edge)
 
     // Use barCenterY for exact vertical center attachment
     const start = { x: startX, y: fromPos.barCenterY };
