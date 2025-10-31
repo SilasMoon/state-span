@@ -475,6 +475,7 @@ export const GanttLinks = ({
               stroke="hsl(var(--background))"
               strokeWidth="1.5"
               strokeLinejoin="round"
+              opacity="1"
             />
           </marker>
         </defs>
