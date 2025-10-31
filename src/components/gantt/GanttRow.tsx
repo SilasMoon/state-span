@@ -303,15 +303,18 @@ export const GanttRow = ({
         />
         
         <div className="flex items-center gap-2 flex-shrink-0 relative z-10">
-          <span
-            className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
-              swimlane.type === "task"
-                ? "bg-primary/20 text-primary"
-                : "bg-secondary/20 text-secondary"
-            }`}
-          >
-            {swimlane.type}
-          </span>
+          {/* Only show type label for non-parent swimlanes or nested swimlanes */}
+          {(!hasChildren || swimlane.parentId) && (
+            <span
+              className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
+                swimlane.type === "task"
+                  ? "bg-primary/20 text-primary"
+                  : "bg-secondary/20 text-secondary"
+              }`}
+            >
+              {swimlane.type}
+            </span>
+          )}
 
           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
             <DropdownMenu>
