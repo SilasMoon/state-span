@@ -561,55 +561,76 @@ export const GanttLinks = ({
         )}
         
         {/* Waypoints - only show when selected and in manual mode */}
-        {isSelected && link.routingMode === 'manual' && link.waypoints && link.waypoints.map((waypoint, index) => (
-          <React.Fragment key={`waypoint-${index}`}>
-            {/* Add waypoint button (before this waypoint) */}
-            {index === 0 && (
+        {isSelected && link.routingMode === 'manual' && (
+          <>
+            {/* If no waypoints, show a button to add the first one */}
+            {(!link.waypoints || link.waypoints.length === 0) && (
               <circle
-                cx={(start.x + waypoint.x) / 2}
-                cy={(start.y + waypoint.y) / 2}
-                r="6"
+                cx={(start.x + end.x) / 2}
+                cy={(start.y + end.y) / 2}
+                r="10"
                 fill="hsl(var(--primary))"
-                opacity="0.5"
-                className="cursor-pointer hover:opacity-100 transition-opacity"
+                opacity="0.7"
+                className="cursor-pointer hover:opacity-100 hover:scale-110 transition-all"
                 style={{ pointerEvents: 'all' }}
                 onClick={(e) => handleAddWaypoint(e, 0)}
               >
-                <title>Add waypoint</title>
+                <title>Click to add first waypoint</title>
               </circle>
             )}
             
-            {/* Waypoint control point */}
-            <circle
-              cx={waypoint.x}
-              cy={waypoint.y}
-              r="8"
-              fill="hsl(var(--primary))"
-              stroke="hsl(var(--background))"
-              strokeWidth="2"
-              className="cursor-move hover:scale-110 transition-transform"
-              style={{ pointerEvents: 'all' }}
-              onMouseDown={(e) => handleWaypointMouseDown(e, index)}
-              onDoubleClick={(e) => handleRemoveWaypoint(e, index)}
-            >
-              <title>Drag to move • Double-click to remove</title>
-            </circle>
-            
-            {/* Add waypoint button (after this waypoint) */}
-            <circle
-              cx={(waypoint.x + (index < link.waypoints.length - 1 ? link.waypoints[index + 1].x : end.x)) / 2}
-              cy={(waypoint.y + (index < link.waypoints.length - 1 ? link.waypoints[index + 1].y : end.y)) / 2}
-              r="6"
-              fill="hsl(var(--primary))"
-              opacity="0.5"
-              className="cursor-pointer hover:opacity-100 transition-opacity"
-              style={{ pointerEvents: 'all' }}
-              onClick={(e) => handleAddWaypoint(e, index + 1)}
-            >
-              <title>Add waypoint</title>
-            </circle>
-          </React.Fragment>
-        ))}
+            {/* Render existing waypoints */}
+            {link.waypoints && link.waypoints.map((waypoint, index) => (
+              <React.Fragment key={`waypoint-${index}`}>
+                {/* Add waypoint button (before this waypoint) */}
+                {index === 0 && (
+                  <circle
+                    cx={(start.x + waypoint.x) / 2}
+                    cy={(start.y + waypoint.y) / 2}
+                    r="6"
+                    fill="hsl(var(--primary))"
+                    opacity="0.5"
+                    className="cursor-pointer hover:opacity-100 transition-opacity"
+                    style={{ pointerEvents: 'all' }}
+                    onClick={(e) => handleAddWaypoint(e, 0)}
+                  >
+                    <title>Add waypoint</title>
+                  </circle>
+                )}
+                
+                {/* Waypoint control point */}
+                <circle
+                  cx={waypoint.x}
+                  cy={waypoint.y}
+                  r="8"
+                  fill="hsl(var(--primary))"
+                  stroke="hsl(var(--background))"
+                  strokeWidth="2"
+                  className="cursor-move hover:scale-110 transition-transform"
+                  style={{ pointerEvents: 'all' }}
+                  onMouseDown={(e) => handleWaypointMouseDown(e, index)}
+                  onDoubleClick={(e) => handleRemoveWaypoint(e, index)}
+                >
+                  <title>Drag to move • Double-click to remove</title>
+                </circle>
+                
+                {/* Add waypoint button (after this waypoint) */}
+                <circle
+                  cx={(waypoint.x + (index < link.waypoints.length - 1 ? link.waypoints[index + 1].x : end.x)) / 2}
+                  cy={(waypoint.y + (index < link.waypoints.length - 1 ? link.waypoints[index + 1].y : end.y)) / 2}
+                  r="6"
+                  fill="hsl(var(--primary))"
+                  opacity="0.5"
+                  className="cursor-pointer hover:opacity-100 transition-opacity"
+                  style={{ pointerEvents: 'all' }}
+                  onClick={(e) => handleAddWaypoint(e, index + 1)}
+                >
+                  <title>Add waypoint</title>
+                </circle>
+              </React.Fragment>
+            ))}
+          </>
+        )}
       </g>
     );
   };
