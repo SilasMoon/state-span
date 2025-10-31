@@ -9,6 +9,7 @@ interface GanttLinksProps {
   selectedLink: string | null;
   onLinkSelect: (linkId: string) => void;
   onLinkDoubleClick: (linkId: string) => void;
+  onUpdateWaypoints?: (linkId: string, waypoints: { x: number; y: number }[]) => void;
   itemTempPositions?: Record<string, { start: number; duration: number; swimlaneId: string }>;
 }
 
@@ -28,6 +29,7 @@ export const GanttLinks = ({
   selectedLink, 
   onLinkSelect, 
   onLinkDoubleClick,
+  onUpdateWaypoints,
   itemTempPositions = {},
 }: GanttLinksProps) => {
   const SWIMLANE_HEIGHT = 48;
@@ -39,6 +41,14 @@ export const GanttLinks = ({
   
   // Force re-render when positions change (for scroll/resize)
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+  
+  // Waypoint dragging state
+  const [draggingWaypoint, setDraggingWaypoint] = React.useState<{
+    linkId: string;
+    index: number;
+    startX: number;
+    startY: number;
+  } | null>(null);
   
   // Update positions when chart scrolls or resizes
   React.useEffect(() => {
@@ -421,13 +431,63 @@ export const GanttLinks = ({
       return null;
     }
 
-    // Generate elbowed path following functional requirements
-    const pathPoints = generateElbowedPath(start, end, link.fromId, link.toId);
+    // Use manual waypoints if available, otherwise generate automatic path
+    let pathPoints: { x: number; y: number }[];
+    if (link.routingMode === 'manual' && link.waypoints && link.waypoints.length > 0) {
+      // Manual mode: use waypoints directly
+      pathPoints = [start, ...link.waypoints, end];
+    } else {
+      // Auto mode: generate elbowed path
+      pathPoints = generateElbowedPath(start, end, link.fromId, link.toId);
+    }
+    
     const path = createSVGPath(pathPoints, 8);
     
     const isSelected = selectedLink === link.id;
     const linkColor = link.color || "#00bcd4";
     const markerId = `arrowhead-${link.id}`;
+
+    const handleWaypointMouseDown = (e: React.MouseEvent, index: number) => {
+      e.stopPropagation();
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      
+      setDraggingWaypoint({
+        linkId: link.id,
+        index,
+        startX: e.clientX - rect.left,
+        startY: e.clientY - rect.top,
+      });
+    };
+
+    const handleAddWaypoint = (e: React.MouseEvent, insertIndex: number) => {
+      e.stopPropagation();
+      if (!link.waypoints || !onUpdateWaypoints) return;
+      
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      
+      // Calculate midpoint between two adjacent waypoints
+      const prevPoint = insertIndex === 0 ? start : link.waypoints[insertIndex - 1];
+      const nextPoint = insertIndex >= link.waypoints.length ? end : link.waypoints[insertIndex];
+      
+      const newWaypoint = {
+        x: (prevPoint.x + nextPoint.x) / 2,
+        y: (prevPoint.y + nextPoint.y) / 2,
+      };
+      
+      const newWaypoints = [...link.waypoints];
+      newWaypoints.splice(insertIndex, 0, newWaypoint);
+      onUpdateWaypoints(link.id, newWaypoints);
+    };
+
+    const handleRemoveWaypoint = (e: React.MouseEvent, index: number) => {
+      e.stopPropagation();
+      if (!link.waypoints || link.waypoints.length <= 1 || !onUpdateWaypoints) return;
+      
+      const newWaypoints = link.waypoints.filter((_, i) => i !== index);
+      onUpdateWaypoints(link.id, newWaypoints);
+    };
 
     return (
       <g key={link.id}>
@@ -499,12 +559,85 @@ export const GanttLinks = ({
             </div>
           </foreignObject>
         )}
+        
+        {/* Waypoints - only show when selected and in manual mode */}
+        {isSelected && link.routingMode === 'manual' && link.waypoints && link.waypoints.map((waypoint, index) => (
+          <React.Fragment key={`waypoint-${index}`}>
+            {/* Add waypoint button (before this waypoint) */}
+            {index === 0 && (
+              <circle
+                cx={(start.x + waypoint.x) / 2}
+                cy={(start.y + waypoint.y) / 2}
+                r="6"
+                fill="hsl(var(--primary))"
+                opacity="0.5"
+                className="cursor-pointer hover:opacity-100 transition-opacity"
+                style={{ pointerEvents: 'all' }}
+                onClick={(e) => handleAddWaypoint(e, 0)}
+              >
+                <title>Add waypoint</title>
+              </circle>
+            )}
+            
+            {/* Waypoint control point */}
+            <circle
+              cx={waypoint.x}
+              cy={waypoint.y}
+              r="8"
+              fill="hsl(var(--primary))"
+              stroke="hsl(var(--background))"
+              strokeWidth="2"
+              className="cursor-move hover:scale-110 transition-transform"
+              style={{ pointerEvents: 'all' }}
+              onMouseDown={(e) => handleWaypointMouseDown(e, index)}
+              onDoubleClick={(e) => handleRemoveWaypoint(e, index)}
+            >
+              <title>Drag to move • Double-click to remove</title>
+            </circle>
+            
+            {/* Add waypoint button (after this waypoint) */}
+            <circle
+              cx={(waypoint.x + (index < link.waypoints.length - 1 ? link.waypoints[index + 1].x : end.x)) / 2}
+              cy={(waypoint.y + (index < link.waypoints.length - 1 ? link.waypoints[index + 1].y : end.y)) / 2}
+              r="6"
+              fill="hsl(var(--primary))"
+              opacity="0.5"
+              className="cursor-pointer hover:opacity-100 transition-opacity"
+              style={{ pointerEvents: 'all' }}
+              onClick={(e) => handleAddWaypoint(e, index + 1)}
+            >
+              <title>Add waypoint</title>
+            </circle>
+          </React.Fragment>
+        ))}
       </g>
     );
   };
 
   const totalHeight = calculateTotalHeight();
   const totalWidth = calculateTotalWidth();
+  
+  // Handle waypoint dragging
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!draggingWaypoint || !onUpdateWaypoints) return;
+    
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const link = data.links.find(l => l.id === draggingWaypoint.linkId);
+    if (!link || !link.waypoints) return;
+    
+    const newWaypoints = [...link.waypoints];
+    newWaypoints[draggingWaypoint.index] = { x, y };
+    onUpdateWaypoints(link.id, newWaypoints);
+  };
+  
+  const handleMouseUp = () => {
+    setDraggingWaypoint(null);
+  };
   
   // SVG positioned at 0,0 covering the full chart area including swimlane column
   // Coordinates in renderLink are adjusted by swimlaneColumnWidth
@@ -519,6 +652,9 @@ export const GanttLinks = ({
         height: `${totalHeight}px`,
         zIndex: 20,
       }}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
     >
       {data.links.map(renderLink)}
     </svg>

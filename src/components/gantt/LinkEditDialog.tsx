@@ -8,13 +8,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 
 interface LinkEditDialogProps {
   open: boolean;
   onClose: () => void;
-  initialLabel: string;
-  initialColor: string;
-  onSave: (label: string, color: string) => void;
+  initialLabel?: string;
+  initialColor?: string;
+  initialRoutingMode?: 'auto' | 'manual';
+  onSave: (label: string, color: string, routingMode: 'auto' | 'manual') => void;
   onDelete: () => void;
 }
 
@@ -73,18 +75,23 @@ const addRecentColor = (key: string, color: string) => {
 export const LinkEditDialog = ({
   open,
   onClose,
-  initialLabel,
-  initialColor,
+  initialLabel = "",
+  initialColor = "#00bcd4",
+  initialRoutingMode = 'auto',
   onSave,
   onDelete,
 }: LinkEditDialogProps) => {
   const [label, setLabel] = useState(initialLabel);
   const [color, setColor] = useState(initialColor);
+  const [routingMode, setRoutingMode] = useState<'auto' | 'manual'>(initialRoutingMode);
   const [recentColors, setRecentColors] = useState<string[]>([]);
 
   useEffect(() => {
+    setLabel(initialLabel || "");
+    setColor(initialColor || "#00bcd4");
+    setRoutingMode(initialRoutingMode || 'auto');
     setRecentColors(getRecentColors('gantt-recent-link-colors'));
-  }, [open]);
+  }, [open, initialLabel, initialColor, initialRoutingMode]);
 
   const handleColorSelect = (newColor: string) => {
     setColor(newColor);
@@ -93,7 +100,7 @@ export const LinkEditDialog = ({
   };
 
   const handleSave = () => {
-    onSave(label, color);
+    onSave(label, color, routingMode);
     onClose();
   };
 
@@ -149,6 +156,29 @@ export const LinkEditDialog = ({
                 />
               ))}
             </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-sm">Routing Mode</Label>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs ${routingMode === 'auto' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                  Automatic
+                </span>
+                <Switch
+                  checked={routingMode === 'manual'}
+                  onCheckedChange={(checked) => setRoutingMode(checked ? 'manual' : 'auto')}
+                />
+                <span className={`text-xs ${routingMode === 'manual' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                  Manual
+                </span>
+              </div>
+            </div>
+            {routingMode === 'manual' && (
+              <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+                💡 Select the link to see waypoints. Drag waypoints to adjust the path, or double-click to remove them.
+              </div>
+            )}
           </div>
 
           <div className="flex justify-between gap-2 pt-2 border-t">
