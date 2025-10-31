@@ -102,17 +102,17 @@ export const GanttFlagRow = ({
   const columns = Math.ceil(totalHours / zoom.hoursPerColumn);
 
   return (
-    <div className="flex border-b border-gantt-grid">
+    <div className="flex">
       {/* Label column */}
       <div
         className="sticky left-0 z-30 bg-gantt-header border-r border-border flex items-center px-4 font-medium text-foreground"
-        style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px`, height: '48px' }}
+        style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px`, height: '64px' }}
       >
         Flags
       </div>
 
       {/* Grid and flags area */}
-      <div className="relative flex" style={{ height: '48px' }}>
+      <div className="relative flex" style={{ height: '64px' }}>
         {/* Grid columns */}
         {Array.from({ length: columns }).map((_, i) => (
           <div
