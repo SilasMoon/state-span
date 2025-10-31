@@ -347,53 +347,70 @@ export const GanttChart = () => {
 
       toast.info("Generating image...");
       
-      // Create wrapper with padding to prevent text cutoff
-      const wrapper = document.createElement('div');
-      wrapper.style.position = 'absolute';
-      wrapper.style.left = '-99999px';
-      wrapper.style.top = '0';
-      wrapper.style.background = '#ffffff';
-      wrapper.style.padding = '40px'; // CRITICAL: Padding to ensure text isn't cut off
-      wrapper.style.boxSizing = 'content-box';
+      // Create a properly sized export container
+      const exportWrapper = document.createElement('div');
+      exportWrapper.style.position = 'fixed';
+      exportWrapper.style.left = '0';
+      exportWrapper.style.top = '0';
+      exportWrapper.style.zIndex = '-1';
+      exportWrapper.style.background = '#0a0a0a'; // Match gantt background
+      exportWrapper.style.overflow = 'visible';
       
       // Clone the chart
       const clone = chartContainer.cloneNode(true) as HTMLElement;
+      clone.style.position = 'relative';
+      clone.style.display = 'block';
       
-      // Remove positioning that causes rendering issues
-      const fixElement = (el: Element) => {
+      // Fix all positioning issues
+      const fixElements = (el: Element) => {
         if (el instanceof HTMLElement) {
-          const style = window.getComputedStyle(el);
-          // Convert sticky/fixed to relative
-          if (style.position === 'sticky' || style.position === 'fixed') {
+          if (el.style.position === 'sticky' || el.style.position === 'fixed' || el.style.position === 'absolute') {
             el.style.position = 'relative';
           }
-          // Remove transforms
           el.style.transform = 'none';
+          
+          // Ensure text elements have proper line height
+          if (el.textContent && el.textContent.trim()) {
+            const computed = window.getComputedStyle(el);
+            if (!el.style.lineHeight) {
+              el.style.lineHeight = computed.lineHeight === 'normal' ? '1.5' : computed.lineHeight;
+            }
+            el.style.paddingBottom = '2px'; // Extra space for descenders
+          }
         }
-        Array.from(el.children).forEach(fixElement);
+        Array.from(el.children).forEach(fixElements);
       };
-      fixElement(clone);
+      fixElements(clone);
       
-      // Remove SVG and overlays (export static content only)
-      clone.querySelectorAll('svg, [style*="zIndex: 25"]').forEach(el => el.remove());
+      // Remove SVG links (export static content)
+      clone.querySelectorAll('svg').forEach(el => el.remove());
       
-      wrapper.appendChild(clone);
-      document.body.appendChild(wrapper);
+      exportWrapper.appendChild(clone);
+      document.body.appendChild(exportWrapper);
       
-      // Wait for fonts and layout
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Force layout and wait for rendering
+      clone.offsetHeight; // Force reflow
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Capture with text-optimized settings
-      const canvas = await html2canvas(wrapper, {
-        backgroundColor: '#ffffff',
+      // Get actual dimensions
+      const rect = clone.getBoundingClientRect();
+      
+      // Capture with proper settings
+      const canvas = await html2canvas(clone, {
+        backgroundColor: '#0a0a0a',
         scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        imageTimeout: 0,
+        width: rect.width,
+        height: rect.height + 20, // Extra 20px for text descenders
+        windowWidth: rect.width,
+        windowHeight: rect.height + 20,
+        x: 0,
+        y: 0,
       });
 
-      document.body.removeChild(wrapper);
+      document.body.removeChild(exportWrapper);
 
       canvas.toBlob((blob) => {
         if (blob) {

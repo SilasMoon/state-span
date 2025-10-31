@@ -87,9 +87,9 @@ export const GanttLinks = ({
       const svgRect = svgRef.current.getBoundingClientRect();
       
       // Convert to SVG coordinate system  
-      // SVG is at 0,0 within container that starts at swimlaneColumnWidth
-      // So we need to subtract swimlaneColumnWidth from bar position
-      x = barRect.left - svgRect.left - swimlaneColumnWidth;
+      // Container starts at swimlaneColumnWidth, SVG is at 0,0 within it
+      // So bar's position relative to SVG is simply: bar.left - container.left
+      x = barRect.left - svgRect.left;
       width = barRect.width;
       
       // Get Y position from DOM for consistency
