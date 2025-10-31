@@ -18,13 +18,13 @@ export const GanttChart = () => {
     addSwimlane,
     deleteSwimlane,
     toggleExpanded,
-    addActivity,
+    addTask,
     addState,
-    updateActivity,
+    updateTask,
     updateState,
-    deleteActivity,
+    deleteTask,
     deleteState,
-    moveActivity,
+    moveTask,
     moveState,
     moveSwimlane,
     addLink,
@@ -44,7 +44,7 @@ export const GanttChart = () => {
     open: boolean;
     swimlaneId: string;
     itemId: string;
-    type: "activity" | "state";
+    type: "task" | "state";
     color: string;
     label: string;
     labelColor: string;
@@ -54,7 +54,7 @@ export const GanttChart = () => {
   } | null>(null);
 
   const [selected, setSelected] = useState<{
-    type: "swimlane" | "activity" | "state";
+    type: "swimlane" | "task" | "state";
     swimlaneId: string;
     itemId?: string;
   } | null>(null);
@@ -112,7 +112,7 @@ export const GanttChart = () => {
   }>>({});
 
   const [copiedItem, setCopiedItem] = useState<{
-    type: "activity" | "state";
+    type: "task" | "state";
     swimlaneId: string;
     itemId: string;
     color: string;
@@ -154,8 +154,8 @@ export const GanttChart = () => {
   const calculateTotalHours = () => {
     let maxHour = 240; // Default 10 days
     Object.values(data.swimlanes).forEach((swimlane) => {
-      swimlane.activities?.forEach((activity) => {
-        const endHour = activity.start + activity.duration;
+      swimlane.tasks?.forEach((task) => {
+        const endHour = task.start + task.duration;
         if (endHour > maxHour) maxHour = endHour;
       });
       swimlane.states?.forEach((state) => {
@@ -196,9 +196,9 @@ export const GanttChart = () => {
     let maxEnd = 0;
     
     Object.values(data.swimlanes).forEach((swimlane) => {
-      swimlane.activities?.forEach((activity) => {
-        if (activity.start < minStart) minStart = activity.start;
-        const end = activity.start + activity.duration;
+      swimlane.tasks?.forEach((task) => {
+        if (task.start < minStart) minStart = task.start;
+        const end = task.start + task.duration;
         if (end > maxEnd) maxEnd = end;
       });
       swimlane.states?.forEach((state) => {
@@ -249,9 +249,9 @@ export const GanttChart = () => {
     toast.info("Timeline zoomed to fit content");
   };
 
-  const handleAddActivityLane = () => {
-    addSwimlane("activity");
-    toast.success("Activity swimlane added");
+  const handleAddTaskLane = () => {
+    addSwimlane("task");
+    toast.success("Task swimlane added");
   };
 
   const handleAddStateLane = () => {
@@ -259,26 +259,26 @@ export const GanttChart = () => {
     toast.success("State swimlane added");
   };
 
-  const handleAddChild = (parentId: string, type: "activity" | "state") => {
+  const handleAddChild = (parentId: string, type: "task" | "state") => {
     addSwimlane(type, parentId);
     toast.success(`${type} child swimlane added`);
   };
 
-  const handleActivityDoubleClick = (swimlaneId: string, activityId: string) => {
+  const handleTaskDoubleClick = (swimlaneId: string, taskId: string) => {
     const swimlane = data.swimlanes[swimlaneId];
-    const activity = swimlane.activities?.find((a) => a.id === activityId);
-    if (activity) {
+    const task = swimlane.tasks?.find((a) => a.id === taskId);
+    if (task) {
       setEditDialog({
         open: true,
         swimlaneId,
-        itemId: activityId,
-        type: "activity",
-        color: activity.color,
-        label: activity.label || "",
-        labelColor: activity.labelColor || "#000000",
-        description: activity.description || "",
-        start: activity.start,
-        duration: activity.duration,
+        itemId: taskId,
+        type: "task",
+        color: task.color,
+        label: task.label || "",
+        labelColor: task.labelColor || "#000000",
+        description: task.description || "",
+        start: task.start,
+        duration: task.duration,
       });
     }
   };
@@ -305,8 +305,8 @@ export const GanttChart = () => {
   const handleEditSave = (color: string, label: string, labelColor: string, description: string) => {
     if (!editDialog) return;
 
-    if (editDialog.type === "activity") {
-      updateActivity(editDialog.swimlaneId, editDialog.itemId, { color, label, labelColor, description });
+    if (editDialog.type === "task") {
+      updateTask(editDialog.swimlaneId, editDialog.itemId, { color, label, labelColor, description });
     } else {
       updateState(editDialog.swimlaneId, editDialog.itemId, { color, label, labelColor, description });
     }
@@ -314,9 +314,9 @@ export const GanttChart = () => {
     toast.success("Item updated");
   };
 
-  const handleAddActivity = (swimlaneId: string, start: number) => {
-    addActivity(swimlaneId, start, zoom * 2);
-    toast.success("Activity added");
+  const handleAddTask = (swimlaneId: string, start: number) => {
+    addTask(swimlaneId, start, zoom * 2);
+    toast.success("Task added");
   };
 
   const handleAddState = (swimlaneId: string, start: number) => {
@@ -328,9 +328,9 @@ export const GanttChart = () => {
     const swimlane = data.swimlanes[swimlaneId];
     if (!swimlane) return;
 
-    if (swimlane.type === 'activity') {
-      addActivity(swimlaneId, start, duration);
-      toast.success("Activity created");
+    if (swimlane.type === 'task') {
+      addTask(swimlaneId, start, duration);
+      toast.success("Task created");
     } else {
       addState(swimlaneId, start, duration);
       toast.success("State created");
@@ -412,7 +412,7 @@ export const GanttChart = () => {
     if (!swimlane) return false;
 
     const end = start + duration;
-    const items = swimlane.type === "activity" ? swimlane.activities : swimlane.states;
+    const items = swimlane.type === "task" ? swimlane.tasks : swimlane.states;
     
     return items?.some((item) => {
       if (item.id === itemId) return false;
@@ -492,21 +492,21 @@ export const GanttChart = () => {
     return () => window.removeEventListener('startLinkDrag', handleStartLink);
   }, [linkDragStart, addLink]);
 
-  const handleActivityResize = (swimlaneId: string, activityId: string, newStart: number, newDuration: number) => {
-    updateActivity(swimlaneId, activityId, { start: newStart, duration: newDuration });
+  const handleTaskResize = (swimlaneId: string, taskId: string, newStart: number, newDuration: number) => {
+    updateTask(swimlaneId, taskId, { start: newStart, duration: newDuration });
   };
 
   const handleStateResize = (swimlaneId: string, stateId: string, newStart: number, newDuration: number) => {
     updateState(swimlaneId, stateId, { start: newStart, duration: newDuration });
   };
 
-  const handleActivityMove = (fromSwimlaneId: string, activityId: string, toSwimlaneId: string, newStart: number) => {
+  const handleTaskMove = (fromSwimlaneId: string, taskId: string, toSwimlaneId: string, newStart: number) => {
     const toSwimlane = data.swimlanes[toSwimlaneId];
-    if (toSwimlane?.type !== 'activity') {
-      toast.error("Activities can only be moved to activity swimlanes");
+    if (toSwimlane?.type !== 'task') {
+      toast.error("Tasks can only be moved to task swimlanes");
       return;
     }
-    moveActivity(fromSwimlaneId, toSwimlaneId, activityId, newStart);
+    moveTask(fromSwimlaneId, toSwimlaneId, taskId, newStart);
   };
 
   const handleStateMove = (fromSwimlaneId: string, stateId: string, toSwimlaneId: string, newStart: number) => {
@@ -577,13 +577,13 @@ export const GanttChart = () => {
           const swimlane = data.swimlanes[selected.swimlaneId];
           if (!swimlane) return;
           
-          const item = selected.type === 'activity' 
-            ? swimlane.activities?.find(a => a.id === selected.itemId)
+          const item = selected.type === 'task' 
+            ? swimlane.tasks?.find(a => a.id === selected.itemId)
             : swimlane.states?.find(s => s.id === selected.itemId);
           
           if (item) {
             setCopiedItem({
-              type: selected.type as "activity" | "state",
+              type: selected.type as "task" | "state",
               swimlaneId: selected.swimlaneId,
               itemId: selected.itemId,
               color: item.color,
@@ -652,10 +652,10 @@ export const GanttChart = () => {
             deleteSwimlane(selected.swimlaneId);
             setSelected(null);
             toast.success("Swimlane deleted");
-          } else if (selected.type === 'activity' && selected.itemId) {
-            deleteActivity(selected.swimlaneId, selected.itemId);
+          } else if (selected.type === 'task' && selected.itemId) {
+            deleteTask(selected.swimlaneId, selected.itemId);
             setSelected(null);
-            toast.success("Activity deleted");
+            toast.success("Task deleted");
           } else if (selected.type === 'state' && selected.itemId) {
             deleteState(selected.swimlaneId, selected.itemId);
             setSelected(null);
@@ -667,7 +667,7 @@ export const GanttChart = () => {
 
     container.addEventListener('keydown', handleKeyDown);
     return () => container.removeEventListener('keydown', handleKeyDown);
-  }, [selected, selectedLink, copiedItem, copyGhost, data.swimlanes, deleteSwimlane, deleteActivity, deleteState, deleteLink, undo, redo, canUndo, canRedo]);
+  }, [selected, selectedLink, copiedItem, copyGhost, data.swimlanes, deleteSwimlane, deleteTask, deleteState, deleteLink, undo, redo, canUndo, canRedo]);
 
   // Auto-focus container when item is selected
   React.useEffect(() => {
@@ -715,8 +715,8 @@ export const GanttChart = () => {
     if (!targetSwimlane) return;
 
     // Check if types match
-    if (copiedItem.type === 'activity' && targetSwimlane.type !== 'activity') {
-      toast.error("Can only paste activities to activity swimlanes");
+    if (copiedItem.type === 'task' && targetSwimlane.type !== 'task') {
+      toast.error("Can only paste tasks to task swimlanes");
       return;
     }
     if (copiedItem.type === 'state' && targetSwimlane.type !== 'state') {
@@ -739,15 +739,15 @@ export const GanttChart = () => {
     }
 
     // Create the new item with the copied properties
-    if (copiedItem.type === 'activity') {
-      const newActivityId = addActivity(targetSwimlaneId, start, copiedItem.duration);
-      updateActivity(targetSwimlaneId, newActivityId, {
+    if (copiedItem.type === 'task') {
+      const newTaskId = addTask(targetSwimlaneId, start, copiedItem.duration);
+      updateTask(targetSwimlaneId, newTaskId, {
         color: copiedItem.color,
         label: copiedItem.label,
         labelColor: copiedItem.labelColor,
         description: copiedItem.description,
       });
-      toast.success("Activity pasted");
+      toast.success("Task pasted");
     } else {
       const newStateId = addState(targetSwimlaneId, start, copiedItem.duration);
       updateState(targetSwimlaneId, newStateId, {
@@ -779,7 +779,7 @@ export const GanttChart = () => {
         
         if (targetSwimlaneId) {
           const swimlane = data.swimlanes[swimlaneId];
-          const item = swimlane?.activities?.find(a => a.id === itemId) || swimlane?.states?.find(s => s.id === itemId);
+          const item = swimlane?.tasks?.find(a => a.id === itemId) || swimlane?.states?.find(s => s.id === itemId);
           if (item) {
             setDragPreview(prev => ({
               itemId,
@@ -832,11 +832,11 @@ export const GanttChart = () => {
             onDelete={deleteSwimlane}
             onAddChild={handleAddChild}
             onCreateByDrag={handleCreateByDrag}
-            onActivityDoubleClick={handleActivityDoubleClick}
+            onTaskDoubleClick={handleTaskDoubleClick}
             onStateDoubleClick={handleStateDoubleClick}
-            onActivityMove={handleActivityMove}
+            onTaskMove={handleTaskMove}
             onStateMove={handleStateMove}
-            onActivityResize={handleActivityResize}
+            onTaskResize={handleTaskResize}
             onStateResize={handleStateResize}
             onSwimlaneNameChange={(id, name) => updateSwimlane(id, { name })}
             onSwimlaneDrop={moveSwimlane}
@@ -869,7 +869,7 @@ export const GanttChart = () => {
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onZoomToFit={handleZoomToFit}
-        onAddActivityLane={handleAddActivityLane}
+        onAddTaskLane={handleAddTaskLane}
         onAddStateLane={handleAddStateLane}
         onExport={handleExport}
         onExportPNG={handleExportPNG}

@@ -63,7 +63,7 @@ export const GanttLinks = ({
     const swimlane = data.swimlanes[effectiveSwimlaneId];
     if (!swimlane) return null;
 
-    const item = swimlane.activities?.find((a) => a.id === itemId) || 
+    const item = swimlane.tasks?.find((a) => a.id === itemId) || 
                  swimlane.states?.find((s) => s.id === itemId);
     if (!item) return null;
     
@@ -145,8 +145,8 @@ export const GanttLinks = ({
   const calculateTotalWidth = () => {
     let maxHour = 240;
     Object.values(data.swimlanes).forEach((swimlane) => {
-      swimlane.activities?.forEach((activity) => {
-        const endHour = activity.start + activity.duration;
+      swimlane.tasks?.forEach((task) => {
+        const endHour = task.start + task.duration;
         if (endHour > maxHour) maxHour = endHour;
       });
       swimlane.states?.forEach((state) => {
@@ -163,7 +163,7 @@ export const GanttLinks = ({
     const bars: Array<{ x: number; y: number; width: number; height: number; id: string }> = [];
     
     Object.entries(data.swimlanes).forEach(([swimlaneId, swimlane]) => {
-      const items = [...(swimlane.activities || []), ...(swimlane.states || [])];
+      const items = [...(swimlane.tasks || []), ...(swimlane.states || [])];
       
       items.forEach(item => {
         const pos = getItemPosition(swimlaneId, item.id);

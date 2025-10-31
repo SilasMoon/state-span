@@ -1,4 +1,4 @@
-export type SwimlaneType = "activity" | "state";
+export type SwimlaneType = "task" | "state";
 
 export interface GanttState {
   id: string;
@@ -10,7 +10,7 @@ export interface GanttState {
   description?: string;
 }
 
-export interface GanttActivity {
+export interface GanttTask {
   id: string;
   start: number; // hours from 0
   duration: number; // hours
@@ -37,7 +37,7 @@ export interface GanttSwimlane {
   parentId?: string;
   children: string[];
   expanded: boolean;
-  activities?: GanttActivity[];
+  tasks?: GanttTask[];
   states?: GanttState[];
 }
 

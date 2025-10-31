@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GanttData, GanttSwimlane, GanttActivity, GanttState, GanttLink, ZoomLevel } from "@/types/gantt";
+import { GanttData, GanttSwimlane, GanttTask, GanttState, GanttLink, ZoomLevel } from "@/types/gantt";
 
 let nextId = 1;
 const generateId = () => `item-${nextId++}`;
@@ -11,7 +11,7 @@ const createDefaultData = (): GanttData => {
   const planningPhase: GanttSwimlane = {
     id: generateId(),
     name: "Planning & Strategy",
-    type: "activity",
+    type: "task",
     parentId: undefined,
     children: [],
     expanded: true,
@@ -20,11 +20,11 @@ const createDefaultData = (): GanttData => {
   const marketResearch: GanttSwimlane = {
     id: generateId(),
     name: "Market Research",
-    type: "activity",
+    type: "task",
     parentId: planningPhase.id,
     children: [],
     expanded: true,
-    activities: [
+    tasks: [
       { id: generateId(), start: 0, duration: 24, color: "#00bcd4", label: "Competitor Analysis", labelColor: "#ffffff", description: "Analyze market competitors" },
       { id: generateId(), start: 24, duration: 16, color: "#0097a7", label: "Customer Surveys", labelColor: "#ffffff", description: "Conduct target audience surveys" },
     ],
@@ -33,11 +33,11 @@ const createDefaultData = (): GanttData => {
   const productStrategy: GanttSwimlane = {
     id: generateId(),
     name: "Product Strategy",
-    type: "activity",
+    type: "task",
     parentId: planningPhase.id,
     children: [],
     expanded: true,
-    activities: [
+    tasks: [
       { id: generateId(), start: 40, duration: 20, color: "#4caf50", label: "Feature Definition", labelColor: "#ffffff", description: "Define core product features" },
       { id: generateId(), start: 60, duration: 12, color: "#388e3c", label: "Pricing Strategy", labelColor: "#ffffff", description: "Determine pricing model" },
     ],
@@ -49,7 +49,7 @@ const createDefaultData = (): GanttData => {
   const developmentPhase: GanttSwimlane = {
     id: generateId(),
     name: "Development",
-    type: "activity",
+    type: "task",
     parentId: undefined,
     children: [],
     expanded: true,
@@ -58,11 +58,11 @@ const createDefaultData = (): GanttData => {
   const productDev: GanttSwimlane = {
     id: generateId(),
     name: "Product Development",
-    type: "activity",
+    type: "task",
     parentId: developmentPhase.id,
     children: [],
     expanded: true,
-    activities: [
+    tasks: [
       { id: generateId(), start: 72, duration: 48, color: "#ff9800", label: "Core Features", labelColor: "#ffffff", description: "Build primary features" },
       { id: generateId(), start: 120, duration: 24, color: "#f57c00", label: "Beta Testing", labelColor: "#ffffff", description: "Internal beta testing" },
     ],
@@ -71,11 +71,11 @@ const createDefaultData = (): GanttData => {
   const uxDesign: GanttSwimlane = {
     id: generateId(),
     name: "UX Design",
-    type: "activity",
+    type: "task",
     parentId: developmentPhase.id,
     children: [],
     expanded: true,
-    activities: [
+    tasks: [
       { id: generateId(), start: 72, duration: 20, color: "#9c27b0", label: "Prototypes", labelColor: "#ffffff", description: "Create interactive prototypes" },
       { id: generateId(), start: 92, duration: 28, color: "#7b1fa2", label: "User Testing", labelColor: "#ffffff", description: "Conduct user experience tests" },
     ],
@@ -87,7 +87,7 @@ const createDefaultData = (): GanttData => {
   const marketingPhase: GanttSwimlane = {
     id: generateId(),
     name: "Marketing & Launch",
-    type: "activity",
+    type: "task",
     parentId: undefined,
     children: [],
     expanded: true,
@@ -96,11 +96,11 @@ const createDefaultData = (): GanttData => {
   const contentCreation: GanttSwimlane = {
     id: generateId(),
     name: "Content Creation",
-    type: "activity",
+    type: "task",
     parentId: marketingPhase.id,
     children: [],
     expanded: true,
-    activities: [
+    tasks: [
       { id: generateId(), start: 120, duration: 16, color: "#e91e63", label: "Landing Page", labelColor: "#ffffff", description: "Design landing page" },
       { id: generateId(), start: 136, duration: 12, color: "#c2185b", label: "Marketing Videos", labelColor: "#ffffff", description: "Produce promotional videos" },
     ],
@@ -109,11 +109,11 @@ const createDefaultData = (): GanttData => {
   const campaigns: GanttSwimlane = {
     id: generateId(),
     name: "Marketing Campaigns",
-    type: "activity",
+    type: "task",
     parentId: marketingPhase.id,
     children: [],
     expanded: true,
-    activities: [
+    tasks: [
       { id: generateId(), start: 148, duration: 20, color: "#673ab7", label: "Pre-Launch", labelColor: "#ffffff", description: "Pre-launch email campaign" },
       { id: generateId(), start: 168, duration: 24, color: "#512da8", label: "Launch Event", labelColor: "#ffffff", description: "Product launch event" },
       { id: generateId(), start: 192, duration: 48, color: "#311b92", label: "Post-Launch", labelColor: "#ffffff", description: "Post-launch marketing push" },
@@ -162,71 +162,71 @@ const createDefaultData = (): GanttData => {
 
   projectStatusParent.children = [budgetStatus.id, milestones.id];
 
-  // Create links between activities
+  // Create links between tasks
   const links: GanttLink[] = [
     // Market research to product strategy
     {
       id: generateId(),
       fromSwimlaneId: marketResearch.id,
-      fromId: marketResearch.activities![1].id,
+      fromId: marketResearch.tasks![1].id,
       toSwimlaneId: productStrategy.id,
-      toId: productStrategy.activities![0].id,
+      toId: productStrategy.tasks![0].id,
     },
     // Product strategy to development
     {
       id: generateId(),
       fromSwimlaneId: productStrategy.id,
-      fromId: productStrategy.activities![1].id,
+      fromId: productStrategy.tasks![1].id,
       toSwimlaneId: productDev.id,
-      toId: productDev.activities![0].id,
+      toId: productDev.tasks![0].id,
     },
     // Product strategy to UX design
     {
       id: generateId(),
       fromSwimlaneId: productStrategy.id,
-      fromId: productStrategy.activities![1].id,
+      fromId: productStrategy.tasks![1].id,
       toSwimlaneId: uxDesign.id,
-      toId: uxDesign.activities![0].id,
+      toId: uxDesign.tasks![0].id,
     },
     // UX prototypes to user testing
     {
       id: generateId(),
       fromSwimlaneId: uxDesign.id,
-      fromId: uxDesign.activities![0].id,
+      fromId: uxDesign.tasks![0].id,
       toSwimlaneId: uxDesign.id,
-      toId: uxDesign.activities![1].id,
+      toId: uxDesign.tasks![1].id,
     },
     // Development to content creation
     {
       id: generateId(),
       fromSwimlaneId: productDev.id,
-      fromId: productDev.activities![1].id,
+      fromId: productDev.tasks![1].id,
       toSwimlaneId: contentCreation.id,
-      toId: contentCreation.activities![0].id,
+      toId: contentCreation.tasks![0].id,
     },
     // Content to pre-launch campaign
     {
       id: generateId(),
       fromSwimlaneId: contentCreation.id,
-      fromId: contentCreation.activities![1].id,
+      fromId: contentCreation.tasks![1].id,
       toSwimlaneId: campaigns.id,
-      toId: campaigns.activities![0].id,
+      toId: campaigns.tasks![0].id,
     },
     // Beta testing to launch event
     {
       id: generateId(),
       fromSwimlaneId: productDev.id,
-      fromId: productDev.activities![1].id,
+      fromId: productDev.tasks![1].id,
       toSwimlaneId: campaigns.id,
-      toId: campaigns.activities![1].id,
+      toId: campaigns.tasks![1].id,
     },
     // Launch event to post-launch
     {
       id: generateId(),
       fromSwimlaneId: campaigns.id,
-      fromId: campaigns.activities![1].id,
+      fromId: campaigns.tasks![1].id,
       toSwimlaneId: campaigns.id,
-      toId: campaigns.activities![2].id,
+      toId: campaigns.tasks![2].id,
     },
   ];
 
@@ -289,16 +289,16 @@ export const useGanttData = () => {
   const canUndo = history.length > 0;
   const canRedo = future.length > 0;
 
-  const addSwimlane = (type: "activity" | "state", parentId?: string) => {
+  const addSwimlane = (type: "task" | "state", parentId?: string) => {
     const id = generateId();
     const newSwimlane: GanttSwimlane = {
       id,
-      name: type === "activity" ? "New Activity Lane" : "New State Lane",
+      name: type === "task" ? "New Task Lane" : "New State Lane",
       type,
       parentId,
       children: [],
       expanded: true,
-      activities: type === "activity" ? [] : undefined,
+      tasks: type === "task" ? [] : undefined,
       states: type === "state" ? [] : undefined,
     };
 
@@ -308,11 +308,11 @@ export const useGanttData = () => {
 
       if (parentId) {
         const parent = newData.swimlanes[parentId];
-        // Clear parent's activities/states when adding a child
+        // Clear parent's tasks/states when adding a child
         newData.swimlanes[parentId] = {
           ...parent,
           children: [...parent.children, id],
-          activities: parent.type === "activity" ? [] : parent.activities,
+          tasks: parent.type === "task" ? [] : parent.tasks,
           states: parent.type === "state" ? [] : parent.states,
         };
       } else {
@@ -376,9 +376,9 @@ export const useGanttData = () => {
     }));
   };
 
-  const addActivity = (swimlaneId: string, start: number, duration: number) => {
+  const addTask = (swimlaneId: string, start: number, duration: number) => {
     const id = generateId();
-    const activity: GanttActivity = {
+    const task: GanttTask = {
       id,
       start,
       duration,
@@ -390,11 +390,11 @@ export const useGanttData = () => {
 
     updateData((prev) => {
       const swimlane = prev.swimlanes[swimlaneId];
-      if (!swimlane || swimlane.type !== "activity") return prev;
+      if (!swimlane || swimlane.type !== "task") return prev;
       
-      // Prevent adding activities to parent swimlanes
+      // Prevent adding tasks to parent swimlanes
       if (swimlane.children.length > 0) {
-        console.warn("Cannot add activities to parent swimlanes");
+        console.warn("Cannot add tasks to parent swimlanes");
         return prev;
       }
 
@@ -404,7 +404,7 @@ export const useGanttData = () => {
           ...prev.swimlanes,
           [swimlaneId]: {
             ...swimlane,
-            activities: [...(swimlane.activities || []), activity],
+            tasks: [...(swimlane.tasks || []), task],
           },
         },
       };
@@ -450,34 +450,34 @@ export const useGanttData = () => {
     return id;
   };
 
-  const updateActivity = (swimlaneId: string, activityId: string, updates: Partial<GanttActivity>) => {
+  const updateTask = (swimlaneId: string, taskId: string, updates: Partial<GanttTask>) => {
     updateData((prev) => {
       const swimlane = prev.swimlanes[swimlaneId];
-      if (!swimlane || !swimlane.activities) return prev;
+      if (!swimlane || !swimlane.tasks) return prev;
 
-      // Get the old activity to calculate duration delta
-      const oldActivity = swimlane.activities.find((act) => act.id === activityId);
-      if (!oldActivity) return prev;
+      // Get the old task to calculate duration delta
+      const oldTask = swimlane.tasks.find((act) => act.id === taskId);
+      if (!oldTask) return prev;
 
-      const durationDelta = updates.duration !== undefined ? updates.duration - oldActivity.duration : 0;
+      const durationDelta = updates.duration !== undefined ? updates.duration - oldTask.duration : 0;
 
-      // Update the activity
+      // Update the task
       let newData = {
         ...prev,
         swimlanes: {
           ...prev.swimlanes,
           [swimlaneId]: {
             ...swimlane,
-            activities: swimlane.activities.map((act) =>
-              act.id === activityId ? { ...act, ...updates } : act
+            tasks: swimlane.tasks.map((act) =>
+              act.id === taskId ? { ...act, ...updates } : act
             ),
           },
         },
       };
 
-      // If duration changed, propagate to linked activities
+      // If duration changed, propagate to linked tasks
       if (durationDelta !== 0) {
-        newData = propagateDurationChange(newData, swimlaneId, activityId, durationDelta);
+        newData = propagateDurationChange(newData, swimlaneId, taskId, durationDelta);
       }
 
       return newData;
@@ -497,18 +497,18 @@ export const useGanttData = () => {
       const toSwimlane = newData.swimlanes[link.toSwimlaneId];
       if (!toSwimlane) return;
 
-      // Update the target activity/state
-      if (toSwimlane.activities) {
+      // Update the target task/state
+      if (toSwimlane.tasks) {
         newData.swimlanes[link.toSwimlaneId] = {
           ...toSwimlane,
-          activities: toSwimlane.activities.map(act => 
+          tasks: toSwimlane.tasks.map(act => 
             act.id === link.toId 
               ? { ...act, start: act.start + durationDelta }
               : act
           ),
         };
 
-        // Recursively propagate to activities linked from this one
+        // Recursively propagate to tasks linked from this one
         newData = propagateDurationChange(newData, link.toSwimlaneId, link.toId, durationDelta);
       } else if (toSwimlane.states) {
         newData.swimlanes[link.toSwimlaneId] = {
@@ -562,14 +562,14 @@ export const useGanttData = () => {
     });
   };
 
-  const deleteActivity = (swimlaneId: string, activityId: string) => {
+  const deleteTask = (swimlaneId: string, taskId: string) => {
     updateData((prev) => {
       const swimlane = prev.swimlanes[swimlaneId];
-      if (!swimlane || !swimlane.activities) return prev;
+      if (!swimlane || !swimlane.tasks) return prev;
 
       // Remove links
       const newLinks = prev.links.filter(
-        (link) => link.fromId !== activityId && link.toId !== activityId
+        (link) => link.fromId !== taskId && link.toId !== taskId
       );
 
       return {
@@ -579,7 +579,7 @@ export const useGanttData = () => {
           ...prev.swimlanes,
           [swimlaneId]: {
             ...swimlane,
-            activities: swimlane.activities.filter((act) => act.id !== activityId),
+            tasks: swimlane.tasks.filter((act) => act.id !== taskId),
           },
         },
       };
@@ -614,11 +614,11 @@ export const useGanttData = () => {
     const id = generateId();
     
     updateData((prev) => {
-      // Get source activity/state color from current data
+      // Get source task/state color from current data
       let color = "#00bcd4"; // default
       const fromSwimlane = prev.swimlanes[fromSwimlaneId];
       if (fromSwimlane) {
-        const item = fromSwimlane.activities?.find((a) => a.id === fromId) || 
+        const item = fromSwimlane.tasks?.find((a) => a.id === fromId) || 
                      fromSwimlane.states?.find((s) => s.id === fromId);
         if (item) {
           color = item.color;
@@ -660,18 +660,18 @@ export const useGanttData = () => {
     }));
   };
 
-  const moveActivity = (fromSwimlaneId: string, toSwimlaneId: string, activityId: string, newStart: number) => {
+  const moveTask = (fromSwimlaneId: string, toSwimlaneId: string, taskId: string, newStart: number) => {
     updateData((prev) => {
       const fromSwimlane = prev.swimlanes[fromSwimlaneId];
       const toSwimlane = prev.swimlanes[toSwimlaneId];
       
-      if (!fromSwimlane || !toSwimlane || toSwimlane.type !== "activity") return prev;
+      if (!fromSwimlane || !toSwimlane || toSwimlane.type !== "task") return prev;
       
-      const activity = fromSwimlane.activities?.find((a) => a.id === activityId);
-      if (!activity) return prev;
+      const task = fromSwimlane.tasks?.find((a) => a.id === taskId);
+      if (!task) return prev;
       
-      const positionDelta = newStart - activity.start;
-      const movedActivity = { ...activity, start: newStart };
+      const positionDelta = newStart - task.start;
+      const movedTask = { ...task, start: newStart };
       
       let newData: GanttData;
       
@@ -682,8 +682,8 @@ export const useGanttData = () => {
             ...prev.swimlanes,
             [toSwimlaneId]: {
               ...toSwimlane,
-              activities: toSwimlane.activities?.map((a) =>
-                a.id === activityId ? movedActivity : a
+              tasks: toSwimlane.tasks?.map((a) =>
+                a.id === taskId ? movedTask : a
               ),
             },
           },
@@ -695,27 +695,27 @@ export const useGanttData = () => {
             ...prev.swimlanes,
             [fromSwimlaneId]: {
               ...fromSwimlane,
-              activities: fromSwimlane.activities?.filter((a) => a.id !== activityId),
+              tasks: fromSwimlane.tasks?.filter((a) => a.id !== taskId),
             },
             [toSwimlaneId]: {
               ...toSwimlane,
-              activities: [...(toSwimlane.activities || []), movedActivity],
+              tasks: [...(toSwimlane.tasks || []), movedTask],
             },
           },
         };
         
-        // Update all links that reference this activity to use the new swimlane ID
+        // Update all links that reference this task to use the new swimlane ID
         newData.links = newData.links.map(link => {
           const needsUpdate = 
-            (link.fromSwimlaneId === fromSwimlaneId && link.fromId === activityId) ||
-            (link.toSwimlaneId === fromSwimlaneId && link.toId === activityId);
+            (link.fromSwimlaneId === fromSwimlaneId && link.fromId === taskId) ||
+            (link.toSwimlaneId === fromSwimlaneId && link.toId === taskId);
           
           if (!needsUpdate) return link;
           
           return {
             ...link,
-            fromSwimlaneId: link.fromId === activityId ? toSwimlaneId : link.fromSwimlaneId,
-            toSwimlaneId: link.toId === activityId ? toSwimlaneId : link.toSwimlaneId,
+            fromSwimlaneId: link.fromId === taskId ? toSwimlaneId : link.fromSwimlaneId,
+            toSwimlaneId: link.toId === taskId ? toSwimlaneId : link.toSwimlaneId,
           };
         });
       }
@@ -872,7 +872,7 @@ export const useGanttData = () => {
           ...newParent,
           children: newChildren,
           // Clear parent's items when adding first child
-          activities: newParent.type === "activity" && newChildren.length === 1 ? [] : newParent.activities,
+          tasks: newParent.type === "task" && newChildren.length === 1 ? [] : newParent.tasks,
           states: newParent.type === "state" && newChildren.length === 1 ? [] : newParent.states,
         };
       } else {
@@ -945,13 +945,13 @@ export const useGanttData = () => {
     addSwimlane,
     deleteSwimlane,
     toggleExpanded,
-    addActivity,
+    addTask,
     addState,
-    updateActivity,
+    updateTask,
     updateState,
-    deleteActivity,
+    deleteTask,
     deleteState,
-    moveActivity,
+    moveTask,
     moveState,
     moveSwimlane,
     addLink,

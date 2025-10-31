@@ -15,7 +15,7 @@ interface GanttToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onZoomToFit: () => void;
-  onAddActivityLane: () => void;
+  onAddTaskLane: () => void;
   onAddStateLane: () => void;
   onExport: () => void;
   onExportPNG: () => void;
@@ -32,7 +32,7 @@ export const GanttToolbar = ({
   onZoomIn,
   onZoomOut,
   onZoomToFit,
-  onAddActivityLane,
+  onAddTaskLane,
   onAddStateLane,
   onExport,
   onExportPNG,
@@ -77,8 +77,8 @@ export const GanttToolbar = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem onClick={onAddActivityLane}>
-            Activity Swimlane
+          <DropdownMenuItem onClick={onAddTaskLane}>
+            Task Swimlane
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onAddStateLane}>
             State Swimlane

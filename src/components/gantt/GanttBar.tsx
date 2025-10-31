@@ -1,11 +1,11 @@
-import { GanttActivity, GanttState, ZoomLevel } from "@/types/gantt";
+import { GanttTask, GanttState, ZoomLevel } from "@/types/gantt";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import React, { useState } from "react";
 
 interface GanttBarProps {
-  item: GanttActivity | GanttState;
+  item: GanttTask | GanttState;
   swimlaneId: string;
-  swimlaneType: "activity" | "state";
+  swimlaneType: "task" | "state";
   zoom: ZoomLevel;
   columnWidth: number;
   isSelected: boolean;
