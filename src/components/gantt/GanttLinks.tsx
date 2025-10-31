@@ -87,7 +87,7 @@ export const GanttLinks = ({
       const svgRect = svgRef.current.getBoundingClientRect();
       
       // Convert to SVG coordinate system
-      // SVG now starts at left: 0, so coordinates include the swimlane column width
+      // SVG starts AFTER swimlane column, so coordinates are relative to that starting point
       x = barRect.left - svgRect.left;
       width = barRect.width;
       
@@ -96,15 +96,15 @@ export const GanttLinks = ({
       
       return {
         x,
-        y: rowTop + 24, // Keep for legacy compatibility
+        y: rowTop + 24,
         width,
         swimlaneId: effectiveSwimlaneId,
         barCenterY
       };
     } else {
       // Fallback: calculate from data
-      // Add swimlaneColumnWidth since SVG now starts at left edge
-      x = swimlaneColumnWidth + (itemStart / zoom) * columnWidth;
+      // SVG starts AFTER swimlane column, so coordinates are 0-based from timeline start
+      x = (itemStart / zoom) * columnWidth;
       width = (itemDuration / zoom) * columnWidth;
     }
     
@@ -364,35 +364,19 @@ export const GanttLinks = ({
     );
   };
 
-  const chartWidth = calculateTotalWidth();
-  const chartHeight = calculateTotalHeight();
-
   return (
     <svg
       ref={svgRef}
       className="absolute pointer-events-none"
       style={{ 
         zIndex: 20, // Below the sidebar (z-30) so it gets masked
-        left: 0, // Start at left edge
+        left: `${swimlaneColumnWidth}px`, // Start AFTER the sidebar - don't render in sidebar area
         top: 0,
-        width: '100%',
-        height: `${chartHeight}px`,
+        width: `calc(100% - ${swimlaneColumnWidth}px)`,
+        height: `${calculateTotalHeight()}px`,
       }}
     >
-      {/* DRAMATIC SOLUTION: Explicit SVG clipPath to mask the sidebar area */}
-      <defs>
-        <clipPath id="gantt-sidebar-mask">
-          <rect 
-            x={swimlaneColumnWidth} 
-            y="0" 
-            width={chartWidth - swimlaneColumnWidth} 
-            height={chartHeight} 
-          />
-        </clipPath>
-      </defs>
-      <g clipPath="url(#gantt-sidebar-mask)">
-        {data.links.map(renderLink)}
-      </g>
+      {data.links.map(renderLink)}
     </svg>
   );
 };

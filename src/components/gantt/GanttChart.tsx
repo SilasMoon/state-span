@@ -337,7 +337,6 @@ export const GanttChart = () => {
 
   const handleExportPNG = async () => {
     try {
-      // Dynamically import html2canvas
       const html2canvas = await import('html2canvas').then(m => m.default);
       
       const scrollContainer = containerRef.current;
@@ -348,52 +347,17 @@ export const GanttChart = () => {
 
       toast.info("Generating image...");
       
-      // DRAMATIC SOLUTION: Clone the visible viewport portion into a temporary container
-      const chartContainer = scrollContainer.querySelector('.gantt-chart-container') as HTMLElement;
-      if (!chartContainer) {
-        toast.error("Chart container not found");
-        return;
-      }
-      
-      // Create a temporary container positioned off-screen
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'fixed';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      tempContainer.style.width = `${scrollContainer.clientWidth}px`;
-      tempContainer.style.height = `${scrollContainer.clientHeight}px`;
-      tempContainer.style.overflow = 'hidden';
-      tempContainer.style.backgroundColor = '#ffffff';
-      document.body.appendChild(tempContainer);
-      
-      // Clone the chart content
-      const clonedChart = chartContainer.cloneNode(true) as HTMLElement;
-      
-      // Adjust the clone's position to show only the visible portion
-      clonedChart.style.position = 'relative';
-      clonedChart.style.left = `-${scrollContainer.scrollLeft}px`;
-      clonedChart.style.top = `-${scrollContainer.scrollTop}px`;
-      
-      tempContainer.appendChild(clonedChart);
-      
-      // Small delay to ensure rendering
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Capture the temporary container
-      const canvas = await html2canvas(tempContainer, {
+      // SIMPLE APPROACH: Capture the scroll container directly
+      // html2canvas will render what's visible
+      const canvas = await html2canvas(scrollContainer, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
         useCORS: true,
-        foreignObjectRendering: true,
         allowTaint: true,
-        width: scrollContainer.clientWidth,
-        height: scrollContainer.clientHeight,
       });
-      
-      // Remove the temporary container
-      document.body.removeChild(tempContainer);
 
+      // Download the image
       canvas.toBlob((blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
@@ -977,7 +941,7 @@ export const GanttChart = () => {
           )}
         </div>
 
-        {/* Render links */}
+        {/* Render links - INSIDE scroll container for natural masking */}
         <GanttLinks
           data={data}
           zoom={zoom}
