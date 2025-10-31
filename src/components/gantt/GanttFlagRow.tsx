@@ -122,7 +122,7 @@ export const GanttFlagRow = ({
           />
         ))}
 
-        {/* Flags */}
+        {/* Flags (icons and labels only, no vertical lines here) */}
         {flags.map((flag) => {
           const isDragging = draggingFlag?.id === flag.id;
           const displayPosition = isDragging && tempPosition !== null ? tempPosition : flag.position;
@@ -142,17 +142,6 @@ export const GanttFlagRow = ({
               }}
               onMouseDown={(e) => handleMouseDown(flag, e)}
             >
-              {/* Vertical line */}
-              <div
-                className="absolute top-0 bottom-0 w-0.5 transition-all"
-                style={{
-                  backgroundColor: flag.color,
-                  opacity: isSelected ? 1 : 0.6,
-                  width: isSelected ? "3px" : "2px",
-                  boxShadow: isSelected ? `0 0 8px ${flag.color}` : "none",
-                }}
-              />
-              
               {/* Highlight on hover */}
               <div
                 className="absolute top-0 bottom-0 opacity-0 group-hover:opacity-15 transition-opacity pointer-events-none"

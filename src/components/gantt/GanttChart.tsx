@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { GanttToolbar } from "./GanttToolbar";
 import { GanttTimeline } from "./GanttTimeline";
 import { GanttFlagRow } from "./GanttFlagRow";
+import { GanttFlagLines } from "./GanttFlagLines";
 import { GanttRow } from "./GanttRow";
 import { EditDialog } from "./EditDialog";
 import { LinkEditDialog } from "./LinkEditDialog";
@@ -1012,7 +1013,18 @@ export const GanttChart = () => {
               Click "Add Swimlane" to get started
             </div>
           ) : (
-            <div>{renderSwimlanes(data.rootIds)}</div>
+            <div className="relative">
+              {/* Flag vertical lines - behind all content */}
+              <GanttFlagLines
+                flags={data.flags}
+                zoom={zoom}
+                swimlaneColumnWidth={swimlaneColumnWidth}
+                selectedFlag={selectedFlag}
+              />
+              
+              {/* Swimlanes */}
+              <div>{renderSwimlanes(data.rootIds)}</div>
+            </div>
           )}
         </div>
 
