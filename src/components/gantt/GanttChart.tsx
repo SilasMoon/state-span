@@ -415,7 +415,7 @@ export const GanttChart = () => {
       toast.error("Tasks can only be moved to task swimlanes");
       return;
     }
-    moveTask(fromSwimlaneId, toSwimlaneId, taskId, newStart);
+    moveTask(fromSwimlaneId, taskId, toSwimlaneId, newStart);
   };
 
   const handleStateMove = (fromSwimlaneId: string, stateId: string, toSwimlaneId: string, newStart: number) => {
@@ -424,7 +424,7 @@ export const GanttChart = () => {
       toast.error("States can only be moved to state swimlanes");
       return;
     }
-    moveState(fromSwimlaneId, toSwimlaneId, stateId, newStart);
+    moveState(fromSwimlaneId, stateId, toSwimlaneId, newStart);
   };
 
   // Handle swimlane column resize
