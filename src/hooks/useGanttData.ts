@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { GanttData, GanttSwimlane, GanttTask, GanttState, GanttLink, GanttFlag, ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
+import { ganttDataSchema } from "@/lib/ganttValidation";
 
 let nextId = 1;
 const generateId = () => `item-${nextId++}`;
@@ -998,10 +999,25 @@ export const useGanttData = () => {
 
   const importData = (jsonData: string) => {
     try {
+      // Parse JSON
       const parsed = JSON.parse(jsonData);
-      updateData(() => parsed);
+      
+      // Validate against schema
+      const validationResult = ganttDataSchema.safeParse(parsed);
+      
+      if (!validationResult.success) {
+        const errorMessages = validationResult.error.errors
+          .map(err => `${err.path.join('.')}: ${err.message}`)
+          .join('; ');
+        throw new Error(`Invalid data format: ${errorMessages}`);
+      }
+      
+      // Use validated data
+      const validatedData = validationResult.data;
+      updateData(() => validatedData);
+      
       // Update nextId to avoid conflicts
-      const allIds = Object.keys(parsed.swimlanes);
+      const allIds = Object.keys(validatedData.swimlanes);
       const maxId = allIds.reduce((max, id) => {
         const num = parseInt(id.split("-")[1]);
         return num > max ? num : max;
