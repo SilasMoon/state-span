@@ -10,6 +10,11 @@ import { LinkEditDialog } from "./LinkEditDialog";
 import { FlagEditDialog } from "./FlagEditDialog";
 import { GanttLinks } from "./GanttLinks";
 import { useGanttData } from "@/hooks/useGanttData";
+import { useGanttSelection } from "@/hooks/useGanttSelection";
+import { useGanttDragAndDrop } from "@/hooks/useGanttDragAndDrop";
+import { useGanttLinkCreation } from "@/hooks/useGanttLinkCreation";
+import { useGanttCopyPaste } from "@/hooks/useGanttCopyPaste";
+import { useGanttKeyboard } from "@/hooks/useGanttKeyboard";
 import { ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
 import { toast } from "sonner";
 
@@ -47,6 +52,93 @@ export const GanttChart = () => {
     canRedo,
   } = useGanttData();
 
+  const [chartTitle, setChartTitle] = useState<string>("Software Development Project");
+
+  // Flags visibility state
+  const [showTopFlags, setShowTopFlags] = useState<boolean>(true);
+  const [showBottomFlags, setShowBottomFlags] = useState<boolean>(true);
+
+  // Swimlane column width state with localStorage persistence
+  const [swimlaneColumnWidth, setSwimlaneColumnWidth] = useState<number>(() => {
+    const stored = localStorage.getItem('gantt-swimlane-width');
+    return stored ? parseInt(stored) : 280;
+  });
+
+  // Calculate total hours dynamically based on content
+  const calculateTotalHours = () => {
+    let maxHour = 240;
+    Object.values(data.swimlanes).forEach((swimlane) => {
+      swimlane.tasks?.forEach((task) => {
+        const endHour = task.start + task.duration;
+        if (endHour > maxHour) maxHour = endHour;
+      });
+      swimlane.states?.forEach((state) => {
+        const endHour = state.start + state.duration;
+        if (endHour > maxHour) maxHour = endHour;
+      });
+    });
+    return Math.ceil((maxHour * 1.2) / 24) * 24;
+  };
+  
+  const totalHours = calculateTotalHours();
+
+  const checkOverlap = (swimlaneId: string, itemId: string, start: number, duration: number): boolean => {
+    const swimlane = data.swimlanes[swimlaneId];
+    if (!swimlane) return false;
+
+    const end = start + duration;
+    const items = swimlane.type === "task" ? swimlane.tasks : swimlane.states;
+    
+    return items?.some((item) => {
+      if (item.id === itemId) return false;
+      const itemEnd = item.start + item.duration;
+      return (start < itemEnd && end > item.start);
+    }) || false;
+  };
+
+  // Selection state
+  const {
+    selected,
+    selectedLink,
+    selectedFlag,
+    setSelected,
+    setSelectedLink,
+    setSelectedFlag,
+    clearSelection,
+    selectItem,
+    selectLink,
+    selectFlag,
+  } = useGanttSelection();
+
+  // Drag and drop state
+  const {
+    dragPreview,
+    itemTempPositions,
+    handleDragStateChange: createDragStateHandler,
+  } = useGanttDragAndDrop();
+
+  // Link creation state
+  const { linkDragStart, linkDragCurrent } = useGanttLinkCreation(addLink);
+
+  // Copy/paste state
+  const {
+    copiedItem,
+    copyGhost,
+    handleCopy,
+    handlePaste,
+    cancelCopy,
+  } = useGanttCopyPaste({
+    data,
+    addTask,
+    addState,
+    updateTask,
+    updateState,
+    checkOverlap,
+    zoomHoursPerColumn: zoom.hoursPerColumn,
+    zoomColumnWidth: zoom.columnWidth,
+    swimlaneColumnWidth,
+  });
+
   const [editDialog, setEditDialog] = useState<{
     open: boolean;
     swimlaneId: string;
@@ -60,95 +152,11 @@ export const GanttChart = () => {
     duration: number;
   } | null>(null);
 
-  const [selected, setSelected] = useState<{
-    type: "swimlane" | "task" | "state";
-    swimlaneId: string;
-    itemId?: string;
+  const [linkEditDialog, setLinkEditDialog] = useState<{
+    linkId: string;
   } | null>(null);
 
-  // Log selected state changes
-  React.useEffect(() => {
-    console.log('[GanttChart] selected state changed:', selected);
-  }, [selected]);
-
-  // Focus container when item is selected to enable keyboard shortcuts
-  React.useEffect(() => {
-    if (selected && containerRef.current) {
-      console.log('[GanttChart] Focusing container for selection:', selected);
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
-        if (containerRef.current) {
-          containerRef.current.focus();
-          console.log('[GanttChart] Container focused, activeElement:', document.activeElement);
-        }
-      }, 10);
-    }
-  }, [selected]);
-
-  const [linkDragStart, setLinkDragStart] = useState<{
-    swimlaneId: string;
-    itemId: string;
-    handleType: 'start' | 'finish';
-  } | null>(null);
-
-  const [linkDragCurrent, setLinkDragCurrent] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-
-  const [selectedLink, setSelectedLink] = useState<string | null>(null);
-
-  const [dragPreview, setDragPreview] = useState<{
-    itemId: string;
-    swimlaneId: string;
-    targetSwimlaneId: string;
-    tempStart: number;
-    tempDuration: number;
-    color: string;
-    mouseX: number;
-    mouseY: number;
-    offsetX: number;
-    offsetY: number;
-  } | null>(null);
-
-  // PHASE 4: Track temp positions for all items being dragged/resized
-  const [itemTempPositions, setItemTempPositions] = useState<Record<string, {
-    start: number;
-    duration: number;
-    swimlaneId: string;
-  }>>({});
-
-  const [copiedItem, setCopiedItem] = useState<{
-    type: "task" | "state";
-    swimlaneId: string;
-    itemId: string;
-    color: string;
-    label: string;
-    labelColor: string;
-    description: string;
-    duration: number;
-  } | null>(null);
-
-  const [copyGhost, setCopyGhost] = useState<{
-    mouseX: number;
-    mouseY: number;
-    duration: number;
-    color: string;
-    label: string;
-    labelColor: string;
-  } | null>(null);
-
-  const [chartTitle, setChartTitle] = useState<string>("Software Development Project");
-
-  // Flags visibility state
-  const [showTopFlags, setShowTopFlags] = useState<boolean>(true);
-  const [showBottomFlags, setShowBottomFlags] = useState<boolean>(true);
-
-  // Swimlane column width state with localStorage persistence
-  const [swimlaneColumnWidth, setSwimlaneColumnWidth] = useState<number>(() => {
-    const stored = localStorage.getItem('gantt-swimlane-width');
-    return stored ? parseInt(stored) : 280;
-  });
+  const [flagEditDialog, setFlagEditDialog] = useState<boolean>(false);
 
   // Ref for the main container to handle keyboard events
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -160,25 +168,6 @@ export const GanttChart = () => {
   const isResizingRef = React.useRef(false);
   const resizeStartXRef = React.useRef(0);
   const resizeStartWidthRef = React.useRef(0);
-
-  // Calculate total hours dynamically based on content
-  const calculateTotalHours = () => {
-    let maxHour = 240; // Default 10 days
-    Object.values(data.swimlanes).forEach((swimlane) => {
-      swimlane.tasks?.forEach((task) => {
-        const endHour = task.start + task.duration;
-        if (endHour > maxHour) maxHour = endHour;
-      });
-      swimlane.states?.forEach((state) => {
-        const endHour = state.start + state.duration;
-        if (endHour > maxHour) maxHour = endHour;
-      });
-    });
-    // Add 20% buffer and round up to next day
-    return Math.ceil((maxHour * 1.2) / 24) * 24;
-  };
-  
-  const totalHours = calculateTotalHours();
 
   const handleZoomIn = () => {
     if (zoomIndex > 0) {
@@ -424,79 +413,6 @@ export const GanttChart = () => {
     }) || false;
   };
 
-  const [linkEditDialog, setLinkEditDialog] = useState<{
-    linkId: string;
-  } | null>(null);
-
-  const [selectedFlag, setSelectedFlag] = useState<string | null>(null);
-  const [flagEditDialog, setFlagEditDialog] = useState<boolean>(false);
-
-  // Link creation event listeners
-  React.useEffect(() => {
-    const handleStartLink = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      const { swimlaneId, itemId, handleType, x, y } = customEvent.detail;
-      setLinkDragStart({ swimlaneId, itemId, handleType });
-      setLinkDragCurrent({ x, y });
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (linkDragStart) {
-        e.preventDefault();
-        e.stopPropagation();
-        setLinkDragCurrent({ x: e.clientX, y: e.clientY });
-      }
-    };
-
-    const handleMouseUp = (e: MouseEvent) => {
-      if (linkDragStart) {
-        const target = document.elementFromPoint(e.clientX, e.clientY);
-        const barElement = target?.closest('[data-item-id]');
-        
-        console.log('[GanttChart] Link drag ended:', {
-          linkDragStart,
-          target: target?.tagName,
-          barElement: barElement?.tagName,
-          toSwimlaneId: barElement?.getAttribute('data-swimlane-id'),
-          toItemId: barElement?.getAttribute('data-item-id')
-        });
-        
-        if (barElement) {
-          const toSwimlaneId = barElement.getAttribute('data-swimlane-id');
-          const toItemId = barElement.getAttribute('data-item-id');
-          
-          if (toSwimlaneId && toItemId && 
-              (linkDragStart.swimlaneId !== toSwimlaneId || linkDragStart.itemId !== toItemId)) {
-            
-            console.log('[GanttChart] Creating link:', {
-              from: { swimlaneId: linkDragStart.swimlaneId, itemId: linkDragStart.itemId },
-              to: { swimlaneId: toSwimlaneId, itemId: toItemId }
-            });
-            
-            addLink(linkDragStart.swimlaneId, linkDragStart.itemId, toSwimlaneId, toItemId);
-            toast.success("Link created");
-          }
-        }
-        
-        setLinkDragStart(null);
-        setLinkDragCurrent(null);
-      }
-    };
-
-    window.addEventListener('startLinkDrag', handleStartLink);
-    
-    if (linkDragStart) {
-      document.addEventListener('mousemove', handleMouseMove, { capture: true });
-      document.addEventListener('mouseup', handleMouseUp, { capture: true });
-      return () => {
-        window.removeEventListener('startLinkDrag', handleStartLink);
-        document.removeEventListener('mousemove', handleMouseMove, true);
-        document.removeEventListener('mouseup', handleMouseUp, true);
-      };
-    }
-    
-    return () => window.removeEventListener('startLinkDrag', handleStartLink);
-  }, [linkDragStart, addLink]);
 
   const handleTaskResize = (swimlaneId: string, taskId: string, newStart: number, newDuration: number) => {
     updateTask(swimlaneId, taskId, { start: newStart, duration: newDuration });
@@ -543,7 +459,7 @@ export const GanttChart = () => {
       if (!isResizingRef.current) return;
       e.preventDefault();
       const delta = e.clientX - resizeStartXRef.current;
-      const newWidth = Math.max(200, Math.min(600, resizeStartWidthRef.current + delta)); // Min 200px, max 600px
+      const newWidth = Math.max(200, Math.min(600, resizeStartWidthRef.current + delta));
       setSwimlaneColumnWidth(newWidth);
       localStorage.setItem('gantt-swimlane-width', newWidth.toString());
     };
@@ -567,138 +483,33 @@ export const GanttChart = () => {
     };
   }, [swimlaneColumnWidth]);
 
-  // Keyboard handlers - attached to container
-  React.useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore keyboard shortcuts when typing in input fields
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-
-      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-      const modifier = isMac ? e.metaKey : e.ctrlKey;
-
-      // Copy: Ctrl+C / Cmd+C
-      if (modifier && e.key === 'c') {
-        e.preventDefault();
-        if (selected && selected.type !== 'swimlane' && selected.itemId) {
-          const swimlane = data.swimlanes[selected.swimlaneId];
-          if (!swimlane) return;
-          
-          const item = selected.type === 'task' 
-            ? swimlane.tasks?.find(a => a.id === selected.itemId)
-            : swimlane.states?.find(s => s.id === selected.itemId);
-          
-          if (item) {
-            setCopiedItem({
-              type: selected.type as "task" | "state",
-              swimlaneId: selected.swimlaneId,
-              itemId: selected.itemId,
-              color: item.color,
-              label: item.label || "",
-              labelColor: item.labelColor || "#000000",
-              description: item.description || "",
-              duration: item.duration,
-            });
-            toast.success("Item copied - move mouse and click or press Ctrl+V to paste");
-          }
-        }
-        return;
-      }
-
-      // Paste: Ctrl+V / Cmd+V
-      if (modifier && e.key === 'v') {
-        e.preventDefault();
-        if (copiedItem && copyGhost) {
-          handlePaste();
-        }
-        return;
-      }
-
-      // Escape: Cancel copy mode
-      if (e.key === 'Escape') {
-        if (copiedItem) {
-          setCopiedItem(null);
-          setCopyGhost(null);
-          toast.info("Copy cancelled");
-        }
-        return;
-      }
-
-      // Undo: Ctrl+Z / Cmd+Z
-      if (modifier && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        if (canUndo) {
-          undo();
-          toast.success("Undo");
-        }
-        return;
-      }
-
-      // Redo: Ctrl+Y / Cmd+Y or Ctrl+Shift+Z / Cmd+Shift+Z
-      if (modifier && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-        e.preventDefault();
-        if (canRedo) {
-          redo();
-          toast.success("Redo");
-        }
-        return;
-      }
-
-      // Delete
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        console.log('[GanttChart] Delete key pressed', { selected, selectedLink, selectedFlag, activeElement: document.activeElement });
-        e.preventDefault();
-        if (selectedFlag) {
-          console.log('[GanttChart] Deleting flag:', selectedFlag);
-          deleteFlag(selectedFlag);
-          setSelectedFlag(null);
-          toast.success("Flag deleted");
-        } else if (selectedLink) {
-          console.log('[GanttChart] Deleting link:', selectedLink);
-          deleteLink(selectedLink);
-          setSelectedLink(null);
-          toast.success("Link deleted");
-        } else if (selected) {
-          console.log('[GanttChart] Deleting selected item', selected);
-          if (selected.type === 'swimlane') {
-            deleteSwimlane(selected.swimlaneId);
-            setSelected(null);
-            toast.success("Swimlane deleted");
-          } else if (selected.type === 'task' && selected.itemId) {
-            deleteTask(selected.swimlaneId, selected.itemId);
-            setSelected(null);
-            toast.success("Task deleted");
-          } else if (selected.type === 'state' && selected.itemId) {
-            deleteState(selected.swimlaneId, selected.itemId);
-            setSelected(null);
-            toast.success("State deleted");
-          }
-        }
-      }
-
-      // F key: Add flag at current scroll position
-      if (e.key === 'f' || e.key === 'F') {
-        if (!modifier) { // Only trigger if no Ctrl/Cmd key
-          e.preventDefault();
-          const scrollContainer = document.querySelector('.overflow-auto');
-          const scrollLeft = scrollContainer?.scrollLeft || 0;
-          const viewportCenter = scrollLeft + (scrollContainer?.clientWidth || 0) / 2 - swimlaneColumnWidth;
-          const position = Math.max(0, Math.round((viewportCenter / zoom.columnWidth) * zoom.hoursPerColumn));
-          const flagId = addFlag(position);
-          setSelectedFlag(flagId);
-          setFlagEditDialog(true);
-          toast.success("Flag added");
-        }
-      }
-    };
-
-    container.addEventListener('keydown', handleKeyDown);
-    return () => container.removeEventListener('keydown', handleKeyDown);
-  }, [selected, selectedLink, selectedFlag, copiedItem, copyGhost, data.swimlanes, deleteSwimlane, deleteTask, deleteState, deleteLink, deleteFlag, undo, redo, canUndo, canRedo, addFlag, zoom, swimlaneColumnWidth]);
+  // Keyboard shortcuts
+  useGanttKeyboard({
+    containerRef,
+    selected,
+    selectedLink,
+    selectedFlag,
+    copiedItem,
+    copyGhost,
+    canUndo,
+    canRedo,
+    zoom,
+    swimlaneColumnWidth,
+    onCopy: () => handleCopy(selected),
+    onPaste: handlePaste,
+    onCancelCopy: cancelCopy,
+    onUndo: undo,
+    onRedo: redo,
+    onDeleteSwimlane: deleteSwimlane,
+    onDeleteTask: deleteTask,
+    onDeleteState: deleteState,
+    onDeleteLink: deleteLink,
+    onDeleteFlag: deleteFlag,
+    onAddFlag: addFlag,
+    onSelectFlag: setSelectedFlag,
+    onOpenFlagDialog: () => setFlagEditDialog(true),
+    clearSelection,
+  });
 
   // Mouse wheel zoom handler
   React.useEffect(() => {

@@ -35,7 +35,7 @@ interface GanttRowProps {
   onDragStateChange: (itemId: string, swimlaneId: string) => (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => void;
 }
 
-export const GanttRow = ({
+export const GanttRow = React.memo(({
   swimlane,
   level,
   zoom,
@@ -417,7 +417,6 @@ export const GanttRow = ({
                 isSelected={selected?.type === 'state' && selected.swimlaneId === swimlane.id && selected.itemId === state.id}
                 onDoubleClick={() => onStateDoubleClick(swimlane.id, state.id)}
                 onSelect={() => {
-                  console.log('[GanttRow] State onSelect callback', { swimlaneId: swimlane.id, stateId: state.id });
                   onSelect('state', swimlane.id, state.id);
                 }}
                 onMove={(toSwimlaneId, newStart) => onStateMove(swimlane.id, state.id, toSwimlaneId, newStart)}
@@ -430,4 +429,4 @@ export const GanttRow = ({
       </div>
     </div>
   );
-};
+});

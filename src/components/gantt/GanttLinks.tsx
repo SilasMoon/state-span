@@ -21,7 +21,7 @@ interface ItemPosition {
   barCenterY: number; // Vertical center of BAR itself (for proper attachment)
 }
 
-export const GanttLinks = ({ 
+export const GanttLinks = React.memo(({ 
   data, 
   zoom, 
   columnWidth, 
@@ -523,4 +523,4 @@ export const GanttLinks = ({
       {data.links.map(renderLink)}
     </svg>
   );
-};
+});

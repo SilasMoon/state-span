@@ -25,7 +25,7 @@ const formatHoursToDayTime = (hours: number): string => {
   return `Day ${day}, ${String(hourOfDay).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 };
 
-export const GanttBar = ({
+export const GanttBar = React.memo(({
   item,
   swimlaneId,
   swimlaneType,
@@ -426,4 +426,4 @@ export const GanttBar = ({
       )}
     </>
   );
-};
+});
