@@ -434,10 +434,10 @@ export const GanttLinks = React.memo(({
         <path
           d={path}
           stroke="transparent"
-          strokeWidth="12"
+          strokeWidth="6"
           fill="none"
           className="cursor-pointer"
-          style={{ pointerEvents: 'all' }}
+          style={{ pointerEvents: 'stroke' }}
           onClick={(e) => {
             e.stopPropagation();
             onLinkSelect(isSelected ? "" : link.id);
