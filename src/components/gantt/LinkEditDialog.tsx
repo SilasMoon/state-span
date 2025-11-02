@@ -89,9 +89,9 @@ export const LinkEditDialog = ({
   }, [open]);
 
   const handleColorSelect = (newColor: string) => {
-    setColor(newColor);
     addRecentColor('gantt-recent-bg-colors', newColor);
-    setRecentColors([newColor, ...recentColors.filter(c => c !== newColor)].slice(0, 5));
+    onSave(label, newColor);
+    onClose();
   };
 
   const handleSave = () => {
@@ -132,7 +132,7 @@ export const LinkEditDialog = ({
                         color === recentColor ? "border-primary ring-2 ring-primary" : "border-border"
                       }`}
                       style={{ backgroundColor: recentColor }}
-                      onClick={() => setColor(recentColor)}
+                      onClick={() => handleColorSelect(recentColor)}
                       title="Recently used"
                     />
                   ))}

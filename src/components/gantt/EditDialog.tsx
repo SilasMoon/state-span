@@ -156,15 +156,15 @@ export const EditDialog = ({
   const endFormatted = formatHoursToDayTime(endHour);
 
   const handleColorSelect = (newColor: string) => {
-    setColor(newColor);
     addRecentColor('gantt-recent-bg-colors', newColor);
-    setRecentBgColors([newColor, ...recentBgColors.filter(c => c !== newColor)].slice(0, 5));
+    onSave(newColor, label, labelColor, description);
+    onClose();
   };
 
   const handleLabelColorSelect = (newColor: string) => {
-    setLabelColor(newColor);
     addRecentColor('gantt-recent-text-colors', newColor);
-    setRecentTextColors([newColor, ...recentTextColors.filter(c => c !== newColor)].slice(0, 5));
+    onSave(color, label, newColor, description);
+    onClose();
   };
 
   const handleSave = () => {
@@ -234,7 +234,7 @@ export const EditDialog = ({
                         color === recentColor ? "border-primary ring-2 ring-primary" : "border-border"
                       }`}
                       style={{ backgroundColor: recentColor }}
-                      onClick={() => setColor(recentColor)}
+                      onClick={() => handleColorSelect(recentColor)}
                       title="Recently used"
                     />
                   ))}
@@ -269,7 +269,7 @@ export const EditDialog = ({
                         labelColor === recentColor ? "border-primary ring-2 ring-primary" : "border-border"
                       }`}
                       style={{ backgroundColor: recentColor }}
-                      onClick={() => setLabelColor(recentColor)}
+                      onClick={() => handleLabelColorSelect(recentColor)}
                       title="Recently used"
                     />
                   ))}
