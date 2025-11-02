@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Image, Flag, Eye, EyeOff, RotateCcw } from "lucide-react";
+import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Image, Flag, Eye, EyeOff, RotateCcw, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -119,23 +119,23 @@ export const GanttToolbar = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Button 
-        variant="outline" 
-        size="icon" 
-        onClick={onToggleTopFlags} 
-        title={showTopFlags ? "Hide Top Flags" : "Show Top Flags"}
-      >
-        {showTopFlags ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-      </Button>
-
-      <Button 
-        variant="outline" 
-        size="icon" 
-        onClick={onToggleBottomFlags} 
-        title={showBottomFlags ? "Hide Bottom Flags" : "Show Bottom Flags"}
-      >
-        {showBottomFlags ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="icon" title="Toggle Flag Visibility">
+            <Eye className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={onToggleTopFlags}>
+            {showTopFlags ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+            Top Flags
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onToggleBottomFlags}>
+            {showBottomFlags ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+            Bottom Flags
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <Button variant="outline" size="icon" onClick={onExport} title="Export JSON">
         <Download className="w-4 h-4" />
