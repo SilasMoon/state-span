@@ -10,6 +10,7 @@ interface GanttFlagRowProps {
   swimlaneColumnWidth: number;
   selectedFlag: string | null;
   onFlagClick: (flagId: string) => void;
+  onFlagDoubleClick: (flagId: string) => void;
   onFlagMove: (flagId: string, newPosition: number) => void;
   onFlagDragStart: (flagId: string, position: number) => void;
   onFlagDragMove: (position: number) => void;
@@ -39,6 +40,7 @@ export const GanttFlagRow = ({
   swimlaneColumnWidth,
   selectedFlag,
   onFlagClick,
+  onFlagDoubleClick,
   onFlagMove,
   onFlagDragStart,
   onFlagDragMove,
@@ -51,6 +53,8 @@ export const GanttFlagRow = ({
   } | null>(null);
   const [tempPosition, setTempPosition] = useState<number | null>(null);
   const isDraggingRef = useRef(false);
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const clickedFlagRef = useRef<string | null>(null);
 
   const handleMouseDown = (flag: GanttFlag, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -92,8 +96,25 @@ export const GanttFlagRow = ({
     if (draggingFlag && tempPosition !== null && isDraggingRef.current) {
       onFlagMove(draggingFlag.id, tempPosition);
     } else if (draggingFlag && !isDraggingRef.current) {
-      // It was a click, not a drag
-      onFlagClick(draggingFlag.id);
+      // It was a click, not a drag - check for double-click
+      const flagId = draggingFlag.id;
+      
+      if (clickTimeoutRef.current && clickedFlagRef.current === flagId) {
+        // Double-click detected
+        clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = null;
+        clickedFlagRef.current = null;
+        onFlagDoubleClick(flagId);
+      } else {
+        // Single click - set timeout for double-click detection
+        clickedFlagRef.current = flagId;
+        onFlagClick(flagId);
+        
+        clickTimeoutRef.current = setTimeout(() => {
+          clickTimeoutRef.current = null;
+          clickedFlagRef.current = null;
+        }, 300);
+      }
     }
     
     setDraggingFlag(null);

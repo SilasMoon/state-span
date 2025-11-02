@@ -714,6 +714,9 @@ export const GanttChart = () => {
                 setSelectedFlag(flagId);
                 setSelected(null);
                 setSelectedLink(null);
+              }}
+              onFlagDoubleClick={(flagId) => {
+                setSelectedFlag(flagId);
                 setFlagEditDialog(true);
               }}
               onFlagMove={(flagId, newPosition) => {
@@ -769,6 +772,9 @@ export const GanttChart = () => {
                     setSelectedFlag(flagId);
                     setSelected(null);
                     setSelectedLink(null);
+                  }}
+                  onFlagDoubleClick={(flagId) => {
+                    setSelectedFlag(flagId);
                     setFlagEditDialog(true);
                   }}
                   onFlagMove={(flagId, newPosition) => {
