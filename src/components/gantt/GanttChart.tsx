@@ -676,6 +676,7 @@ export const GanttChart = () => {
           if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.inline-block')) {
             setSelected(null);
             setSelectedLink(null);
+            setSelectedFlag(null);
           }
         }}
       >
