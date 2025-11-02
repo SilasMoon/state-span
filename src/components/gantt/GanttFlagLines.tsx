@@ -5,6 +5,7 @@ interface GanttFlagLinesProps {
   zoom: ZoomConfig;
   swimlaneColumnWidth: number;
   selectedFlag: string | null;
+  draggingFlag: { id: string; tempPosition: number } | null;
 }
 
 export const GanttFlagLines = ({
@@ -12,6 +13,7 @@ export const GanttFlagLines = ({
   zoom,
   swimlaneColumnWidth,
   selectedFlag,
+  draggingFlag,
 }: GanttFlagLinesProps) => {
   return (
     <div 
@@ -22,7 +24,9 @@ export const GanttFlagLines = ({
       }}
     >
       {flags.map((flag) => {
-        const left = (flag.position / zoom.hoursPerColumn) * zoom.columnWidth;
+        const isDragging = draggingFlag?.id === flag.id;
+        const displayPosition = isDragging ? draggingFlag.tempPosition : flag.position;
+        const left = (displayPosition / zoom.hoursPerColumn) * zoom.columnWidth;
         const isSelected = selectedFlag === flag.id;
 
         return (
@@ -39,9 +43,9 @@ export const GanttFlagLines = ({
               className="absolute top-0 bottom-0 transition-all"
               style={{
                 backgroundColor: flag.color,
-                opacity: isSelected ? 0.4 : 0.25,
-                width: isSelected ? "3px" : "2px",
-                boxShadow: isSelected ? `0 0 8px ${flag.color}` : "none",
+                opacity: isDragging ? 0.5 : (isSelected ? 0.4 : 0.25),
+                width: isDragging ? "3px" : (isSelected ? "3px" : "2px"),
+                boxShadow: isDragging || isSelected ? `0 0 8px ${flag.color}` : "none",
               }}
             />
           </div>

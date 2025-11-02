@@ -11,6 +11,9 @@ interface GanttFlagRowProps {
   selectedFlag: string | null;
   onFlagClick: (flagId: string) => void;
   onFlagMove: (flagId: string, newPosition: number) => void;
+  onFlagDragStart: (flagId: string, position: number) => void;
+  onFlagDragMove: (position: number) => void;
+  onFlagDragEnd: () => void;
 }
 
 const iconMap: Record<string, React.ComponentType<any>> = {
@@ -37,6 +40,9 @@ export const GanttFlagRow = ({
   selectedFlag,
   onFlagClick,
   onFlagMove,
+  onFlagDragStart,
+  onFlagDragMove,
+  onFlagDragEnd,
 }: GanttFlagRowProps) => {
   const [draggingFlag, setDraggingFlag] = useState<{
     id: string;
@@ -59,6 +65,8 @@ export const GanttFlagRow = ({
       startX: e.clientX + scrollLeft,
       startPosition: flag.position,
     });
+    
+    onFlagDragStart(flag.id, flag.position);
   };
 
   const handleMouseMove = (e: MouseEvent) => {
@@ -77,6 +85,7 @@ export const GanttFlagRow = ({
     }
     
     setTempPosition(newPosition);
+    onFlagDragMove(newPosition);
   };
 
   const handleMouseUp = (e: MouseEvent) => {
@@ -90,6 +99,7 @@ export const GanttFlagRow = ({
     setDraggingFlag(null);
     setTempPosition(null);
     isDraggingRef.current = false;
+    onFlagDragEnd();
   };
 
   // Attach mouse move and up listeners when dragging

@@ -76,6 +76,12 @@ export const GanttChart = () => {
   const [showClearAlert, setShowClearAlert] = useState(false);
   const [showResetAlert, setShowResetAlert] = useState(false);
 
+  // Flag dragging state
+  const [draggingFlag, setDraggingFlag] = useState<{
+    id: string;
+    tempPosition: number;
+  } | null>(null);
+
   // Swimlane column width state with localStorage persistence
   const [swimlaneColumnWidth, setSwimlaneColumnWidth] = useState<number>(() => {
     const stored = localStorage.getItem('gantt-swimlane-width');
@@ -714,6 +720,17 @@ export const GanttChart = () => {
                 updateFlag(flagId, { position: newPosition });
                 toast.success("Flag moved");
               }}
+              onFlagDragStart={(flagId, position) => {
+                setDraggingFlag({ id: flagId, tempPosition: position });
+              }}
+              onFlagDragMove={(position) => {
+                if (draggingFlag) {
+                  setDraggingFlag({ ...draggingFlag, tempPosition: position });
+                }
+              }}
+              onFlagDragEnd={() => {
+                setDraggingFlag(null);
+              }}
             />
           )}
 
@@ -733,6 +750,7 @@ export const GanttChart = () => {
                   zoom={zoom}
                   swimlaneColumnWidth={swimlaneColumnWidth}
                   selectedFlag={selectedFlag}
+                  draggingFlag={draggingFlag}
                 />
               )}
               
@@ -756,6 +774,17 @@ export const GanttChart = () => {
                   onFlagMove={(flagId, newPosition) => {
                     updateFlag(flagId, { position: newPosition });
                     toast.success("Flag moved");
+                  }}
+                  onFlagDragStart={(flagId, position) => {
+                    setDraggingFlag({ id: flagId, tempPosition: position });
+                  }}
+                  onFlagDragMove={(position) => {
+                    if (draggingFlag) {
+                      setDraggingFlag({ ...draggingFlag, tempPosition: position });
+                    }
+                  }}
+                  onFlagDragEnd={() => {
+                    setDraggingFlag(null);
                   }}
                 />
               )}
