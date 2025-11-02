@@ -1,6 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { GanttData, GanttSwimlane, GanttTask, GanttState, GanttLink, GanttFlag, ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
 import { ganttDataSchema } from "@/lib/ganttValidation";
+import { useGanttHistory } from "./useGanttHistory";
+import { useGanttSwimlanes } from "./useGanttSwimlanes";
+import { useGanttItems } from "./useGanttItems";
+import { useGanttLinks } from "./useGanttLinks";
+import { useGanttFlags } from "./useGanttFlags";
 
 let nextId = 1;
 const generateId = () => `item-${nextId++}`;
@@ -8,7 +13,6 @@ const generateId = () => `item-${nextId++}`;
 const createDefaultData = (): GanttData => {
   // Product Launch Project Example
   
-  // Planning & Strategy Phase
   const planningPhase: GanttSwimlane = {
     id: generateId(),
     name: "Planning & Strategy",
@@ -46,7 +50,6 @@ const createDefaultData = (): GanttData => {
 
   planningPhase.children = [marketResearch.id, productStrategy.id];
 
-  // Development Phase
   const developmentPhase: GanttSwimlane = {
     id: generateId(),
     name: "Development",
@@ -84,7 +87,6 @@ const createDefaultData = (): GanttData => {
 
   developmentPhase.children = [productDev.id, uxDesign.id];
 
-  // Marketing & Launch Phase
   const marketingPhase: GanttSwimlane = {
     id: generateId(),
     name: "Marketing & Launch",
@@ -123,7 +125,6 @@ const createDefaultData = (): GanttData => {
 
   marketingPhase.children = [contentCreation.id, campaigns.id];
 
-  // Project States
   const projectStatusParent: GanttSwimlane = {
     id: generateId(),
     name: "Project Status",
@@ -163,9 +164,7 @@ const createDefaultData = (): GanttData => {
 
   projectStatusParent.children = [budgetStatus.id, milestones.id];
 
-  // Create links between tasks
   const links: GanttLink[] = [
-    // Market research to product strategy
     {
       id: generateId(),
       fromSwimlaneId: marketResearch.id,
@@ -173,7 +172,6 @@ const createDefaultData = (): GanttData => {
       toSwimlaneId: productStrategy.id,
       toId: productStrategy.tasks![0].id,
     },
-    // Product strategy to development
     {
       id: generateId(),
       fromSwimlaneId: productStrategy.id,
@@ -181,7 +179,6 @@ const createDefaultData = (): GanttData => {
       toSwimlaneId: productDev.id,
       toId: productDev.tasks![0].id,
     },
-    // Product strategy to UX design
     {
       id: generateId(),
       fromSwimlaneId: productStrategy.id,
@@ -189,7 +186,6 @@ const createDefaultData = (): GanttData => {
       toSwimlaneId: uxDesign.id,
       toId: uxDesign.tasks![0].id,
     },
-    // UX prototypes to user testing
     {
       id: generateId(),
       fromSwimlaneId: uxDesign.id,
@@ -197,7 +193,6 @@ const createDefaultData = (): GanttData => {
       toSwimlaneId: uxDesign.id,
       toId: uxDesign.tasks![1].id,
     },
-    // Development to content creation
     {
       id: generateId(),
       fromSwimlaneId: productDev.id,
@@ -205,7 +200,6 @@ const createDefaultData = (): GanttData => {
       toSwimlaneId: contentCreation.id,
       toId: contentCreation.tasks![0].id,
     },
-    // Content to pre-launch campaign
     {
       id: generateId(),
       fromSwimlaneId: contentCreation.id,
@@ -213,7 +207,6 @@ const createDefaultData = (): GanttData => {
       toSwimlaneId: campaigns.id,
       toId: campaigns.tasks![0].id,
     },
-    // Beta testing to launch event
     {
       id: generateId(),
       fromSwimlaneId: productDev.id,
@@ -221,7 +214,6 @@ const createDefaultData = (): GanttData => {
       toSwimlaneId: campaigns.id,
       toId: campaigns.tasks![1].id,
     },
-    // Launch event to post-launch
     {
       id: generateId(),
       fromSwimlaneId: campaigns.id,
@@ -231,7 +223,6 @@ const createDefaultData = (): GanttData => {
     },
   ];
 
-  // Create example flags
   const flags: GanttFlag[] = [
     {
       id: generateId(),
@@ -289,699 +280,24 @@ const createDefaultData = (): GanttData => {
 };
 
 export const useGanttData = () => {
-  const [data, setData] = useState<GanttData>(createDefaultData());
-  const [zoomIndex, setZoomIndex] = useState<number>(19); // Default to 8 hours per column, 44px width
+  const [zoomIndex, setZoomIndex] = useState<number>(19);
   const zoom: ZoomConfig = ZOOM_LEVELS[zoomIndex];
-  const [history, setHistory] = useState<GanttData[]>([]);
-  const [future, setFuture] = useState<GanttData[]>([]);
 
-  // Wrapper to track history when data changes
-  const updateData = (updater: (prev: GanttData) => GanttData) => {
-    setData((prev) => {
-      const next = updater(prev);
-      if (next !== prev) {
-        setHistory((h) => [...h, prev].slice(-50)); // Keep last 50 states
-        setFuture([]); // Clear redo stack when new action is made
-      }
-      return next;
-    });
-  };
-
-  const undo = () => {
-    if (history.length === 0) return;
-    
-    const previous = history[history.length - 1];
-    setHistory((h) => h.slice(0, -1));
-    setFuture((f) => [data, ...f].slice(0, 50));
-    setData(previous);
-  };
-
-  const redo = () => {
-    if (future.length === 0) return;
-    
-    const next = future[0];
-    setFuture((f) => f.slice(1));
-    setHistory((h) => [...h, data].slice(-50));
-    setData(next);
-  };
-
-  const canUndo = history.length > 0;
-  const canRedo = future.length > 0;
-
-  const addSwimlane = (type: "task" | "state", parentId?: string) => {
-    const id = generateId();
-    const newSwimlane: GanttSwimlane = {
-      id,
-      name: type === "task" ? "New Task Lane" : "New State Lane",
-      type,
-      parentId,
-      children: [],
-      expanded: true,
-      tasks: type === "task" ? [] : undefined,
-      states: type === "state" ? [] : undefined,
-    };
-
-    updateData((prev) => {
-      const newData = { ...prev };
-      newData.swimlanes = { ...prev.swimlanes, [id]: newSwimlane };
-
-      if (parentId) {
-        const parent = newData.swimlanes[parentId];
-        // Clear parent's tasks/states when adding a child
-        newData.swimlanes[parentId] = {
-          ...parent,
-          children: [...parent.children, id],
-          tasks: parent.type === "task" ? [] : parent.tasks,
-          states: parent.type === "state" ? [] : parent.states,
-        };
-      } else {
-        newData.rootIds = [...prev.rootIds, id];
-      }
-
-      return newData;
-    });
-
-    return id;
-  };
-
-  const deleteSwimlane = (id: string) => {
-    updateData((prev) => {
-      const newData = { ...prev };
-      const swimlane = newData.swimlanes[id];
-      if (!swimlane) return prev;
-
-      // Delete all children recursively
-      const deleteRecursive = (swimlaneId: string) => {
-        const lane = newData.swimlanes[swimlaneId];
-        if (!lane) return;
-        
-        lane.children.forEach(deleteRecursive);
-        delete newData.swimlanes[swimlaneId];
-      };
-
-      swimlane.children.forEach(deleteRecursive);
-
-      // Remove from parent or root
-      if (swimlane.parentId) {
-        const parent = newData.swimlanes[swimlane.parentId];
-        newData.swimlanes[swimlane.parentId] = {
-          ...parent,
-          children: parent.children.filter((childId) => childId !== id),
-        };
-      } else {
-        newData.rootIds = newData.rootIds.filter((rootId) => rootId !== id);
-      }
-
-      // Remove links associated with this swimlane
-      newData.links = newData.links.filter(
-        (link) => link.fromSwimlaneId !== id && link.toSwimlaneId !== id
-      );
-
-      delete newData.swimlanes[id];
-      return newData;
-    });
-  };
-
-  const toggleExpanded = (id: string) => {
-    updateData((prev) => ({
-      ...prev,
-      swimlanes: {
-        ...prev.swimlanes,
-        [id]: {
-          ...prev.swimlanes[id],
-          expanded: !prev.swimlanes[id].expanded,
-        },
-      },
-    }));
-  };
-
-  const addTask = (swimlaneId: string, start: number, duration: number) => {
-    const id = generateId();
-    const task: GanttTask = {
-      id,
-      start,
-      duration,
-      color: "#00bcd4",
-      label: "",
-      labelColor: "#000000",
-      description: "",
-    };
-
-    updateData((prev) => {
-      const swimlane = prev.swimlanes[swimlaneId];
-      if (!swimlane || swimlane.type !== "task") return prev;
-      
-      // Prevent adding tasks to parent swimlanes
-      if (swimlane.children.length > 0) {
-        console.warn("Cannot add tasks to parent swimlanes");
-        return prev;
-      }
-
-      return {
-        ...prev,
-        swimlanes: {
-          ...prev.swimlanes,
-          [swimlaneId]: {
-            ...swimlane,
-            tasks: [...(swimlane.tasks || []), task],
-          },
-        },
-      };
-    });
-
-    return id;
-  };
-
-  const addState = (swimlaneId: string, start: number, duration: number) => {
-    const id = generateId();
-    const state: GanttState = {
-      id,
-      start,
-      duration,
-      color: "#ab47bc",
-      label: "",
-      labelColor: "#000000",
-      description: "",
-    };
-
-    updateData((prev) => {
-      const swimlane = prev.swimlanes[swimlaneId];
-      if (!swimlane || swimlane.type !== "state") return prev;
-      
-      // Prevent adding states to parent swimlanes
-      if (swimlane.children.length > 0) {
-        console.warn("Cannot add states to parent swimlanes");
-        return prev;
-      }
-
-      return {
-        ...prev,
-        swimlanes: {
-          ...prev.swimlanes,
-          [swimlaneId]: {
-            ...swimlane,
-            states: [...(swimlane.states || []), state],
-          },
-        },
-      };
-    });
-
-    return id;
-  };
-
-  const updateTask = (swimlaneId: string, taskId: string, updates: Partial<GanttTask>) => {
-    updateData((prev) => {
-      const swimlane = prev.swimlanes[swimlaneId];
-      if (!swimlane || !swimlane.tasks) return prev;
-
-      // Get the old task to calculate duration delta
-      const oldTask = swimlane.tasks.find((act) => act.id === taskId);
-      if (!oldTask) return prev;
-
-      const durationDelta = updates.duration !== undefined ? updates.duration - oldTask.duration : 0;
-
-      // Update the task
-      let newData = {
-        ...prev,
-        swimlanes: {
-          ...prev.swimlanes,
-          [swimlaneId]: {
-            ...swimlane,
-            tasks: swimlane.tasks.map((act) =>
-              act.id === taskId ? { ...act, ...updates } : act
-            ),
-          },
-        },
-      };
-
-      // If duration changed, propagate to linked tasks
-      if (durationDelta !== 0) {
-        newData = propagateDurationChange(newData, swimlaneId, taskId, durationDelta);
-      }
-
-      return newData;
-    });
-  };
-
-  // Helper function to propagate duration changes through links
-  const propagateDurationChange = (data: GanttData, fromSwimlaneId: string, fromItemId: string, durationDelta: number): GanttData => {
-    // Find all links where this item is the source
-    const affectedLinks = data.links.filter(link => 
-      link.fromSwimlaneId === fromSwimlaneId && link.fromId === fromItemId
-    );
-
-    let newData = { ...data };
-
-    affectedLinks.forEach(link => {
-      const toSwimlane = newData.swimlanes[link.toSwimlaneId];
-      if (!toSwimlane) return;
-
-      // Update the target task/state
-      if (toSwimlane.tasks) {
-        newData.swimlanes[link.toSwimlaneId] = {
-          ...toSwimlane,
-          tasks: toSwimlane.tasks.map(act => 
-            act.id === link.toId 
-              ? { ...act, start: act.start + durationDelta }
-              : act
-          ),
-        };
-
-        // Recursively propagate to tasks linked from this one
-        newData = propagateDurationChange(newData, link.toSwimlaneId, link.toId, durationDelta);
-      } else if (toSwimlane.states) {
-        newData.swimlanes[link.toSwimlaneId] = {
-          ...toSwimlane,
-          states: toSwimlane.states.map(state => 
-            state.id === link.toId 
-              ? { ...state, start: state.start + durationDelta }
-              : state
-          ),
-        };
-
-        // Recursively propagate to states linked from this one
-        newData = propagateDurationChange(newData, link.toSwimlaneId, link.toId, durationDelta);
-      }
-    });
-
-    return newData;
-  };
-
-  const updateState = (swimlaneId: string, stateId: string, updates: Partial<GanttState>) => {
-    updateData((prev) => {
-      const swimlane = prev.swimlanes[swimlaneId];
-      if (!swimlane || !swimlane.states) return prev;
-
-      // Get the old state to calculate duration delta
-      const oldState = swimlane.states.find((st) => st.id === stateId);
-      if (!oldState) return prev;
-
-      const durationDelta = updates.duration !== undefined ? updates.duration - oldState.duration : 0;
-
-      // Update the state
-      let newData = {
-        ...prev,
-        swimlanes: {
-          ...prev.swimlanes,
-          [swimlaneId]: {
-            ...swimlane,
-            states: swimlane.states.map((st) =>
-              st.id === stateId ? { ...st, ...updates } : st
-            ),
-          },
-        },
-      };
-
-      // If duration changed, propagate to linked items
-      if (durationDelta !== 0) {
-        newData = propagateDurationChange(newData, swimlaneId, stateId, durationDelta);
-      }
-
-      return newData;
-    });
-  };
-
-  const deleteTask = (swimlaneId: string, taskId: string) => {
-    updateData((prev) => {
-      const swimlane = prev.swimlanes[swimlaneId];
-      if (!swimlane || !swimlane.tasks) return prev;
-
-      // Remove links
-      const newLinks = prev.links.filter(
-        (link) => link.fromId !== taskId && link.toId !== taskId
-      );
-
-      return {
-        ...prev,
-        links: newLinks,
-        swimlanes: {
-          ...prev.swimlanes,
-          [swimlaneId]: {
-            ...swimlane,
-            tasks: swimlane.tasks.filter((act) => act.id !== taskId),
-          },
-        },
-      };
-    });
-  };
-
-  const deleteState = (swimlaneId: string, stateId: string) => {
-    updateData((prev) => {
-      const swimlane = prev.swimlanes[swimlaneId];
-      if (!swimlane || !swimlane.states) return prev;
-
-      // Remove links
-      const newLinks = prev.links.filter(
-        (link) => link.fromId !== stateId && link.toId !== stateId
-      );
-
-      return {
-        ...prev,
-        links: newLinks,
-        swimlanes: {
-          ...prev.swimlanes,
-          [swimlaneId]: {
-            ...swimlane,
-            states: swimlane.states.filter((st) => st.id !== stateId),
-          },
-        },
-      };
-    });
-  };
-
-  const addLink = (fromSwimlaneId: string, fromId: string, toSwimlaneId: string, toId: string) => {
-    const id = generateId();
-    
-    updateData((prev) => {
-      // Get source task/state color from current data
-      let color = "#00bcd4"; // default
-      const fromSwimlane = prev.swimlanes[fromSwimlaneId];
-      if (fromSwimlane) {
-        const item = fromSwimlane.tasks?.find((a) => a.id === fromId) || 
-                     fromSwimlane.states?.find((s) => s.id === fromId);
-        if (item) {
-          color = item.color;
-        }
-      }
-      
-      const link: GanttLink = {
-        id,
-        fromId,
-        toId,
-        fromSwimlaneId,
-        toSwimlaneId,
-        color,
-        label: "",
-      };
-
-      return {
-        ...prev,
-        links: [...prev.links, link],
-      };
-    });
-
-    return id;
-  };
-
-  const updateLink = (linkId: string, updates: Partial<GanttLink>) => {
-    updateData((prev) => ({
-      ...prev,
-      links: prev.links.map((link) =>
-        link.id === linkId ? { ...link, ...updates } : link
-      ),
-    }));
-  };
-
-  const deleteLink = (linkId: string) => {
-    updateData((prev) => ({
-      ...prev,
-      links: prev.links.filter((link) => link.id !== linkId),
-    }));
-  };
-
-  const moveTask = (fromSwimlaneId: string, toSwimlaneId: string, taskId: string, newStart: number) => {
-    updateData((prev) => {
-      const fromSwimlane = prev.swimlanes[fromSwimlaneId];
-      const toSwimlane = prev.swimlanes[toSwimlaneId];
-      
-      if (!fromSwimlane || !toSwimlane || toSwimlane.type !== "task") return prev;
-      
-      const task = fromSwimlane.tasks?.find((a) => a.id === taskId);
-      if (!task) return prev;
-      
-      const positionDelta = newStart - task.start;
-      const movedTask = { ...task, start: newStart };
-      
-      let newData: GanttData;
-      
-      if (fromSwimlaneId === toSwimlaneId) {
-        newData = {
-          ...prev,
-          swimlanes: {
-            ...prev.swimlanes,
-            [toSwimlaneId]: {
-              ...toSwimlane,
-              tasks: toSwimlane.tasks?.map((a) =>
-                a.id === taskId ? movedTask : a
-              ),
-            },
-          },
-        };
-      } else {
-        newData = {
-          ...prev,
-          swimlanes: {
-            ...prev.swimlanes,
-            [fromSwimlaneId]: {
-              ...fromSwimlane,
-              tasks: fromSwimlane.tasks?.filter((a) => a.id !== taskId),
-            },
-            [toSwimlaneId]: {
-              ...toSwimlane,
-              tasks: [...(toSwimlane.tasks || []), movedTask],
-            },
-          },
-        };
-        
-        // Update all links that reference this task to use the new swimlane ID
-        newData.links = newData.links.map(link => {
-          const needsUpdate = 
-            (link.fromSwimlaneId === fromSwimlaneId && link.fromId === taskId) ||
-            (link.toSwimlaneId === fromSwimlaneId && link.toId === taskId);
-          
-          if (!needsUpdate) return link;
-          
-          return {
-            ...link,
-            fromSwimlaneId: link.fromId === taskId ? toSwimlaneId : link.fromSwimlaneId,
-            toSwimlaneId: link.toId === taskId ? toSwimlaneId : link.toSwimlaneId,
-          };
-        });
-      }
-      
-      return newData;
-    });
-  };
-
-
-  const moveState = (fromSwimlaneId: string, toSwimlaneId: string, stateId: string, newStart: number) => {
-    updateData((prev) => {
-      const fromSwimlane = prev.swimlanes[fromSwimlaneId];
-      const toSwimlane = prev.swimlanes[toSwimlaneId];
-      
-      if (!fromSwimlane || !toSwimlane || toSwimlane.type !== "state") return prev;
-      
-      const state = fromSwimlane.states?.find((s) => s.id === stateId);
-      if (!state) return prev;
-      
-      const positionDelta = newStart - state.start;
-      const movedState = { ...state, start: newStart };
-      
-      let newData: GanttData;
-      
-      if (fromSwimlaneId === toSwimlaneId) {
-        newData = {
-          ...prev,
-          swimlanes: {
-            ...prev.swimlanes,
-            [toSwimlaneId]: {
-              ...toSwimlane,
-              states: toSwimlane.states?.map((s) =>
-                s.id === stateId ? movedState : s
-              ),
-            },
-          },
-        };
-      } else {
-        newData = {
-          ...prev,
-          swimlanes: {
-            ...prev.swimlanes,
-            [fromSwimlaneId]: {
-              ...fromSwimlane,
-              states: fromSwimlane.states?.filter((s) => s.id !== stateId),
-            },
-            [toSwimlaneId]: {
-              ...toSwimlane,
-              states: [...(toSwimlane.states || []), movedState],
-            },
-          },
-        };
-        
-        // Update all links that reference this state to use the new swimlane ID
-        newData.links = newData.links.map(link => {
-          const needsUpdate = 
-            (link.fromSwimlaneId === fromSwimlaneId && link.fromId === stateId) ||
-            (link.toSwimlaneId === fromSwimlaneId && link.toId === stateId);
-          
-          if (!needsUpdate) return link;
-          
-          return {
-            ...link,
-            fromSwimlaneId: link.fromId === stateId ? toSwimlaneId : link.fromSwimlaneId,
-            toSwimlaneId: link.toId === stateId ? toSwimlaneId : link.toSwimlaneId,
-          };
-        });
-      }
-      
-      return newData;
-    });
-  };
-
-  const moveSwimlane = (swimlaneId: string, targetParentId: string | null, insertBeforeId: string | null) => {
-    updateData((prev) => {
-      const swimlane = prev.swimlanes[swimlaneId];
-      if (!swimlane) return prev;
-
-      // Don't allow moving into itself or its own descendants
-      const isDescendant = (potentialParentId: string): boolean => {
-        if (potentialParentId === swimlaneId) return true;
-        const potentialParent = prev.swimlanes[potentialParentId];
-        if (!potentialParent || !potentialParent.parentId) return false;
-        return isDescendant(potentialParent.parentId);
-      };
-
-      if (targetParentId && isDescendant(targetParentId)) {
-        console.warn("Cannot move swimlane into its own descendant");
-        return prev;
-      }
-
-      // Check type compatibility if moving to a parent
-      if (targetParentId) {
-        const targetParent = prev.swimlanes[targetParentId];
-        if (targetParent && targetParent.type !== swimlane.type) {
-          console.warn("Cannot move swimlane to parent of different type");
-          return prev;
-        }
-      }
-
-      const newData = { ...prev };
-      newData.swimlanes = { ...prev.swimlanes };
-
-      // Handle "after:id" syntax for insertBeforeId
-      let actualInsertBeforeId = insertBeforeId;
-      if (insertBeforeId?.startsWith('after:')) {
-        const afterId = insertBeforeId.substring(6);
-        // Find the next sibling after this ID
-        const siblings = targetParentId 
-          ? newData.swimlanes[targetParentId].children 
-          : newData.rootIds;
-        const afterIndex = siblings.indexOf(afterId);
-        if (afterIndex >= 0 && afterIndex < siblings.length - 1) {
-          actualInsertBeforeId = siblings[afterIndex + 1];
-        } else {
-          actualInsertBeforeId = null; // Append to end
-        }
-      }
-
-      // Remove from old location
-      if (swimlane.parentId) {
-        const oldParent = newData.swimlanes[swimlane.parentId];
-        newData.swimlanes[swimlane.parentId] = {
-          ...oldParent,
-          children: oldParent.children.filter(id => id !== swimlaneId),
-        };
-      } else {
-        newData.rootIds = newData.rootIds.filter(id => id !== swimlaneId);
-      }
-
-      // Update swimlane's parentId
-      newData.swimlanes[swimlaneId] = {
-        ...swimlane,
-        parentId: targetParentId || undefined,
-      };
-
-      // Insert at new location
-      if (targetParentId) {
-        const newParent = newData.swimlanes[targetParentId];
-        const newChildren = [...newParent.children];
-        
-        if (actualInsertBeforeId) {
-          const insertIndex = newChildren.indexOf(actualInsertBeforeId);
-          if (insertIndex >= 0) {
-            newChildren.splice(insertIndex, 0, swimlaneId);
-          } else {
-            newChildren.push(swimlaneId);
-          }
-        } else {
-          newChildren.push(swimlaneId);
-        }
-
-        newData.swimlanes[targetParentId] = {
-          ...newParent,
-          children: newChildren,
-          // Clear parent's items when adding first child
-          tasks: newParent.type === "task" && newChildren.length === 1 ? [] : newParent.tasks,
-          states: newParent.type === "state" && newChildren.length === 1 ? [] : newParent.states,
-        };
-      } else {
-        const newRootIds = [...newData.rootIds];
-        
-        if (actualInsertBeforeId) {
-          const insertIndex = newRootIds.indexOf(actualInsertBeforeId);
-          if (insertIndex >= 0) {
-            newRootIds.splice(insertIndex, 0, swimlaneId);
-          } else {
-            newRootIds.push(swimlaneId);
-          }
-        } else {
-          newRootIds.push(swimlaneId);
-        }
-
-        newData.rootIds = newRootIds;
-      }
-
-      return newData;
-    });
-  };
-
-  const updateSwimlane = (id: string, updates: Partial<GanttSwimlane>) => {
-    updateData((prev) => ({
-      ...prev,
-      swimlanes: {
-        ...prev.swimlanes,
-        [id]: {
-          ...prev.swimlanes[id],
-          ...updates,
-        },
-      },
-    }));
-  };
-
-  const addFlag = (position: number, label: string = "New Flag", color: string = "#2196f3", icon?: string, swimlane: "top" | "bottom" = "top") => {
-    const id = generateId();
-    const flag: GanttFlag = {
-      id,
-      position,
-      label,
-      color,
-      icon,
-      swimlane,
-    };
-
-    updateData((prev) => ({
-      ...prev,
-      flags: [...prev.flags, flag],
-    }));
-
-    return id;
-  };
-
-  const updateFlag = (flagId: string, updates: Partial<GanttFlag>) => {
-    updateData((prev) => ({
-      ...prev,
-      flags: prev.flags.map((flag) =>
-        flag.id === flagId ? { ...flag, ...updates } : flag
-      ),
-    }));
-  };
-
-  const deleteFlag = (flagId: string) => {
-    updateData((prev) => ({
-      ...prev,
-      flags: prev.flags.filter((flag) => flag.id !== flagId),
-    }));
-  };
+  // Initialize history management
+  const {
+    data,
+    updateData,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useGanttHistory(createDefaultData());
+
+  // Initialize focused hooks
+  const swimlaneOps = useGanttSwimlanes({ updateData, generateId });
+  const itemOps = useGanttItems({ updateData, generateId });
+  const linkOps = useGanttLinks({ updateData, generateId });
+  const flagOps = useGanttFlags({ updateData, generateId });
 
   const clearAll = () => {
     updateData(() => ({
@@ -999,10 +315,7 @@ export const useGanttData = () => {
 
   const importData = (jsonData: string) => {
     try {
-      // Parse JSON
       const parsed = JSON.parse(jsonData);
-      
-      // Validate against schema
       const validationResult = ganttDataSchema.safeParse(parsed);
       
       if (!validationResult.success) {
@@ -1012,11 +325,9 @@ export const useGanttData = () => {
         throw new Error(`Invalid data format: ${errorMessages}`);
       }
       
-      // Use validated data
       const validatedData = validationResult.data;
       updateData(() => validatedData);
       
-      // Update nextId to avoid conflicts
       const allIds = Object.keys(validatedData.swimlanes);
       const maxId = allIds.reduce((max, id) => {
         const num = parseInt(id.split("-")[1]);
@@ -1033,25 +344,10 @@ export const useGanttData = () => {
     zoom,
     zoomIndex,
     setZoomIndex,
-    addSwimlane,
-    deleteSwimlane,
-    toggleExpanded,
-    addTask,
-    addState,
-    updateTask,
-    updateState,
-    deleteTask,
-    deleteState,
-    moveTask,
-    moveState,
-    moveSwimlane,
-    addLink,
-    deleteLink,
-    updateLink,
-    updateSwimlane,
-    addFlag,
-    updateFlag,
-    deleteFlag,
+    ...swimlaneOps,
+    ...itemOps,
+    ...linkOps,
+    ...flagOps,
     clearAll,
     exportData,
     importData,

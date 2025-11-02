@@ -15,6 +15,7 @@ import { useGanttDragAndDrop } from "@/hooks/useGanttDragAndDrop";
 import { useGanttLinkCreation } from "@/hooks/useGanttLinkCreation";
 import { useGanttCopyPaste } from "@/hooks/useGanttCopyPaste";
 import { useGanttKeyboard } from "@/hooks/useGanttKeyboard";
+import { LAYOUT, ARIA_LABELS } from "@/lib/ganttConstants";
 import { ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
 import { toast } from "sonner";
 
@@ -61,12 +62,12 @@ export const GanttChart = () => {
   // Swimlane column width state with localStorage persistence
   const [swimlaneColumnWidth, setSwimlaneColumnWidth] = useState<number>(() => {
     const stored = localStorage.getItem('gantt-swimlane-width');
-    return stored ? parseInt(stored) : 280;
+    return stored ? parseInt(stored) : LAYOUT.DEFAULT_SWIMLANE_WIDTH;
   });
 
   // Calculate total hours dynamically based on content
-  const calculateTotalHours = () => {
-    let maxHour = 240;
+  const calculateTotalHours = (): number => {
+    let maxHour: number = LAYOUT.DEFAULT_TOTAL_HOURS;
     Object.values(data.swimlanes).forEach((swimlane) => {
       swimlane.tasks?.forEach((task) => {
         const endHour = task.start + task.duration;
@@ -445,7 +446,7 @@ export const GanttChart = () => {
       if (!isResizingRef.current) return;
       e.preventDefault();
       const delta = e.clientX - resizeStartXRef.current;
-      const newWidth = Math.max(200, Math.min(600, resizeStartWidthRef.current + delta));
+      const newWidth = Math.max(LAYOUT.MIN_SWIMLANE_WIDTH, Math.min(LAYOUT.MAX_SWIMLANE_WIDTH, resizeStartWidthRef.current + delta));
       setSwimlaneColumnWidth(newWidth);
       localStorage.setItem('gantt-swimlane-width', newWidth.toString());
     };
