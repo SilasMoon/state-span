@@ -177,6 +177,7 @@ export const GanttFlagRow = ({
                 zIndex: isDragging ? 40 : 20,
               }}
               onMouseDown={(e) => handleMouseDown(flag, e)}
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Highlight on hover */}
               <div
@@ -195,6 +196,7 @@ export const GanttFlagRow = ({
                 style={{
                   filter: isSelected ? `drop-shadow(0 0 4px ${flag.color})` : "none",
                 }}
+                onClick={(e) => e.stopPropagation()}
               >
                 <div
                   className="p-1.5 rounded-full transition-all"
