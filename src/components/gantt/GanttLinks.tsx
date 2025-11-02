@@ -7,7 +7,7 @@ interface GanttLinksProps {
   columnWidth: number;
   swimlaneColumnWidth: number;
   selectedLink: string | null;
-  showFlags: boolean;
+  showTopFlags: boolean;
   onLinkSelect: (linkId: string) => void;
   onLinkDoubleClick: (linkId: string) => void;
   itemTempPositions?: Record<string, { start: number; duration: number; swimlaneId: string }>;
@@ -27,13 +27,13 @@ export const GanttLinks = ({
   columnWidth, 
   swimlaneColumnWidth, 
   selectedLink,
-  showFlags,
+  showTopFlags,
   onLinkSelect, 
   onLinkDoubleClick,
   itemTempPositions = {},
 }: GanttLinksProps) => {
   const SWIMLANE_HEIGHT = 32;
-  const FLAG_ROW_HEIGHT = showFlags ? 64 : 0;
+  const FLAG_ROW_HEIGHT = showTopFlags ? 64 : 0;
   const BAR_HEIGHT = 24;
   const GRID_SIZE = 12; // Grid cell size for pathfinding
 

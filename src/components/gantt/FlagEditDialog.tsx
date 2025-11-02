@@ -65,10 +65,11 @@ export const FlagEditDialog = ({
   const [color, setColor] = useState(flag?.color || "#2196f3");
   const [icon, setIcon] = useState(flag?.icon || "Flag");
   const [position, setPosition] = useState(flag?.position || 0);
+  const [swimlane, setSwimlane] = useState<"top" | "bottom">(flag?.swimlane || "top");
 
   const handleSave = () => {
     if (!flag || !label.trim()) return;
-    onSave(flag.id, { label: label.trim(), color, icon, position });
+    onSave(flag.id, { label: label.trim(), color, icon, position, swimlane });
     onClose();
   };
 
@@ -119,6 +120,19 @@ export const FlagEditDialog = ({
                 {formatPosition(position)}
               </div>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="swimlane">Swimlane</Label>
+            <Select value={swimlane} onValueChange={(value) => setSwimlane(value as "top" | "bottom")}>
+              <SelectTrigger id="swimlane">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="top">Top</SelectItem>
+                <SelectItem value="bottom">Bottom</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

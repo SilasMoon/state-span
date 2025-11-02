@@ -238,6 +238,7 @@ const createDefaultData = (): GanttData => {
       label: "Strategy Complete",
       color: "#2196f3",
       icon: "Flag",
+      swimlane: "top",
     },
     {
       id: generateId(),
@@ -245,6 +246,7 @@ const createDefaultData = (): GanttData => {
       label: "Beta Release",
       color: "#ff9800",
       icon: "CheckCircle",
+      swimlane: "top",
     },
     {
       id: generateId(),
@@ -252,6 +254,15 @@ const createDefaultData = (): GanttData => {
       label: "Launch Day",
       color: "#4caf50",
       icon: "Rocket",
+      swimlane: "bottom",
+    },
+    {
+      id: generateId(),
+      position: 240,
+      label: "Post-Launch Review",
+      color: "#9c27b0",
+      icon: "Target",
+      swimlane: "bottom",
     },
   ];
 
@@ -936,7 +947,7 @@ export const useGanttData = () => {
     }));
   };
 
-  const addFlag = (position: number, label: string = "New Flag", color: string = "#2196f3", icon?: string) => {
+  const addFlag = (position: number, label: string = "New Flag", color: string = "#2196f3", icon?: string, swimlane: "top" | "bottom" = "top") => {
     const id = generateId();
     const flag: GanttFlag = {
       id,
@@ -944,6 +955,7 @@ export const useGanttData = () => {
       label,
       color,
       icon,
+      swimlane,
     };
 
     updateData((prev) => ({

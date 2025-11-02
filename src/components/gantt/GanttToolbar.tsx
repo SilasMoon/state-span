@@ -19,7 +19,7 @@ interface GanttToolbarProps {
   onZoomToFit: () => void;
   onAddTaskLane: () => void;
   onAddStateLane: () => void;
-  onAddFlag: () => void;
+  onAddFlag: (swimlane: "top" | "bottom") => void;
   onExport: () => void;
   onExportPNG: () => void;
   onImport: (data: string) => void;
@@ -30,8 +30,10 @@ interface GanttToolbarProps {
   canRedo: boolean;
   chartTitle: string;
   onChartTitleChange: (title: string) => void;
-  showFlags: boolean;
-  onToggleFlags: () => void;
+  showTopFlags: boolean;
+  showBottomFlags: boolean;
+  onToggleTopFlags: () => void;
+  onToggleBottomFlags: () => void;
 }
 
 export const GanttToolbar = ({
@@ -54,8 +56,10 @@ export const GanttToolbar = ({
   canRedo,
   chartTitle,
   onChartTitleChange,
-  showFlags,
-  onToggleFlags,
+  showTopFlags,
+  showBottomFlags,
+  onToggleTopFlags,
+  onToggleBottomFlags,
 }: GanttToolbarProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -97,17 +101,38 @@ export const GanttToolbar = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Button variant="outline" size="icon" onClick={onAddFlag} title="Add Flag (F)">
-        <Flag className="w-4 h-4" />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="icon" title="Add Flag (F)">
+            <Flag className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={() => onAddFlag("top")}>
+            Add Top Flag
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onAddFlag("bottom")}>
+            Add Bottom Flag
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Button 
+        variant="outline" 
+        size="icon" 
+        onClick={onToggleTopFlags} 
+        title={showTopFlags ? "Hide Top Flags" : "Show Top Flags"}
+      >
+        {showTopFlags ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
       </Button>
 
       <Button 
         variant="outline" 
         size="icon" 
-        onClick={onToggleFlags} 
-        title={showFlags ? "Hide Flags" : "Show Flags"}
+        onClick={onToggleBottomFlags} 
+        title={showBottomFlags ? "Hide Bottom Flags" : "Show Bottom Flags"}
       >
-        {showFlags ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+        {showBottomFlags ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
       </Button>
 
       <Button variant="outline" size="icon" onClick={onExport} title="Export JSON">

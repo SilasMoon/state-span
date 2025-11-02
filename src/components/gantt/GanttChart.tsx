@@ -141,7 +141,8 @@ export const GanttChart = () => {
   const [chartTitle, setChartTitle] = useState<string>("Software Development Project");
 
   // Flags visibility state
-  const [showFlags, setShowFlags] = useState<boolean>(true);
+  const [showTopFlags, setShowTopFlags] = useState<boolean>(true);
+  const [showBottomFlags, setShowBottomFlags] = useState<boolean>(true);
 
   // Swimlane column width state with localStorage persistence
   const [swimlaneColumnWidth, setSwimlaneColumnWidth] = useState<number>(() => {
@@ -915,15 +916,15 @@ export const GanttChart = () => {
     return elements;
   };
 
-  const handleAddFlag = () => {
+  const handleAddFlag = (swimlane: "top" | "bottom" = "top") => {
     const scrollContainer = document.querySelector('.overflow-auto');
     const scrollLeft = scrollContainer?.scrollLeft || 0;
     const viewportCenter = scrollLeft + (scrollContainer?.clientWidth || 0) / 2 - swimlaneColumnWidth;
     const position = Math.max(0, Math.round((viewportCenter / zoom.columnWidth) * zoom.hoursPerColumn));
-    const flagId = addFlag(position);
+    const flagId = addFlag(position, "New Flag", "#2196f3", undefined, swimlane);
     setSelectedFlag(flagId);
     setFlagEditDialog(true);
-    toast.success("Flag added");
+    toast.success(`Flag added to ${swimlane} row`);
   };
 
   return (
@@ -948,8 +949,10 @@ export const GanttChart = () => {
         canRedo={canRedo}
         chartTitle={chartTitle}
         onChartTitleChange={setChartTitle}
-        showFlags={showFlags}
-        onToggleFlags={() => setShowFlags(!showFlags)}
+        showTopFlags={showTopFlags}
+        showBottomFlags={showBottomFlags}
+        onToggleTopFlags={() => setShowTopFlags(!showTopFlags)}
+        onToggleBottomFlags={() => setShowBottomFlags(!showBottomFlags)}
       />
 
       <div 
@@ -994,10 +997,10 @@ export const GanttChart = () => {
             </div>
           </div>
 
-          {/* Dedicated Flag Row */}
-          {showFlags && (
+          {/* Top Flag Row */}
+          {showTopFlags && (
             <GanttFlagRow
-              flags={data.flags}
+              flags={data.flags.filter(f => (f.swimlane || "top") === "top")}
               zoom={zoom}
               totalHours={totalHours}
               swimlaneColumnWidth={swimlaneColumnWidth}
@@ -1022,9 +1025,12 @@ export const GanttChart = () => {
           ) : (
             <div className="relative">
               {/* Flag vertical lines - behind all content */}
-              {showFlags && (
+              {(showTopFlags || showBottomFlags) && (
                 <GanttFlagLines
-                  flags={data.flags}
+                  flags={data.flags.filter(f => {
+                    const swimlane = f.swimlane || "top";
+                    return (swimlane === "top" && showTopFlags) || (swimlane === "bottom" && showBottomFlags);
+                  })}
                   zoom={zoom}
                   swimlaneColumnWidth={swimlaneColumnWidth}
                   selectedFlag={selectedFlag}
@@ -1033,6 +1039,27 @@ export const GanttChart = () => {
               
               {/* Swimlanes */}
               <div>{renderSwimlanes(data.rootIds)}</div>
+              
+              {/* Bottom Flag Row */}
+              {showBottomFlags && (
+                <GanttFlagRow
+                  flags={data.flags.filter(f => (f.swimlane || "top") === "bottom")}
+                  zoom={zoom}
+                  totalHours={totalHours}
+                  swimlaneColumnWidth={swimlaneColumnWidth}
+                  selectedFlag={selectedFlag}
+                  onFlagClick={(flagId) => {
+                    setSelectedFlag(flagId);
+                    setSelected(null);
+                    setSelectedLink(null);
+                    setFlagEditDialog(true);
+                  }}
+                  onFlagMove={(flagId, newPosition) => {
+                    updateFlag(flagId, { position: newPosition });
+                    toast.success("Flag moved");
+                  }}
+                />
+              )}
             </div>
           )}
         </div>
@@ -1044,7 +1071,7 @@ export const GanttChart = () => {
           columnWidth={zoom.columnWidth}
           swimlaneColumnWidth={swimlaneColumnWidth}
           selectedLink={selectedLink}
-          showFlags={showFlags}
+          showTopFlags={showTopFlags}
           onLinkSelect={(linkId) => {
             setSelectedLink(linkId === "" ? null : linkId);
             if (linkId) setSelected(null);
