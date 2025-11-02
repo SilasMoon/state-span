@@ -32,7 +32,7 @@ interface GanttRowProps {
   onSwimlaneNameChange: (id: string, name: string) => void;
   onSwimlaneDrop: (swimlaneId: string, targetParentId: string | null, insertBeforeId: string | null) => void;
   checkOverlap: (swimlaneId: string, itemId: string, start: number, duration: number) => boolean;
-  onDragStateChange: (itemId: string, swimlaneId: string) => (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => void;
+  onDragStateChange: (itemId: string, swimlaneId: string, itemColor: string) => (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => void;
 }
 
 export const GanttRow = React.memo(({
@@ -93,26 +93,13 @@ export const GanttRow = React.memo(({
             const clickedOnBar = elementsAtPoint.some(el => el.hasAttribute('data-item-id'));
             const clickedOnHandle = elementsAtPoint.some(el => el.hasAttribute('data-handle-type'));
             
-            console.log('[GanttRow] Grid cell mousedown:', {
-              clickedOnBar,
-              clickedOnHandle,
-              elementsAtPoint: elementsAtPoint.map(el => ({
-                tag: el.tagName,
-                classes: el.className,
-                dataItemId: el.getAttribute('data-item-id'),
-                dataHandleType: el.getAttribute('data-handle-type')
-              }))
-            });
-            
             if (clickedOnBar || clickedOnHandle) {
               // Let the bar handle its own events
-              console.log('[GanttRow] Returning early - bar or handle detected');
               return;
             }
             
             e.preventDefault();
             e.stopPropagation();
-            console.log('[GanttRow] Starting drag creation');
             const hour = i * zoom.hoursPerColumn;
             setDragCreation({ startHour: hour, currentHour: hour, hasMoved: false });
           }}
@@ -396,13 +383,12 @@ export const GanttRow = React.memo(({
                 isSelected={selected?.type === 'task' && selected.swimlaneId === swimlane.id && selected.itemId === task.id}
                 onDoubleClick={() => onTaskDoubleClick(swimlane.id, task.id)}
                 onSelect={() => {
-                  console.log('[GanttRow] Task onSelect callback', { swimlaneId: swimlane.id, taskId: task.id });
                   onSelect('task', swimlane.id, task.id);
                 }}
                 onMove={(toSwimlaneId, newStart) => onTaskMove(swimlane.id, task.id, toSwimlaneId, newStart)}
                 onResize={(newStart, newDuration) => onTaskResize(swimlane.id, task.id, newStart, newDuration)}
                 checkOverlap={checkOverlap}
-                onDragStateChange={onDragStateChange(task.id, swimlane.id)}
+                onDragStateChange={onDragStateChange(task.id, swimlane.id, task.color)}
               />
             ))}
           {!hasChildren && swimlane.type === "state" &&
@@ -422,7 +408,7 @@ export const GanttRow = React.memo(({
                 onMove={(toSwimlaneId, newStart) => onStateMove(swimlane.id, state.id, toSwimlaneId, newStart)}
                 onResize={(newStart, newDuration) => onStateResize(swimlane.id, state.id, newStart, newDuration)}
                 checkOverlap={checkOverlap}
-                onDragStateChange={onDragStateChange(state.id, swimlane.id)}
+                onDragStateChange={onDragStateChange(state.id, swimlane.id, state.color)}
               />
             ))}
         </div>

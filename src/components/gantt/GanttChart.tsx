@@ -399,20 +399,6 @@ export const GanttChart = () => {
     }
   };
 
-  const checkOverlap = (swimlaneId: string, itemId: string, start: number, duration: number): boolean => {
-    const swimlane = data.swimlanes[swimlaneId];
-    if (!swimlane) return false;
-
-    const end = start + duration;
-    const items = swimlane.type === "task" ? swimlane.tasks : swimlane.states;
-    
-    return items?.some((item) => {
-      if (item.id === itemId) return false;
-      const itemEnd = item.start + item.duration;
-      return (start < itemEnd && end > item.start);
-    }) || false;
-  };
-
 
   const handleTaskResize = (swimlaneId: string, taskId: string, newStart: number, newDuration: number) => {
     updateTask(swimlaneId, taskId, { start: newStart, duration: newDuration });
@@ -551,135 +537,6 @@ export const GanttChart = () => {
     }
   }, [selected]);
 
-  // Track mouse movement for copy ghost
-  React.useEffect(() => {
-    if (!copiedItem) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      setCopyGhost({
-        mouseX: e.clientX,
-        mouseY: e.clientY,
-        duration: copiedItem.duration,
-        color: copiedItem.color,
-        label: copiedItem.label,
-        labelColor: copiedItem.labelColor,
-      });
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    return () => document.removeEventListener('mousemove', handleMouseMove);
-  }, [copiedItem]);
-
-  // Handle paste operation
-  const handlePaste = () => {
-    if (!copiedItem || !copyGhost) return;
-
-    // Find which swimlane the cursor is over
-    const element = document.elementFromPoint(copyGhost.mouseX, copyGhost.mouseY);
-    const rowElement = element?.closest('[data-swimlane-id]');
-    
-    if (!rowElement) {
-      toast.error("Position cursor over a swimlane to paste");
-      return;
-    }
-
-    const targetSwimlaneId = rowElement.getAttribute('data-swimlane-id');
-    if (!targetSwimlaneId) return;
-
-    const targetSwimlane = data.swimlanes[targetSwimlaneId];
-    if (!targetSwimlane) return;
-
-    // Check if types match
-    if (copiedItem.type === 'task' && targetSwimlane.type !== 'task') {
-      toast.error("Can only paste tasks to task swimlanes");
-      return;
-    }
-    if (copiedItem.type === 'state' && targetSwimlane.type !== 'state') {
-      toast.error("Can only paste states to state swimlanes");
-      return;
-    }
-
-    // Calculate start time based on cursor position
-    const scrollContainer = document.querySelector('.overflow-auto');
-    const scrollLeft = scrollContainer?.scrollLeft || 0;
-    
-    const gridX = copyGhost.mouseX + scrollLeft - swimlaneColumnWidth;
-    const start = Math.max(0, Math.round((gridX / zoom.columnWidth) * zoom.hoursPerColumn / zoom.hoursPerColumn) * zoom.hoursPerColumn);
-
-    // Check for overlap
-    if (checkOverlap(targetSwimlaneId, '', start, copiedItem.duration)) {
-      toast.error("Cannot paste here - overlaps with existing item");
-      return;
-    }
-
-    // Create the new item with the copied properties
-    if (copiedItem.type === 'task') {
-      const newTaskId = addTask(targetSwimlaneId, start, copiedItem.duration);
-      updateTask(targetSwimlaneId, newTaskId, {
-        color: copiedItem.color,
-        label: copiedItem.label,
-        labelColor: copiedItem.labelColor,
-        description: copiedItem.description,
-      });
-      toast.success("Task pasted");
-    } else {
-      const newStateId = addState(targetSwimlaneId, start, copiedItem.duration);
-      updateState(targetSwimlaneId, newStateId, {
-        color: copiedItem.color,
-        label: copiedItem.label,
-        labelColor: copiedItem.labelColor,
-        description: copiedItem.description,
-      });
-      toast.success("State pasted");
-    }
-
-    // Clear copy mode
-    setCopiedItem(null);
-    setCopyGhost(null);
-  };
-
-  const handleDragStateChange = (itemId: string, swimlaneId: string) => 
-    (isDragging: boolean, targetSwimlaneId: string | null, tempStart: number, tempDuration: number, mouseX: number, mouseY: number, offsetX?: number, offsetY?: number) => {
-      // PHASE 4: Update temp positions for real-time link updates
-      if (isDragging) {
-        setItemTempPositions(prev => ({
-          ...prev,
-          [itemId]: {
-            start: tempStart,
-            duration: tempDuration,
-            swimlaneId: targetSwimlaneId || swimlaneId
-          }
-        }));
-        
-        if (targetSwimlaneId) {
-          const swimlane = data.swimlanes[swimlaneId];
-          const item = swimlane?.tasks?.find(a => a.id === itemId) || swimlane?.states?.find(s => s.id === itemId);
-          if (item) {
-            setDragPreview(prev => ({
-              itemId,
-              swimlaneId,
-              targetSwimlaneId,
-              tempStart,
-              tempDuration,
-              color: item.color,
-              mouseX,
-              mouseY,
-              // Use existing offset if not provided (during drag move), or new offset (drag start)
-              offsetX: offsetX !== undefined ? offsetX : (prev?.offsetX || 0),
-              offsetY: offsetY !== undefined ? offsetY : (prev?.offsetY || 0),
-            }));
-          }
-        }
-      } else {
-        // Clear temp position when drag ends
-        setItemTempPositions(prev => {
-          const newPositions = { ...prev };
-          delete newPositions[itemId];
-          return newPositions;
-        });
-        setDragPreview(null);
-      }
-    };
 
   const renderSwimlanes = (ids: string[], level: number = 0): JSX.Element[] => {
     const elements: JSX.Element[] = [];
@@ -698,9 +555,7 @@ export const GanttChart = () => {
             swimlaneColumnWidth={swimlaneColumnWidth}
             selected={selected}
             onSelect={(type, swimlaneId, itemId) => {
-              console.log('[GanttChart] onSelect called', { type, swimlaneId, itemId });
               setSelected({ type, swimlaneId, itemId });
-              console.log('[GanttChart] setSelected called with', { type, swimlaneId, itemId });
             }}
             onToggleExpand={toggleExpanded}
             onDelete={deleteSwimlane}
@@ -715,7 +570,7 @@ export const GanttChart = () => {
             onSwimlaneNameChange={(id, name) => updateSwimlane(id, { name })}
             onSwimlaneDrop={moveSwimlane}
             checkOverlap={checkOverlap}
-            onDragStateChange={handleDragStateChange}
+            onDragStateChange={createDragStateHandler}
           />
       );
 
