@@ -276,8 +276,8 @@ export const GanttBar = React.memo(({
           if (isSelected && !tooltipPos && !isTooltipDragging) {
             const rect = e.currentTarget.getBoundingClientRect();
             setTooltipPos({
-              x: rect.right + 10,
-              y: rect.top
+              x: rect.left + rect.width / 2 - 150,
+              y: rect.bottom + 10
             });
           }
         }}
