@@ -6,6 +6,7 @@ interface GanttFlagLinesProps {
   swimlaneColumnWidth: number;
   selectedFlag: string | null;
   draggingFlag: { id: string; tempPosition: number } | null;
+  extendToTop?: boolean;
 }
 
 export const GanttFlagLines = ({
@@ -14,6 +15,7 @@ export const GanttFlagLines = ({
   swimlaneColumnWidth,
   selectedFlag,
   draggingFlag,
+  extendToTop = false,
 }: GanttFlagLinesProps) => {
   return (
     <div 
@@ -21,6 +23,10 @@ export const GanttFlagLines = ({
       style={{ 
         left: `${swimlaneColumnWidth}px`,
         zIndex: 1, // Behind bars (z-10) and links (z-20+)
+        ...(extendToTop && {
+          top: '-128px', // Extend up to include timeline (40px) and top flags (64px) and some margin
+          bottom: 0,
+        }),
       }}
     >
       {flags.map((flag) => {

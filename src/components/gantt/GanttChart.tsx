@@ -754,6 +754,7 @@ export const GanttChart = () => {
                   swimlaneColumnWidth={swimlaneColumnWidth}
                   selectedFlag={selectedFlag}
                   draggingFlag={draggingFlag}
+                  extendToTop={showBottomFlags && data.flags.some(f => (f.swimlane || "top") === "bottom")}
                 />
               )}
               
