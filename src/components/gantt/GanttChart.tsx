@@ -8,7 +8,18 @@ import { GanttRow } from "./GanttRow";
 import { EditDialog } from "./EditDialog";
 import { LinkEditDialog } from "./LinkEditDialog";
 import { FlagEditDialog } from "./FlagEditDialog";
+import { KeyboardShortcutsDialog } from "./KeyboardShortcutsDialog";
 import { GanttLinks } from "./GanttLinks";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useGanttData } from "@/hooks/useGanttData";
 import { useGanttSelection } from "@/hooks/useGanttSelection";
 import { useGanttDragAndDrop } from "@/hooks/useGanttDragAndDrop";
@@ -59,6 +70,11 @@ export const GanttChart = () => {
   // Flags visibility state
   const [showTopFlags, setShowTopFlags] = useState<boolean>(true);
   const [showBottomFlags, setShowBottomFlags] = useState<boolean>(true);
+
+  // Dialog states
+  const [showHelpDialog, setShowHelpDialog] = useState(false);
+  const [showClearAlert, setShowClearAlert] = useState(false);
+  const [showResetAlert, setShowResetAlert] = useState(false);
 
   // Swimlane column width state with localStorage persistence
   const [swimlaneColumnWidth, setSwimlaneColumnWidth] = useState<number>(() => {
@@ -395,17 +411,23 @@ export const GanttChart = () => {
   };
 
   const handleClear = () => {
-    if (confirm("Are you sure you want to clear everything?")) {
-      clearAll();
-      toast.success("Chart cleared");
-    }
+    setShowClearAlert(true);
+  };
+
+  const handleClearConfirm = () => {
+    clearAll();
+    toast.success("Chart cleared");
+    setShowClearAlert(false);
   };
 
   const handleResetToDefault = () => {
-    if (confirm("Are you sure you want to reset to the default example? This will replace all current data.")) {
-      resetToDefault();
-      toast.success("Reset to default example");
-    }
+    setShowResetAlert(true);
+  };
+
+  const handleResetConfirm = () => {
+    resetToDefault();
+    toast.success("Reset to default example");
+    setShowResetAlert(false);
   };
 
 
@@ -629,6 +651,7 @@ export const GanttChart = () => {
         showBottomFlags={showBottomFlags}
         onToggleTopFlags={() => setShowTopFlags(!showTopFlags)}
         onToggleBottomFlags={() => setShowBottomFlags(!showBottomFlags)}
+        onShowHelp={() => setShowHelpDialog(true)}
       />
 
       <div 
@@ -962,6 +985,41 @@ export const GanttChart = () => {
           />
         ) : null;
       })()}
+
+      <KeyboardShortcutsDialog
+        open={showHelpDialog}
+        onClose={() => setShowHelpDialog(false)}
+      />
+
+      <AlertDialog open={showClearAlert} onOpenChange={setShowClearAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Chart</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to clear everything? This will remove all swimlanes, tasks, states, links, and flags. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearConfirm}>Clear All</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showResetAlert} onOpenChange={setShowResetAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset to Default</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to reset to the default example? This will replace all current data with the default project template. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetConfirm}>Reset</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -6,6 +6,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,12 +83,13 @@ export const FlagEditDialog = ({
     onClose();
   };
 
-  const handleDelete = () => {
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+
+  const handleDeleteConfirm = () => {
     if (!flag) return;
-    if (confirm("Are you sure you want to delete this flag?")) {
-      onDelete(flag.id);
-      onClose();
-    }
+    onDelete(flag.id);
+    onClose();
+    setShowDeleteAlert(false);
   };
 
   const formatPosition = (hours: number) => {
@@ -183,7 +194,7 @@ export const FlagEditDialog = ({
         </div>
 
         <DialogFooter className="flex justify-between sm:justify-between">
-          <Button variant="destructive" onClick={handleDelete}>
+          <Button variant="destructive" onClick={() => setShowDeleteAlert(true)}>
             Delete
           </Button>
           <div className="flex gap-2">
@@ -196,6 +207,21 @@ export const FlagEditDialog = ({
           </div>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Flag</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this flag? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };
