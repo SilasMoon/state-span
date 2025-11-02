@@ -171,6 +171,7 @@ const createDefaultData = (): GanttData => {
       fromId: marketResearch.tasks![1].id,
       toSwimlaneId: productStrategy.id,
       toId: productStrategy.tasks![0].id,
+      color: marketResearch.tasks![1].color,
     },
     {
       id: generateId(),
@@ -178,6 +179,7 @@ const createDefaultData = (): GanttData => {
       fromId: productStrategy.tasks![1].id,
       toSwimlaneId: productDev.id,
       toId: productDev.tasks![0].id,
+      color: productStrategy.tasks![1].color,
     },
     {
       id: generateId(),
@@ -185,6 +187,7 @@ const createDefaultData = (): GanttData => {
       fromId: productStrategy.tasks![1].id,
       toSwimlaneId: uxDesign.id,
       toId: uxDesign.tasks![0].id,
+      color: productStrategy.tasks![1].color,
     },
     {
       id: generateId(),
@@ -192,6 +195,7 @@ const createDefaultData = (): GanttData => {
       fromId: uxDesign.tasks![0].id,
       toSwimlaneId: uxDesign.id,
       toId: uxDesign.tasks![1].id,
+      color: uxDesign.tasks![0].color,
     },
     {
       id: generateId(),
@@ -199,6 +203,7 @@ const createDefaultData = (): GanttData => {
       fromId: productDev.tasks![1].id,
       toSwimlaneId: contentCreation.id,
       toId: contentCreation.tasks![0].id,
+      color: productDev.tasks![1].color,
     },
     {
       id: generateId(),
@@ -206,6 +211,7 @@ const createDefaultData = (): GanttData => {
       fromId: contentCreation.tasks![1].id,
       toSwimlaneId: campaigns.id,
       toId: campaigns.tasks![0].id,
+      color: contentCreation.tasks![1].color,
     },
     {
       id: generateId(),
@@ -213,6 +219,7 @@ const createDefaultData = (): GanttData => {
       fromId: productDev.tasks![1].id,
       toSwimlaneId: campaigns.id,
       toId: campaigns.tasks![1].id,
+      color: productDev.tasks![1].color,
     },
     {
       id: generateId(),
@@ -220,6 +227,7 @@ const createDefaultData = (): GanttData => {
       fromId: campaigns.tasks![1].id,
       toSwimlaneId: campaigns.id,
       toId: campaigns.tasks![2].id,
+      color: campaigns.tasks![1].color,
     },
   ];
 

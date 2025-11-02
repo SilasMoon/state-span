@@ -22,12 +22,23 @@ export const useGanttLinks = ({ updateData, generateId }: UseGanttLinksProps) =>
         return prev;
       }
 
+      // Get color from source item
+      const fromSwimlane = prev.swimlanes[fromSwimlaneId];
+      let sourceColor: string | undefined;
+      
+      if (fromSwimlane) {
+        const sourceItem = fromSwimlane.tasks?.find(t => t.id === fromId) || 
+                          fromSwimlane.states?.find(s => s.id === fromId);
+        sourceColor = sourceItem?.color;
+      }
+
       const link: GanttLink = {
         id: generateId(),
         fromSwimlaneId,
         fromId,
         toSwimlaneId,
         toId,
+        color: sourceColor,
       };
 
       return {
