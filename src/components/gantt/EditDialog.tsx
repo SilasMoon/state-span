@@ -208,6 +208,20 @@ export const EditDialog = ({
           </div>
 
           <div>
+            <Label htmlFor="description" className="text-sm">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              maxLength={2000}
+              placeholder="Add a description..."
+              rows={3}
+              className="mt-1.5 text-sm"
+            />
+          </div>
+
+          <div>
             <Label className="text-sm">Background Color</Label>
             {recentBgColors.length > 0 && (
               <div className="mb-2">
@@ -275,20 +289,6 @@ export const EditDialog = ({
                 />
               ))}
             </div>
-          </div>
-
-          <div>
-            <Label htmlFor="description" className="text-sm">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              onKeyDown={(e) => e.stopPropagation()}
-              maxLength={2000}
-              placeholder="Add a description..."
-              rows={3}
-              className="mt-1.5 text-sm"
-            />
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
