@@ -45,6 +45,7 @@ export const GanttChart = () => {
     updateFlag,
     deleteFlag,
     clearAll,
+    resetToDefault,
     exportData,
     importData,
     undo,
@@ -400,6 +401,13 @@ export const GanttChart = () => {
     }
   };
 
+  const handleResetToDefault = () => {
+    if (confirm("Are you sure you want to reset to the default example? This will replace all current data.")) {
+      resetToDefault();
+      toast.success("Reset to default example");
+    }
+  };
+
 
   const handleTaskResize = (swimlaneId: string, taskId: string, newStart: number, newDuration: number) => {
     updateTask(swimlaneId, taskId, { start: newStart, duration: newDuration });
@@ -610,6 +618,7 @@ export const GanttChart = () => {
         onExportPNG={handleExportPNG}
         onImport={handleImport}
         onClear={handleClear}
+        onResetToDefault={handleResetToDefault}
         onUndo={undo}
         onRedo={redo}
         canUndo={canUndo}

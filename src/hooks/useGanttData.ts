@@ -309,6 +309,11 @@ export const useGanttData = () => {
     nextId = 1;
   };
 
+  const resetToDefault = () => {
+    nextId = 1;
+    updateData(() => createDefaultData());
+  };
+
   const exportData = () => {
     return JSON.stringify(data, null, 2);
   };
@@ -349,6 +354,7 @@ export const useGanttData = () => {
     ...linkOps,
     ...flagOps,
     clearAll,
+    resetToDefault,
     exportData,
     importData,
     undo,

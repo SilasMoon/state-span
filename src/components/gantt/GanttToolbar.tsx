@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Image, Flag, Eye, EyeOff } from "lucide-react";
+import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Image, Flag, Eye, EyeOff, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,6 +24,7 @@ interface GanttToolbarProps {
   onExportPNG: () => void;
   onImport: (data: string) => void;
   onClear: () => void;
+  onResetToDefault: () => void;
   onUndo: () => void;
   onRedo: () => void;
   canUndo: boolean;
@@ -50,6 +51,7 @@ export const GanttToolbar = ({
   onExportPNG,
   onImport,
   onClear,
+  onResetToDefault,
   onUndo,
   onRedo,
   canUndo,
@@ -157,6 +159,10 @@ export const GanttToolbar = ({
       
       <Button variant="destructive" size="icon" onClick={onClear} title="Clear All">
         <Trash2 className="w-4 h-4" />
+      </Button>
+
+      <Button variant="outline" size="icon" onClick={onResetToDefault} title="Reset to Default Example">
+        <RotateCcw className="w-4 h-4" />
       </Button>
 
       <div className="h-6 w-px bg-border mx-1" />
