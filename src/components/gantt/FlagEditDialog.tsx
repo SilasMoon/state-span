@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -72,14 +73,14 @@ export const FlagEditDialog = ({
   onClose,
 }: FlagEditDialogProps) => {
   const [label, setLabel] = useState(flag?.label || "");
+  const [description, setDescription] = useState(flag?.description || "");
   const [color, setColor] = useState(flag?.color || "#2196f3");
   const [icon, setIcon] = useState(flag?.icon || "Flag");
-  const [position, setPosition] = useState(flag?.position || 0);
   const [swimlane, setSwimlane] = useState<"top" | "bottom">(flag?.swimlane || "top");
 
   const handleSave = () => {
     if (!flag || !label.trim()) return;
-    onSave(flag.id, { label: label.trim(), color, icon, position, swimlane });
+    onSave(flag.id, { label: label.trim(), description: description.trim(), color, icon, swimlane });
     onClose();
   };
 
@@ -90,12 +91,6 @@ export const FlagEditDialog = ({
     onDelete(flag.id);
     onClose();
     setShowDeleteAlert(false);
-  };
-
-  const formatPosition = (hours: number) => {
-    const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
-    return `Day ${days}, ${remainingHours}:00`;
   };
 
   return (
@@ -112,26 +107,24 @@ export const FlagEditDialog = ({
               id="label"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
               maxLength={200}
               placeholder="Enter flag label"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="position">Position</Label>
-            <div className="flex gap-2">
-              <Input
-                id="position"
-                type="number"
-                value={position}
-                onChange={(e) => setPosition(Number(e.target.value))}
-                min={0}
-                step={1}
-              />
-              <div className="flex items-center text-sm text-muted-foreground whitespace-nowrap">
-                {formatPosition(position)}
-              </div>
-            </div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              maxLength={2000}
+              placeholder="Add a description..."
+              rows={3}
+              className="text-sm"
+            />
           </div>
 
           <div className="space-y-2">

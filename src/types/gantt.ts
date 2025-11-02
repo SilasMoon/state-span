@@ -43,6 +43,7 @@ export interface GanttFlag {
   color: string;
   icon?: string; // Lucide icon name
   swimlane?: "top" | "bottom"; // Which flag row (defaults to "top" for backward compatibility)
+  description?: string;
 }
 
 export interface GanttSwimlane {
