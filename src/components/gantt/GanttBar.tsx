@@ -54,13 +54,10 @@ export const GanttBar = ({
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const [tooltipDragOffset, setTooltipDragOffset] = useState({ x: 0, y: 0 });
 
-  console.log('[GanttBar] Render', { itemId: item.id, isSelected, modifierKeyState });
-
   // Track modifier key state globally to force re-render
   React.useEffect(() => {
     const handleKeyChange = (e: KeyboardEvent) => {
       const isPressed = e.shiftKey || e.ctrlKey || e.metaKey;
-      console.log('[GanttBar] Modifier key changed', { itemId: item.id, isPressed, shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey });
       setModifierKeyState(prev => isPressed ? prev + 1 : 0);
     };
     
@@ -114,14 +111,11 @@ export const GanttBar = ({
     
     // Only prevent drag if clicking on resize or link handles
     const target = e.target as HTMLElement;
-    console.log('[GanttBar] handleMoveStart called', { itemId: item.id, targetTag: target.tagName, targetClasses: target.className });
     if (target.closest('[data-handle-type]') || target.classList.contains('cursor-ew-resize')) {
-      console.log('[GanttBar] Ignoring - clicked on handle');
       return;
     }
     e.stopPropagation();
     e.preventDefault();
-    console.log('[GanttBar] Starting move, calling onSelect');
     document.body.style.cursor = 'grabbing';
     onSelect();
     setIsDragging('move');
@@ -276,7 +270,6 @@ export const GanttBar = ({
         }}
         onClick={(e) => {
           e.stopPropagation();
-          console.log('[GanttBar] onClick called, calling onSelect', { itemId: item.id });
           onSelect();
         }}
         onMouseMove={(e) => {
@@ -395,24 +388,11 @@ export const GanttBar = ({
             data-swimlane-id={swimlaneId}
             data-item-id={item.id}
             ref={(el) => {
-              if (el && isModifierPressed) {
-                const rect = el.getBoundingClientRect();
-                const parentRect = el.parentElement?.getBoundingClientRect();
-                console.log('[GanttBar] START handle', {
-                  itemId: item.id,
-                  barLeft: left,
-                  handleStyleLeft: left - 12,
-                  handleAbsLeft: rect.left,
-                  handleCenterX: rect.left + rect.width / 2,
-                  parentLeft: parentRect?.left,
-                  relativeToParent: rect.left - (parentRect?.left || 0) + rect.width / 2
-                });
-              }
+              // Ref for potential future debugging
             }}
             onMouseDown={(e) => {
               e.stopPropagation();
               e.preventDefault();
-              console.log('[GanttBar] Link handle START clicked', { itemId: item.id });
               const event = e.nativeEvent;
               window.dispatchEvent(new CustomEvent('startLinkDrag', {
                 detail: { swimlaneId, itemId: item.id, handleType: 'start', x: event.clientX, y: event.clientY }
@@ -435,7 +415,6 @@ export const GanttBar = ({
             onMouseDown={(e) => {
               e.stopPropagation();
               e.preventDefault();
-              console.log('[GanttBar] Link handle FINISH clicked', { itemId: item.id });
               const event = e.nativeEvent;
               window.dispatchEvent(new CustomEvent('startLinkDrag', {
                 detail: { swimlaneId, itemId: item.id, handleType: 'finish', x: event.clientX, y: event.clientY }

@@ -113,6 +113,7 @@ export const LinkEditDialog = ({
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
+              maxLength={200}
               placeholder="Optional label..."
               className="mt-1.5 h-9"
             />

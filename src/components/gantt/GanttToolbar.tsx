@@ -184,6 +184,7 @@ export const GanttToolbar = ({
         type="text"
         value={chartTitle}
         onChange={(e) => onChartTitleChange(e.target.value)}
+        maxLength={200}
         className="flex-1 text-xl font-bold bg-transparent border-none outline-none text-foreground text-center min-w-0 mx-4 focus:ring-2 focus:ring-primary/20 rounded px-3 py-1 transition-all"
         placeholder="Enter chart title..."
       />

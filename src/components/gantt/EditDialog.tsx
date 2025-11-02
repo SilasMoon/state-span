@@ -284,6 +284,7 @@ export const EditDialog = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
+              maxLength={2000}
               placeholder="Add a description..."
               rows={3}
               className="mt-1.5 text-sm"

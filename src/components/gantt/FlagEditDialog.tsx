@@ -101,6 +101,7 @@ export const FlagEditDialog = ({
               id="label"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
+              maxLength={200}
               placeholder="Enter flag label"
             />
           </div>
