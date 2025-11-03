@@ -18,5 +18,8 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // IMPORTANT: Replace 'your-repo-name' with your actual GitHub repository name!
+  // For example, if your repo is at github.com/username/state-span-main
+  // then use: base: process.env.NODE_ENV === 'production' ? '/state-span-main/' : '/',
   base: process.env.NODE_ENV === 'production' ? '/state-span/' : '/',
 }));
