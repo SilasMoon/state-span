@@ -1,15 +1,15 @@
 export type SwimlaneType = "task" | "state";
 
-// Unified zoom configuration for 16-level system
-// Odd levels define granularity with base 80px width
-// Even levels double the width (160px) while maintaining same granularity
+// Unified zoom configuration for 11-level system
+// All levels use 40px column width by default
 export interface ZoomConfig {
-  level: number; // 1-16
-  hoursPerColumn: number; // Time increment for Row 2 granularity
-  columnWidth: number; // Pixel width (80px for odd, 160px for even)
-  label: string; // Display label (e.g., "L5: 6h")
-  row1Unit: "day" | "hour"; // Context unit for Row 1
-  row2Increment: number | null; // Hours for Row 2 granularity (null for L1-L2)
+  level: number; // 1-11
+  hoursPerColumn: number; // Time increment per column
+  columnWidth: number; // Pixel width (default 40px)
+  label: string; // Display label (e.g., "L1: 1 day")
+  showDays: boolean; // Show days row
+  showHours: boolean; // Show hours row
+  showMinutes: boolean; // Show minutes row
 }
 
 export interface GanttState {
@@ -71,52 +71,52 @@ export interface GanttData {
 }
 
 export interface GanttConfig {
-  columnWidths: number[]; // 16 values for each zoom level
-  gridOpacity: number; // 0.0 - 1.0
-  timescaleContrast: number; // 0.0 - 1.0
+  columnWidths: number[]; // 11 values for each zoom level
+  gridOpacity: number; // 1.0 - 2.0 (100% - 200%)
+  timescaleContrast: number; // 1.0 - 2.0 (100% - 200%)
 }
 
-// 16-level unified zoom system
-// Odd levels (L1, L3, L5, etc.): Define granularity with base 80px width
-// Even levels (L2, L4, L6, etc.): Same granularity as previous level, double width (160px)
+// 11-level zoom system with 40px columns
+// L1: Only days, L2-L6: Days + hours, L7-L11: Days + hours + minutes
 export const ZOOM_LEVELS: ZoomConfig[] = [
-  // L1-L2: Day only (no Row 2)
-  { level: 1, hoursPerColumn: 24, columnWidth: 80, label: "L1: Day", row1Unit: "day", row2Increment: null },
-  { level: 2, hoursPerColumn: 24, columnWidth: 160, label: "L2: Day (x2)", row1Unit: "day", row2Increment: null },
+  // L1: 1 day per column - show only days
+  { level: 1, hoursPerColumn: 24, columnWidth: 40, label: "L1: 1 day", showDays: true, showHours: false, showMinutes: false },
 
-  // L3-L4: 12-hour increments
-  { level: 3, hoursPerColumn: 12, columnWidth: 80, label: "L3: 12h", row1Unit: "day", row2Increment: 12 },
-  { level: 4, hoursPerColumn: 12, columnWidth: 160, label: "L4: 12h (x2)", row1Unit: "day", row2Increment: 12 },
+  // L2: 12 hours per column - show days + hours
+  { level: 2, hoursPerColumn: 12, columnWidth: 40, label: "L2: 12 hours", showDays: true, showHours: true, showMinutes: false },
 
-  // L5-L6: 6-hour increments
-  { level: 5, hoursPerColumn: 6, columnWidth: 80, label: "L5: 6h", row1Unit: "day", row2Increment: 6 },
-  { level: 6, hoursPerColumn: 6, columnWidth: 160, label: "L6: 6h (x2)", row1Unit: "day", row2Increment: 6 },
+  // L3: 6 hours per column - show days + hours
+  { level: 3, hoursPerColumn: 6, columnWidth: 40, label: "L3: 6 hours", showDays: true, showHours: true, showMinutes: false },
 
-  // L7-L8: 2-hour increments
-  { level: 7, hoursPerColumn: 2, columnWidth: 80, label: "L7: 2h", row1Unit: "day", row2Increment: 2 },
-  { level: 8, hoursPerColumn: 2, columnWidth: 160, label: "L8: 2h (x2)", row1Unit: "day", row2Increment: 2 },
+  // L4: 4 hours per column - show days + hours
+  { level: 4, hoursPerColumn: 4, columnWidth: 40, label: "L4: 4 hours", showDays: true, showHours: true, showMinutes: false },
 
-  // L9-L10: 1-hour increments
-  { level: 9, hoursPerColumn: 1, columnWidth: 80, label: "L9: 1h", row1Unit: "day", row2Increment: 1 },
-  { level: 10, hoursPerColumn: 1, columnWidth: 160, label: "L10: 1h (x2)", row1Unit: "day", row2Increment: 1 },
+  // L5: 2 hours per column - show days + hours
+  { level: 5, hoursPerColumn: 2, columnWidth: 40, label: "L5: 2 hours", showDays: true, showHours: true, showMinutes: false },
 
-  // L11-L12: 30-minute increments
-  { level: 11, hoursPerColumn: 0.5, columnWidth: 80, label: "L11: 30min", row1Unit: "hour", row2Increment: 0.5 },
-  { level: 12, hoursPerColumn: 0.5, columnWidth: 160, label: "L12: 30min (x2)", row1Unit: "hour", row2Increment: 0.5 },
+  // L6: 1 hour per column - show days + hours
+  { level: 6, hoursPerColumn: 1, columnWidth: 40, label: "L6: 1 hour", showDays: true, showHours: true, showMinutes: false },
 
-  // L13-L14: 15-minute increments
-  { level: 13, hoursPerColumn: 0.25, columnWidth: 80, label: "L13: 15min", row1Unit: "hour", row2Increment: 0.25 },
-  { level: 14, hoursPerColumn: 0.25, columnWidth: 160, label: "L14: 15min (x2)", row1Unit: "hour", row2Increment: 0.25 },
+  // L7: 30 minutes per column - show days + hours + minutes
+  { level: 7, hoursPerColumn: 0.5, columnWidth: 40, label: "L7: 30 minutes", showDays: true, showHours: true, showMinutes: true },
 
-  // L15-L16: 5-minute increments
-  { level: 15, hoursPerColumn: 5/60, columnWidth: 80, label: "L15: 5min", row1Unit: "hour", row2Increment: 5/60 },
-  { level: 16, hoursPerColumn: 5/60, columnWidth: 160, label: "L16: 5min (x2)", row1Unit: "hour", row2Increment: 5/60 },
+  // L8: 15 minutes per column - show days + hours + minutes
+  { level: 8, hoursPerColumn: 0.25, columnWidth: 40, label: "L8: 15 minutes", showDays: true, showHours: true, showMinutes: true },
+
+  // L9: 10 minutes per column - show days + hours + minutes
+  { level: 9, hoursPerColumn: 10/60, columnWidth: 40, label: "L9: 10 minutes", showDays: true, showHours: true, showMinutes: true },
+
+  // L10: 5 minutes per column - show days + hours + minutes
+  { level: 10, hoursPerColumn: 5/60, columnWidth: 40, label: "L10: 5 minutes", showDays: true, showHours: true, showMinutes: true },
+
+  // L11: 1 minute per column - show days + hours + minutes
+  { level: 11, hoursPerColumn: 1/60, columnWidth: 40, label: "L11: 1 minute", showDays: true, showHours: true, showMinutes: true },
 ];
 
-// Default zoom level (L9: 1h at 80px)
-export const DEFAULT_ZOOM_LEVEL = 9;
+// Default zoom level (L6: 1 hour at 40px)
+export const DEFAULT_ZOOM_LEVEL = 6;
 
-// Helper function to get zoom config by level (1-16)
+// Helper function to get zoom config by level (1-11)
 export function getZoomConfig(level: number): ZoomConfig {
   const index = level - 1; // Convert 1-based to 0-based index
   if (index < 0 || index >= ZOOM_LEVELS.length) {

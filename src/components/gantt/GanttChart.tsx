@@ -214,16 +214,16 @@ export const GanttChart = () => {
   const resizeStartXRef = React.useRef(0);
   const resizeStartWidthRef = React.useRef(0);
 
-  // Zoom controls (16 levels)
+  // Zoom controls (11 levels)
   const handleZoomIn = () => {
-    // Zoom in = increase level (L1 -> L2 -> ... -> L16)
-    if (zoomLevel < 16) {
+    // Zoom in = increase level (L1 -> L2 -> ... -> L11)
+    if (zoomLevel < 11) {
       setZoomLevel(zoomLevel + 1);
     }
   };
 
   const handleZoomOut = () => {
-    // Zoom out = decrease level (L16 -> L15 -> ... -> L1)
+    // Zoom out = decrease level (L11 -> L10 -> ... -> L1)
     if (zoomLevel > 1) {
       setZoomLevel(zoomLevel - 1);
     }
@@ -265,7 +265,7 @@ export const GanttChart = () => {
     // Start from L1 (most zoomed out) and find the first level that fits
     let bestLevel = 1;
 
-    for (let level = 1; level <= 16; level++) {
+    for (let level = 1; level <= 11; level++) {
       const levelConfig = ZOOM_LEVELS[level - 1];
       const columns = Math.ceil(actualContentDuration / levelConfig.hoursPerColumn);
       const requiredWidth = columns * levelConfig.columnWidth;
@@ -579,7 +579,7 @@ export const GanttChart = () => {
         // Wheel up (deltaY < 0) = zoom in (increase level)
         if (e.deltaY < 0) {
           // Zoom in
-          if (zoomLevel < 16) {
+          if (zoomLevel < 11) {
             setZoomLevel(zoomLevel + 1);
           }
         } else if (e.deltaY > 0) {
@@ -665,7 +665,7 @@ export const GanttChart = () => {
         zoomLevel={zoomLevel}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
-        canZoomIn={zoomLevel < 16}
+        canZoomIn={zoomLevel < 11}
         canZoomOut={zoomLevel > 1}
         onZoomToFit={handleZoomToFit}
         onAddTaskLane={handleAddTaskLane}

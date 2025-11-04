@@ -9,135 +9,149 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
   const columnWidth = zoom.columnWidth;
   const columns = Math.ceil(totalHours / zoom.hoursPerColumn);
 
-  // Render Row 1 (Top): Context row
-  // L1-L10: Day only (xd format)
-  // L11-L16: Day + Hour (xd + yh format)
-  const renderRow1 = () => {
-    const elements = [];
-
-    if (zoom.row1Unit === "day") {
-      // L1-L10: Group by day
-      let currentDay = -1;
-      let dayStartColumn = 0;
-
-      for (let i = 0; i <= columns; i++) {
-        const hour = i * zoom.hoursPerColumn;
-        const day = Math.floor(hour / 24);
-
-        if (day !== currentDay || i === columns) {
-          if (currentDay >= 0) {
-            const columnsInDay = i - dayStartColumn;
-            const dayWidth = columnsInDay * columnWidth;
-            const isEven = currentDay % 2 === 0;
-
-            elements.push(
-              <div
-                key={`day-${currentDay}`}
-                className="flex items-center px-2 border-r border-gantt-grid text-xs font-semibold"
-                style={{ 
-                  width: `${dayWidth}px`, 
-                  minWidth: `${dayWidth}px`,
-                  backgroundColor: isEven 
-                    ? 'hsl(var(--gantt-header))' 
-                    : `hsla(var(--muted) / calc(0.5 * var(--gantt-timescale-contrast)))`
-                }}
-              >
-                {currentDay}d
-              </div>
-            );
-          }
-          currentDay = day;
-          dayStartColumn = i;
-        }
-      }
-    } else {
-      // L11-L16: Show day + hour for each column
-      for (let i = 0; i < columns; i++) {
-        const hour = i * zoom.hoursPerColumn;
-        const day = Math.floor(hour / 24);
-        const hourInDay = Math.floor(hour % 24);
-        const isEven = Math.floor(hour) % 2 === 0;
-
-        elements.push(
-          <div
-            key={`hour-${i}`}
-            className="flex items-center px-2 border-r border-gantt-grid text-xs font-semibold"
-            style={{ 
-              width: `${columnWidth}px`, 
-              minWidth: `${columnWidth}px`,
-              backgroundColor: isEven 
-                ? 'hsl(var(--gantt-header))' 
-                : `hsla(var(--muted) / calc(0.5 * var(--gantt-timescale-contrast)))`
-            }}
-          >
-            {day}d + {hourInDay}h
-          </div>
-        );
-      }
-    }
-
-    return elements;
-  };
-
-  // Render Row 2 (Bottom): Detail row
-  // L1-L2: No Row 2 (null)
-  // L3-L10: Hours (yh format)
-  // L11-L16: Minutes only (mm format)
-  const renderRow2 = () => {
-    // L1-L2: No Row 2
-    if (zoom.row2Increment === null) {
-      return null;
-    }
+  // Render Row 1: Days (top row)
+  const renderDaysRow = () => {
+    if (!zoom.showDays) return null;
 
     const elements = [];
+    let currentDay = -1;
+    let dayStartColumn = 0;
 
-    for (let i = 0; i < columns; i++) {
+    for (let i = 0; i <= columns; i++) {
       const hour = i * zoom.hoursPerColumn;
-      const hourInDay = hour % 24;
+      const day = Math.floor(hour / 24);
 
-      // Determine background alternation based on increment unit
-      // For alternation, we divide the column index by the pattern and check if it's even
-      const incrementIndex = Math.floor(i);
-      const isEven = incrementIndex % 2 === 0;
+      if (day !== currentDay || i === columns) {
+        if (currentDay >= 0) {
+          const columnsInDay = i - dayStartColumn;
+          const dayWidth = columnsInDay * columnWidth;
+          // Alternate background based on day number
+          const isEven = currentDay % 2 === 0;
 
-      let label: string;
-      if (zoom.row1Unit === "day") {
-        // L3-L10: Show hours as "yh"
-        label = `${Math.floor(hourInDay)}h`;
-      } else {
-        // L11-L16: Show minutes only
-        const minutes = Math.round((hourInDay % 1) * 60);
-        label = minutes.toString().padStart(2, '0');
+          elements.push(
+            <div
+              key={`day-${currentDay}`}
+              className="flex items-center px-2 border-r border-gantt-grid text-xs font-semibold"
+              style={{
+                width: `${dayWidth}px`,
+                minWidth: `${dayWidth}px`,
+                backgroundColor: isEven
+                  ? 'hsl(var(--gantt-header))'
+                  : `hsla(var(--muted) / calc(0.5 * var(--gantt-timescale-contrast)))`
+              }}
+            >
+              {currentDay}d
+            </div>
+          );
+        }
+        currentDay = day;
+        dayStartColumn = i;
       }
-
-      elements.push(
-        <div
-          key={`detail-${i}`}
-          className="flex items-center px-2 border-r border-gantt-grid text-xs"
-          style={{ 
-            width: `${columnWidth}px`, 
-            minWidth: `${columnWidth}px`,
-            backgroundColor: isEven 
-              ? 'hsl(var(--background))' 
-              : `hsla(var(--muted) / calc(0.3 * var(--gantt-timescale-contrast)))`
-          }}
-        >
-          <div className="text-gantt-text-muted">{label}</div>
-        </div>
-      );
     }
 
     return elements;
   };
 
-  const row2Content = renderRow2();
+  // Render Row 2: Hours (middle row)
+  const renderHoursRow = () => {
+    if (!zoom.showHours) return null;
+
+    const elements = [];
+    let currentHour = -1;
+    let hourStartColumn = 0;
+
+    for (let i = 0; i <= columns; i++) {
+      const totalHour = i * zoom.hoursPerColumn;
+      const hour = Math.floor(totalHour);
+
+      if (hour !== currentHour || i === columns) {
+        if (currentHour >= 0) {
+          const columnsInHour = i - hourStartColumn;
+          const hourWidth = columnsInHour * columnWidth;
+          const hourInDay = currentHour % 24;
+          // Alternate background based on hour value
+          const isEven = currentHour % 2 === 0;
+
+          elements.push(
+            <div
+              key={`hour-${currentHour}`}
+              className="flex items-center px-2 border-r border-gantt-grid text-xs"
+              style={{
+                width: `${hourWidth}px`,
+                minWidth: `${hourWidth}px`,
+                backgroundColor: isEven
+                  ? 'hsl(var(--background))'
+                  : `hsla(var(--muted) / calc(0.3 * var(--gantt-timescale-contrast)))`
+              }}
+            >
+              <div className="text-gantt-text-muted">{hourInDay}h</div>
+            </div>
+          );
+        }
+        currentHour = hour;
+        hourStartColumn = i;
+      }
+    }
+
+    return elements;
+  };
+
+  // Render Row 3: Minutes (bottom row)
+  const renderMinutesRow = () => {
+    if (!zoom.showMinutes) return null;
+
+    const elements = [];
+    let currentMinute = -1;
+    let minuteStartColumn = 0;
+
+    for (let i = 0; i <= columns; i++) {
+      const totalHour = i * zoom.hoursPerColumn;
+      const minute = Math.floor(totalHour * 60);
+
+      if (minute !== currentMinute || i === columns) {
+        if (currentMinute >= 0) {
+          const columnsInMinute = i - minuteStartColumn;
+          const minuteWidth = columnsInMinute * columnWidth;
+          const minuteInHour = currentMinute % 60;
+          // Alternate background based on minute value
+          const isEven = Math.floor(currentMinute / 1) % 2 === 0;
+
+          elements.push(
+            <div
+              key={`minute-${currentMinute}`}
+              className="flex items-center px-2 border-r border-gantt-grid text-xs"
+              style={{
+                width: `${minuteWidth}px`,
+                minWidth: `${minuteWidth}px`,
+                backgroundColor: isEven
+                  ? 'hsl(var(--gantt-bg))'
+                  : `hsla(var(--muted) / calc(0.2 * var(--gantt-timescale-contrast)))`
+              }}
+            >
+              <div className="text-gantt-text-muted">{minuteInHour.toString().padStart(2, '0')}</div>
+            </div>
+          );
+        }
+        currentMinute = minute;
+        minuteStartColumn = i;
+      }
+    }
+
+    return elements;
+  };
+
+  const daysRow = renderDaysRow();
+  const hoursRow = renderHoursRow();
+  const minutesRow = renderMinutesRow();
 
   return (
     <div className="sticky top-0 z-20 border-b border-border">
-      {/* Row 1: Context row */}
-      <div className="flex h-6 border-b border-gantt-grid">{renderRow1()}</div>
-      {/* Row 2: Detail row (only if not L1-L2) */}
-      {row2Content && <div className="flex h-6">{row2Content}</div>}
+      {/* Row 1: Days */}
+      {daysRow && <div className="flex h-6 border-b border-gantt-grid">{daysRow}</div>}
+      {/* Row 2: Hours */}
+      {hoursRow && <div className="flex h-6 border-b border-gantt-grid">{hoursRow}</div>}
+      {/* Row 3: Minutes */}
+      {minutesRow && <div className="flex h-6">{minutesRow}</div>}
     </div>
   );
 };

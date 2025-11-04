@@ -125,7 +125,7 @@ export const ConfigDialog = ({
                 Customize the column width for each zoom level (in pixels)
               </p>
               <div className="grid grid-cols-2 gap-4">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((level) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((level) => (
                   <div key={level} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor={`zoom-${level}`} className="text-sm">
@@ -143,7 +143,7 @@ export const ConfigDialog = ({
                       step={10}
                       value={config.columnWidths[level - 1]}
                       onChange={(e) =>
-                        handleColumnWidthChange(level, parseInt(e.target.value) || 80)
+                        handleColumnWidthChange(level, parseInt(e.target.value) || 40)
                       }
                       className="h-8"
                     />
@@ -160,13 +160,13 @@ export const ConfigDialog = ({
                   Grid Line Opacity
                 </Label>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Adjust the visibility of grid lines (0 = invisible, 1 = full opacity)
+                  Adjust the visibility of grid lines (100% = normal, 200% = double intensity)
                 </p>
                 <div className="flex items-center gap-4">
                   <Slider
                     id="grid-opacity"
-                    min={0}
-                    max={1}
+                    min={1}
+                    max={2}
                     step={0.1}
                     value={[config.gridOpacity]}
                     onValueChange={([value]) => onConfigChange({ gridOpacity: value })}
@@ -196,14 +196,14 @@ export const ConfigDialog = ({
                   Timescale Background Contrast
                 </Label>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Adjust the contrast between alternating background colors (0 = no contrast, 1 = full
+                  Adjust the contrast between alternating background colors (100% = normal, 200% = double
                   contrast)
                 </p>
                 <div className="flex items-center gap-4">
                   <Slider
                     id="timescale-contrast"
-                    min={0}
-                    max={1}
+                    min={1}
+                    max={2}
                     step={0.1}
                     value={[config.timescaleContrast]}
                     onValueChange={([value]) => onConfigChange({ timescaleContrast: value })}
