@@ -27,17 +27,15 @@ import { useGanttLinkCreation } from "@/hooks/useGanttLinkCreation";
 import { useGanttCopyPaste } from "@/hooks/useGanttCopyPaste";
 import { useGanttKeyboard } from "@/hooks/useGanttKeyboard";
 import { LAYOUT, ARIA_LABELS } from "@/lib/ganttConstants";
-import { ZoomConfig, ZOOM_LEVELS, GRANULARITY_LEVELS } from "@/types/gantt";
+import { ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
 import { toast } from "sonner";
 
 export const GanttChart = () => {
   const {
     data,
     zoom,
-    granularityIndex,
-    setGranularityIndex,
-    zoomIndex,
-    setZoomIndex,
+    zoomLevel,
+    setZoomLevel,
     addSwimlane,
     deleteSwimlane,
     toggleExpanded,
@@ -195,29 +193,18 @@ export const GanttChart = () => {
   const resizeStartXRef = React.useRef(0);
   const resizeStartWidthRef = React.useRef(0);
 
-  // Granularity controls (hoursPerColumn)
-  const handleGranularityDecrease = () => {
-    if (granularityIndex > 0) {
-      setGranularityIndex(granularityIndex - 1);
-    }
-  };
-
-  const handleGranularityIncrease = () => {
-    if (granularityIndex < GRANULARITY_LEVELS.length - 1) {
-      setGranularityIndex(granularityIndex + 1);
-    }
-  };
-
-  // Zoom controls (columnWidth)
+  // Zoom controls (16 levels)
   const handleZoomIn = () => {
-    if (zoomIndex > 0) {
-      setZoomIndex(zoomIndex - 1);
+    // Zoom in = increase level (L1 -> L2 -> ... -> L16)
+    if (zoomLevel < 16) {
+      setZoomLevel(zoomLevel + 1);
     }
   };
 
   const handleZoomOut = () => {
-    if (zoomIndex < ZOOM_LEVELS.length - 1) {
-      setZoomIndex(zoomIndex + 1);
+    // Zoom out = decrease level (L16 -> L15 -> ... -> L1)
+    if (zoomLevel > 1) {
+      setZoomLevel(zoomLevel - 1);
     }
   };
 
@@ -244,38 +231,40 @@ export const GanttChart = () => {
       });
     });
 
-    // If no content, use default
+    // If no content, use default (most zoomed out)
     if (minStart === Infinity) {
-      setZoomIndex(ZOOM_LEVELS.length - 1);
+      setZoomLevel(1);
       toast.info("Timeline zoomed to fit");
       return;
     }
 
     const actualContentDuration = maxEnd - minStart;
 
-    // Find best zoom level (columnWidth) to fit the content at current granularity
-    const currentGranularity = GRANULARITY_LEVELS[granularityIndex];
-    const columns = Math.ceil(actualContentDuration / currentGranularity.hoursPerColumn);
+    // Find best zoom level to fit the content
+    // Start from L1 (most zoomed out) and find the first level that fits
+    let bestLevel = 1;
 
-    let bestZoomIndex = ZOOM_LEVELS.length - 1;
-
-    for (let i = 0; i < ZOOM_LEVELS.length; i++) {
-      const level = ZOOM_LEVELS[i];
-      const requiredWidth = columns * level.columnWidth;
+    for (let level = 1; level <= 16; level++) {
+      const levelConfig = ZOOM_LEVELS[level - 1];
+      const columns = Math.ceil(actualContentDuration / levelConfig.hoursPerColumn);
+      const requiredWidth = columns * levelConfig.columnWidth;
 
       if (requiredWidth <= viewportWidth) {
-        bestZoomIndex = i;
+        // Found a level that fits - try to find the most zoomed in level that still fits
+        bestLevel = level;
+      } else {
+        // This level doesn't fit, use the previous level
         break;
       }
     }
 
-    setZoomIndex(bestZoomIndex);
+    setZoomLevel(bestLevel);
 
     // Scroll to the start of content
     setTimeout(() => {
       if (scrollContainer && minStart > 0) {
-        const bestZoom = ZOOM_LEVELS[bestZoomIndex];
-        const scrollTo = (minStart / currentGranularity.hoursPerColumn) * bestZoom.columnWidth;
+        const bestZoomConfig = ZOOM_LEVELS[bestLevel - 1];
+        const scrollTo = (minStart / bestZoomConfig.hoursPerColumn) * bestZoomConfig.columnWidth;
         scrollContainer.scrollLeft = scrollTo;
       }
     }, 0);
@@ -552,7 +541,7 @@ export const GanttChart = () => {
     clearSelection,
   });
 
-  // Mouse wheel zoom handler
+  // Mouse wheel zoom handler (Ctrl/Cmd + Scroll)
   React.useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -564,18 +553,18 @@ export const GanttChart = () => {
 
       if (modifier) {
         e.preventDefault();
-        
-        // Wheel down (deltaY > 0) = zoom out
-        // Wheel up (deltaY < 0) = zoom in
+
+        // Wheel down (deltaY > 0) = zoom out (decrease level)
+        // Wheel up (deltaY < 0) = zoom in (increase level)
         if (e.deltaY < 0) {
           // Zoom in
-          if (zoomIndex > 0) {
-            setZoomIndex(zoomIndex - 1);
+          if (zoomLevel < 16) {
+            setZoomLevel(zoomLevel + 1);
           }
         } else if (e.deltaY > 0) {
           // Zoom out
-          if (zoomIndex < ZOOM_LEVELS.length - 1) {
-            setZoomIndex(zoomIndex + 1);
+          if (zoomLevel > 1) {
+            setZoomLevel(zoomLevel - 1);
           }
         }
       }
@@ -583,7 +572,7 @@ export const GanttChart = () => {
 
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
-  }, [zoomIndex, setZoomIndex]);
+  }, [zoomLevel, setZoomLevel]);
 
   // Auto-focus container when item is selected
   React.useEffect(() => {
@@ -652,15 +641,11 @@ export const GanttChart = () => {
     <div className="flex flex-col h-screen bg-background">
       <GanttToolbar
         zoom={zoom}
-        granularityIndex={granularityIndex}
-        onGranularityDecrease={handleGranularityDecrease}
-        onGranularityIncrease={handleGranularityIncrease}
-        canGranularityDecrease={granularityIndex > 0}
-        canGranularityIncrease={granularityIndex < GRANULARITY_LEVELS.length - 1}
+        zoomLevel={zoomLevel}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
-        canZoomIn={zoomIndex > 0}
-        canZoomOut={zoomIndex < ZOOM_LEVELS.length - 1}
+        canZoomIn={zoomLevel < 16}
+        canZoomOut={zoomLevel > 1}
         onZoomToFit={handleZoomToFit}
         onAddTaskLane={handleAddTaskLane}
         onAddStateLane={handleAddStateLane}

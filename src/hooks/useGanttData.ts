@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { GanttData, GanttSwimlane, GanttTask, GanttState, GanttLink, GanttFlag, ZoomConfig, DEFAULT_GRANULARITY_INDEX, DEFAULT_ZOOM_INDEX, createZoomConfig } from "@/types/gantt";
+import { GanttData, GanttSwimlane, GanttTask, GanttState, GanttLink, GanttFlag, ZoomConfig, DEFAULT_ZOOM_LEVEL, getZoomConfig } from "@/types/gantt";
 import { ganttDataSchema } from "@/lib/ganttValidation";
 import { useGanttHistory } from "./useGanttHistory";
 import { useGanttSwimlanes } from "./useGanttSwimlanes";
@@ -288,9 +288,8 @@ const createDefaultData = (): GanttData => {
 };
 
 export const useGanttData = () => {
-  const [granularityIndex, setGranularityIndex] = useState<number>(DEFAULT_GRANULARITY_INDEX);
-  const [zoomIndex, setZoomIndex] = useState<number>(DEFAULT_ZOOM_INDEX);
-  const zoom: ZoomConfig = createZoomConfig(granularityIndex, zoomIndex);
+  const [zoomLevel, setZoomLevel] = useState<number>(DEFAULT_ZOOM_LEVEL);
+  const zoom: ZoomConfig = getZoomConfig(zoomLevel);
 
   // Initialize history management
   const {
@@ -356,10 +355,8 @@ export const useGanttData = () => {
   return {
     data,
     zoom,
-    granularityIndex,
-    setGranularityIndex,
-    zoomIndex,
-    setZoomIndex,
+    zoomLevel,
+    setZoomLevel,
     ...swimlaneOps,
     ...itemOps,
     ...linkOps,
