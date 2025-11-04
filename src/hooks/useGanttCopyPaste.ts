@@ -120,9 +120,10 @@ export const useGanttCopyPaste = ({
 
     const scrollContainer = document.querySelector('.overflow-auto');
     const scrollLeft = scrollContainer?.scrollLeft || 0;
-    
+
     const gridX = copyGhost.mouseX + scrollLeft - swimlaneColumnWidth;
-    const start = Math.max(0, Math.round((gridX / zoomColumnWidth) * zoomHoursPerColumn / zoomHoursPerColumn) * zoomHoursPerColumn);
+    const hours = (gridX / zoomColumnWidth) * zoomHoursPerColumn;
+    const start = Math.max(0, Math.round(hours / zoomHoursPerColumn) * zoomHoursPerColumn);
 
     if (checkOverlap(targetSwimlaneId, '', start, copiedItem.duration)) {
       toast.error("Cannot paste here - overlaps with existing item");
