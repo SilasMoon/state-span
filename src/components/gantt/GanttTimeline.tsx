@@ -29,7 +29,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
             <div
               key={currentDay}
               className={`flex items-center justify-center border-r border-gantt-grid text-xs font-semibold ${
-                isEven ? 'bg-gantt-header' : 'bg-gantt-grid/20'
+                isEven ? 'bg-gantt-header' : 'bg-muted/50'
               }`}
               style={{ width: `${dayWidth}px`, minWidth: `${dayWidth}px` }}
             >
@@ -51,31 +51,26 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
 
     for (let i = 0; i < columns; i++) {
       const hour = i * zoom.hoursPerColumn;
-      const day = Math.floor(hour / 24);
       const hourInDay = hour % 24;
-      const isEven = day % 2 === 0;
+      const isEven = i % 2 === 0;
 
-      // Format hour display based on granularity
+      // Format hour display based on granularity - always show start time only
       let hourDisplay: string;
       if (zoom.hoursPerColumn < 1) {
         // For sub-hour granularity, show HH:MM format
         const hours = Math.floor(hourInDay);
         const minutes = Math.round((hourInDay % 1) * 60);
         hourDisplay = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-      } else if (zoom.hoursPerColumn === 1) {
-        // For 1-hour granularity, show just the hour
-        hourDisplay = hourInDay.toString();
       } else {
-        // For multi-hour granularity, show hour range
-        const endHour = hourInDay + zoom.hoursPerColumn;
-        hourDisplay = `${hourInDay}-${endHour > 24 ? 24 : endHour}`;
+        // For hour-based granularity, show just the start hour
+        hourDisplay = Math.floor(hourInDay).toString();
       }
 
       timeElements.push(
         <div
           key={i}
           className={`flex items-center justify-center border-r border-gantt-grid text-xs ${
-            isEven ? 'bg-gantt-header' : 'bg-gantt-grid/20'
+            isEven ? 'bg-background' : 'bg-muted/30'
           }`}
           style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
         >
