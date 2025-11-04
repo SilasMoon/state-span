@@ -78,8 +78,13 @@ export const GanttRow = React.memo(({
         <div
           key={i}
           data-cell-index={i}
-          className="border-r border-gantt-grid h-full cursor-crosshair"
-          style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
+          className="border-r h-full cursor-crosshair"
+          style={{ 
+            width: `${columnWidth}px`, 
+            minWidth: `${columnWidth}px`,
+            borderColor: `hsl(var(--gantt-grid))`,
+            opacity: `var(--gantt-grid-opacity)`
+          }}
           onMouseDown={(e) => {
             if (e.button !== 0) return; // Only left click
             

@@ -9,6 +9,7 @@ import { EditDialog } from "./EditDialog";
 import { LinkEditDialog } from "./LinkEditDialog";
 import { FlagEditDialog } from "./FlagEditDialog";
 import { KeyboardShortcutsDialog } from "./KeyboardShortcutsDialog";
+import { ConfigDialog } from "./ConfigDialog";
 import { GanttLinks } from "./GanttLinks";
 import {
   AlertDialog,
@@ -26,6 +27,7 @@ import { useGanttDragAndDrop } from "@/hooks/useGanttDragAndDrop";
 import { useGanttLinkCreation } from "@/hooks/useGanttLinkCreation";
 import { useGanttCopyPaste } from "@/hooks/useGanttCopyPaste";
 import { useGanttKeyboard } from "@/hooks/useGanttKeyboard";
+import { useGanttConfig } from "@/hooks/useGanttConfig";
 import { LAYOUT, ARIA_LABELS } from "@/lib/ganttConstants";
 import { ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
 import { toast } from "sonner";
@@ -65,6 +67,24 @@ export const GanttChart = () => {
     canRedo,
   } = useGanttData();
 
+  // Configuration state
+  const {
+    config,
+    updateConfig,
+    resetToDefaults,
+    exportConfig,
+    importConfig,
+  } = useGanttConfig();
+
+  // Use custom column width from config for current zoom level
+  const customZoom = React.useMemo<ZoomConfig>(() => {
+    const baseZoom = ZOOM_LEVELS[zoomLevel - 1];
+    return {
+      ...baseZoom,
+      columnWidth: config.columnWidths[zoomLevel - 1] || baseZoom.columnWidth,
+    };
+  }, [zoomLevel, config.columnWidths]);
+
   const [chartTitle, setChartTitle] = useState<string>("Software Development Project");
 
   // Flags visibility state
@@ -73,6 +93,7 @@ export const GanttChart = () => {
 
   // Dialog states
   const [showHelpDialog, setShowHelpDialog] = useState(false);
+  const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [showClearAlert, setShowClearAlert] = useState(false);
   const [showResetAlert, setShowResetAlert] = useState(false);
 
@@ -158,8 +179,8 @@ export const GanttChart = () => {
     updateTask,
     updateState,
     checkOverlap,
-    zoomHoursPerColumn: zoom.hoursPerColumn,
-    zoomColumnWidth: zoom.columnWidth,
+    zoomHoursPerColumn: customZoom.hoursPerColumn,
+    zoomColumnWidth: customZoom.columnWidth,
     swimlaneColumnWidth,
   });
 
@@ -338,12 +359,12 @@ export const GanttChart = () => {
   };
 
   const handleAddTask = (swimlaneId: string, start: number) => {
-    addTask(swimlaneId, start, zoom.hoursPerColumn * 2);
+    addTask(swimlaneId, start, customZoom.hoursPerColumn * 2);
     toast.success("Task added");
   };
 
   const handleAddState = (swimlaneId: string, start: number) => {
-    addState(swimlaneId, start, zoom.hoursPerColumn * 2);
+    addState(swimlaneId, start, customZoom.hoursPerColumn * 2);
     toast.success("State added");
   };
 
@@ -523,7 +544,7 @@ export const GanttChart = () => {
     copyGhost,
     canUndo,
     canRedo,
-    zoom,
+    zoom: customZoom,
     swimlaneColumnWidth,
     onCopy: () => handleCopy(selected),
     onPaste: handlePaste,
@@ -594,7 +615,7 @@ export const GanttChart = () => {
             key={id}
             swimlane={swimlane}
             level={level}
-            zoom={zoom}
+            zoom={customZoom}
             totalHours={totalHours}
             swimlaneColumnWidth={swimlaneColumnWidth}
             selected={selected}
@@ -630,7 +651,7 @@ export const GanttChart = () => {
     const scrollContainer = document.querySelector('.overflow-auto');
     const scrollLeft = scrollContainer?.scrollLeft || 0;
     const viewportCenter = scrollLeft + (scrollContainer?.clientWidth || 0) / 2 - swimlaneColumnWidth;
-    const position = Math.max(0, Math.round((viewportCenter / zoom.columnWidth) * zoom.hoursPerColumn));
+    const position = Math.max(0, Math.round((viewportCenter / customZoom.columnWidth) * customZoom.hoursPerColumn));
     const flagId = addFlag(position, "New Flag", "#2196f3", undefined, swimlane);
     setSelectedFlag(flagId);
     setFlagEditDialog(true);
@@ -640,7 +661,7 @@ export const GanttChart = () => {
   return (
     <div className="flex flex-col h-screen bg-background">
       <GanttToolbar
-        zoom={zoom}
+        zoom={customZoom}
         zoomLevel={zoomLevel}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
@@ -666,6 +687,7 @@ export const GanttChart = () => {
         onToggleTopFlags={() => setShowTopFlags(!showTopFlags)}
         onToggleBottomFlags={() => setShowBottomFlags(!showBottomFlags)}
         onShowHelp={() => setShowHelpDialog(true)}
+        onShowConfig={() => setShowConfigDialog(true)}
       />
 
       <div 
@@ -707,7 +729,7 @@ export const GanttChart = () => {
               />
             </div>
             <div className="flex-1">
-              <GanttTimeline zoom={zoom} totalHours={totalHours} />
+              <GanttTimeline zoom={customZoom} totalHours={totalHours} />
             </div>
           </div>
 
@@ -715,7 +737,7 @@ export const GanttChart = () => {
           {showTopFlags && (
             <GanttFlagRow
               flags={data.flags.filter(f => (f.swimlane || "top") === "top")}
-              zoom={zoom}
+              zoom={customZoom}
               totalHours={totalHours}
               swimlaneColumnWidth={swimlaneColumnWidth}
               selectedFlag={selectedFlag}
@@ -759,7 +781,7 @@ export const GanttChart = () => {
                     const swimlane = f.swimlane || "top";
                     return (swimlane === "top" && showTopFlags) || (swimlane === "bottom" && showBottomFlags);
                   })}
-                  zoom={zoom}
+                  zoom={customZoom}
                   swimlaneColumnWidth={swimlaneColumnWidth}
                   selectedFlag={selectedFlag}
                   draggingFlag={draggingFlag}
@@ -774,7 +796,7 @@ export const GanttChart = () => {
               {showBottomFlags && (
                 <GanttFlagRow
                   flags={data.flags.filter(f => (f.swimlane || "top") === "bottom")}
-                  zoom={zoom}
+                  zoom={customZoom}
                   totalHours={totalHours}
                   swimlaneColumnWidth={swimlaneColumnWidth}
                   selectedFlag={selectedFlag}
@@ -811,8 +833,8 @@ export const GanttChart = () => {
 
         <GanttLinks
           data={data}
-          zoom={zoom}
-          columnWidth={zoom.columnWidth}
+          zoom={customZoom}
+          columnWidth={customZoom.columnWidth}
           swimlaneColumnWidth={swimlaneColumnWidth}
           selectedLink={selectedLink}
           showTopFlags={showTopFlags}
@@ -835,7 +857,7 @@ export const GanttChart = () => {
           // Calculate position - ghost is portaled to body, so use viewport coordinates
           const left = dragPreview.mouseX - dragPreview.offsetX;
           const top = dragPreview.mouseY - dragPreview.offsetY;
-          const width = (dragPreview.tempDuration / zoom.hoursPerColumn) * zoom.columnWidth;
+          const width = (dragPreview.tempDuration / customZoom.hoursPerColumn) * customZoom.columnWidth;
           
           return createPortal(
             <div
@@ -857,7 +879,7 @@ export const GanttChart = () => {
 
         {/* Copy ghost preview */}
         {copyGhost && (() => {
-          const width = (copyGhost.duration / zoom.hoursPerColumn) * zoom.columnWidth;
+          const width = (copyGhost.duration / customZoom.hoursPerColumn) * customZoom.columnWidth;
           
           return createPortal(
             <div
@@ -1034,6 +1056,16 @@ export const GanttChart = () => {
       <KeyboardShortcutsDialog
         open={showHelpDialog}
         onClose={() => setShowHelpDialog(false)}
+      />
+
+      <ConfigDialog
+        open={showConfigDialog}
+        onOpenChange={setShowConfigDialog}
+        config={config}
+        onConfigChange={updateConfig}
+        onReset={resetToDefaults}
+        onExport={exportConfig}
+        onImport={importConfig}
       />
 
       <AlertDialog open={showClearAlert} onOpenChange={setShowClearAlert}>

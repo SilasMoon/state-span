@@ -70,6 +70,12 @@ export interface GanttData {
   flags: GanttFlag[];
 }
 
+export interface GanttConfig {
+  columnWidths: number[]; // 16 values for each zoom level
+  gridOpacity: number; // 0.0 - 1.0
+  timescaleContrast: number; // 0.0 - 1.0
+}
+
 // 16-level unified zoom system
 // Odd levels (L1, L3, L5, etc.): Define granularity with base 80px width
 // Even levels (L2, L4, L6, etc.): Same granularity as previous level, double width (160px)

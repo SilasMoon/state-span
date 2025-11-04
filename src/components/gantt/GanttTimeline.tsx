@@ -33,10 +33,14 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
             elements.push(
               <div
                 key={`day-${currentDay}`}
-                className={`flex items-center px-2 border-r border-gantt-grid text-xs font-semibold ${
-                  isEven ? 'bg-gantt-header' : 'bg-muted/50'
-                }`}
-                style={{ width: `${dayWidth}px`, minWidth: `${dayWidth}px` }}
+                className="flex items-center px-2 border-r border-gantt-grid text-xs font-semibold"
+                style={{ 
+                  width: `${dayWidth}px`, 
+                  minWidth: `${dayWidth}px`,
+                  backgroundColor: isEven 
+                    ? 'hsl(var(--gantt-header))' 
+                    : `hsla(var(--muted) / calc(0.5 * var(--gantt-timescale-contrast)))`
+                }}
               >
                 {currentDay}d
               </div>
@@ -57,10 +61,14 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
         elements.push(
           <div
             key={`hour-${i}`}
-            className={`flex items-center px-2 border-r border-gantt-grid text-xs font-semibold ${
-              isEven ? 'bg-gantt-header' : 'bg-muted/50'
-            }`}
-            style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
+            className="flex items-center px-2 border-r border-gantt-grid text-xs font-semibold"
+            style={{ 
+              width: `${columnWidth}px`, 
+              minWidth: `${columnWidth}px`,
+              backgroundColor: isEven 
+                ? 'hsl(var(--gantt-header))' 
+                : `hsla(var(--muted) / calc(0.5 * var(--gantt-timescale-contrast)))`
+            }}
           >
             {day}d + {hourInDay}h
           </div>
@@ -105,10 +113,14 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
       elements.push(
         <div
           key={`detail-${i}`}
-          className={`flex items-center px-2 border-r border-gantt-grid text-xs ${
-            isEven ? 'bg-background' : 'bg-muted/30'
-          }`}
-          style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px` }}
+          className="flex items-center px-2 border-r border-gantt-grid text-xs"
+          style={{ 
+            width: `${columnWidth}px`, 
+            minWidth: `${columnWidth}px`,
+            backgroundColor: isEven 
+              ? 'hsl(var(--background))' 
+              : `hsla(var(--muted) / calc(0.3 * var(--gantt-timescale-contrast)))`
+          }}
         >
           <div className="text-gantt-text-muted">{label}</div>
         </div>

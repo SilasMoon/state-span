@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Image, Flag, Eye, EyeOff, RotateCcw, ChevronDown, HelpCircle, ChevronUp } from "lucide-react";
+import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Image, Flag, Eye, EyeOff, RotateCcw, ChevronDown, HelpCircle, ChevronUp, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -37,6 +37,7 @@ interface GanttToolbarProps {
   onToggleTopFlags: () => void;
   onToggleBottomFlags: () => void;
   onShowHelp: () => void;
+  onShowConfig: () => void;
 }
 
 export const GanttToolbar = ({
@@ -66,6 +67,7 @@ export const GanttToolbar = ({
   onToggleTopFlags,
   onToggleBottomFlags,
   onShowHelp,
+  onShowConfig,
 }: GanttToolbarProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -203,6 +205,10 @@ export const GanttToolbar = ({
 
       <Button variant="outline" size="icon" onClick={onShowHelp} title="Keyboard Shortcuts">
         <HelpCircle className="w-4 h-4" />
+      </Button>
+
+      <Button variant="outline" size="icon" onClick={onShowConfig} title="Configuration">
+        <Settings className="w-4 h-4" />
       </Button>
 
       <div className="h-6 w-px bg-border mx-1" />

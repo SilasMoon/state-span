@@ -32,7 +32,10 @@ export const GanttLinks = React.memo(({
   onLinkDoubleClick,
   itemTempPositions = {},
 }: GanttLinksProps) => {
-  const SWIMLANE_HEIGHT = 32;
+  const SWIMLANE_ROW_HEIGHT = 32;
+  const HEADER_HEIGHT = 32;
+  const TIMELINE_ROW1_HEIGHT = 24;
+  const TIMELINE_ROW2_HEIGHT = zoom.row2Increment !== null ? 24 : 0;
   const FLAG_ROW_HEIGHT = showTopFlags ? 64 : 0;
   const BAR_HEIGHT = 24;
   const GRID_SIZE = 12; // Grid cell size for pathfinding
@@ -83,7 +86,7 @@ export const GanttLinks = React.memo(({
     const width = (itemDuration / zoom.hoursPerColumn) * columnWidth;
     
     // Calculate barCenterY from row position
-    const barCenterY = rowTop + (SWIMLANE_HEIGHT / 2);
+    const barCenterY = rowTop + (SWIMLANE_ROW_HEIGHT / 2);
 
     return {
       x,
@@ -95,7 +98,7 @@ export const GanttLinks = React.memo(({
   };
 
   const findYPosition = (swimlaneId: string): number | null => {
-    let currentY = SWIMLANE_HEIGHT + FLAG_ROW_HEIGHT; // Start after header and flag row
+    let currentY = HEADER_HEIGHT + TIMELINE_ROW1_HEIGHT + TIMELINE_ROW2_HEIGHT + FLAG_ROW_HEIGHT; // Start after all headers
     
     for (const rootId of data.rootIds) {
       const result = traverseSwimlane(rootId, swimlaneId, currentY);
@@ -111,7 +114,7 @@ export const GanttLinks = React.memo(({
     const current = data.swimlanes[currentId];
     if (!current) return null;
     
-    let nextY = currentY + SWIMLANE_HEIGHT;
+    let nextY = currentY + SWIMLANE_ROW_HEIGHT;
     
     if (current.expanded && current.children.length > 0) {
       for (const childId of current.children) {
@@ -128,7 +131,7 @@ export const GanttLinks = React.memo(({
     const swimlane = data.swimlanes[id];
     if (!swimlane) return 0;
     
-    let height = SWIMLANE_HEIGHT;
+    let height = SWIMLANE_ROW_HEIGHT;
     if (swimlane.expanded) {
       for (const childId of swimlane.children) {
         height += getVisibleHeight(childId);
@@ -138,7 +141,7 @@ export const GanttLinks = React.memo(({
   };
 
   const calculateTotalHeight = () => {
-    let height = SWIMLANE_HEIGHT + FLAG_ROW_HEIGHT; // Header and flag row
+    let height = HEADER_HEIGHT + TIMELINE_ROW1_HEIGHT + TIMELINE_ROW2_HEIGHT + FLAG_ROW_HEIGHT; // All header rows
     data.rootIds.forEach(id => {
       height += getVisibleHeight(id);
     });
@@ -232,8 +235,8 @@ export const GanttLinks = React.memo(({
     
     // Add gutters above first and below last row
     if (rowYPositions.length > 0) {
-      gutters.unshift(rowYPositions[0] - SWIMLANE_HEIGHT / 2);
-      gutters.push(rowYPositions[rowYPositions.length - 1] + SWIMLANE_HEIGHT / 2);
+      gutters.unshift(rowYPositions[0] - SWIMLANE_ROW_HEIGHT / 2);
+      gutters.push(rowYPositions[rowYPositions.length - 1] + SWIMLANE_ROW_HEIGHT / 2);
     }
     
     return gutters;
@@ -242,7 +245,7 @@ export const GanttLinks = React.memo(({
   const collectRowYPositions = (swimlaneId: string, positions: number[]) => {
     const y = findYPosition(swimlaneId);
     if (y !== null) {
-      positions.push(y + SWIMLANE_HEIGHT / 2);
+      positions.push(y + SWIMLANE_ROW_HEIGHT / 2);
     }
     
     const swimlane = data.swimlanes[swimlaneId];

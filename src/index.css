@@ -49,6 +49,10 @@ All colors MUST be HSL.
     --gantt-text: 0 0% 15%;
     --gantt-text-muted: 0 0% 50%;
 
+    /* Gantt configuration */
+    --gantt-grid-opacity: 1;
+    --gantt-timescale-contrast: 1;
+
     /* Transitions */
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s ease;
@@ -93,6 +97,10 @@ All colors MUST be HSL.
     --gantt-link: 189 80% 50%;
     --gantt-text: 0 0% 85%;
     --gantt-text-muted: 0 0% 50%;
+
+    /* Gantt configuration (same as light mode) */
+    --gantt-grid-opacity: 1;
+    --gantt-timescale-contrast: 1;
   }
 }
 
