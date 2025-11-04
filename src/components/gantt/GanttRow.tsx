@@ -187,9 +187,16 @@ export const GanttRow = React.memo(({
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    if (e.currentTarget === e.target) {
+    // Only clear if we're leaving the container itself, not entering a child
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (!e.currentTarget.contains(relatedTarget)) {
       setDragOver(null);
     }
+  };
+
+  const handleDragEnd = () => {
+    // Always clear drag state when drag ends
+    setDragOver(null);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -240,6 +247,7 @@ export const GanttRow = React.memo(({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onDragEnd={handleDragEnd}
     >
       <div
         className={`sticky left-0 z-40 bg-card border-r border-border flex items-center gap-2 px-3 py-1 group transition-colors relative ${
