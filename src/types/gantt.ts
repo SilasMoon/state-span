@@ -1,9 +1,23 @@
 export type SwimlaneType = "task" | "state";
 
+// Granularity configuration (time per column)
+export interface GranularityConfig {
+  hoursPerColumn: number;
+  label: string;
+}
+
+// Zoom configuration (pixel width per column)
+export interface ZoomLevel {
+  columnWidth: number;
+  label: string;
+}
+
+// Combined configuration used throughout the app
 export interface ZoomConfig {
   hoursPerColumn: number;
   columnWidth: number;
-  label: string;
+  granularityLabel: string;
+  zoomLabel: string;
 }
 
 export interface GanttState {
@@ -64,33 +78,43 @@ export interface GanttData {
   flags: GanttFlag[];
 }
 
-export const ZOOM_LEVELS: ZoomConfig[] = [
-  { hoursPerColumn: 0.5, columnWidth: 48, label: "0.5h" },
-  { hoursPerColumn: 0.5, columnWidth: 40, label: "0.5h" },
-  { hoursPerColumn: 0.5, columnWidth: 32, label: "0.5h" },
-  { hoursPerColumn: 0.5, columnWidth: 24, label: "0.5h" },
-  { hoursPerColumn: 1, columnWidth: 44, label: "1h" },
-  { hoursPerColumn: 1, columnWidth: 36, label: "1h" },
-  { hoursPerColumn: 1, columnWidth: 28, label: "1h" },
-  { hoursPerColumn: 1, columnWidth: 20, label: "1h" },
-  { hoursPerColumn: 2, columnWidth: 64, label: "2h" },
-  { hoursPerColumn: 2, columnWidth: 52, label: "2h" },
-  { hoursPerColumn: 2, columnWidth: 40, label: "2h" },
-  { hoursPerColumn: 2, columnWidth: 28, label: "2h" },
-  { hoursPerColumn: 4, columnWidth: 84, label: "4h" },
-  { hoursPerColumn: 4, columnWidth: 68, label: "4h" },
-  { hoursPerColumn: 4, columnWidth: 52, label: "4h" },
-  { hoursPerColumn: 4, columnWidth: 36, label: "4h" },
-  { hoursPerColumn: 8, columnWidth: 104, label: "8h" },
-  { hoursPerColumn: 8, columnWidth: 84, label: "8h" },
-  { hoursPerColumn: 8, columnWidth: 64, label: "8h" },
-  { hoursPerColumn: 8, columnWidth: 44, label: "8h" },
-  { hoursPerColumn: 12, columnWidth: 124, label: "12h" },
-  { hoursPerColumn: 12, columnWidth: 100, label: "12h" },
-  { hoursPerColumn: 12, columnWidth: 76, label: "12h" },
-  { hoursPerColumn: 12, columnWidth: 52, label: "12h" },
-  { hoursPerColumn: 24, columnWidth: 150, label: "1d" },
-  { hoursPerColumn: 24, columnWidth: 120, label: "1d" },
-  { hoursPerColumn: 24, columnWidth: 90, label: "1d" },
-  { hoursPerColumn: 24, columnWidth: 60, label: "1d" },
+// Granularity levels: 24h, 12h, 6h, 2h, 1h, 30min, 10min
+export const GRANULARITY_LEVELS: GranularityConfig[] = [
+  { hoursPerColumn: 24, label: "24h" },
+  { hoursPerColumn: 12, label: "12h" },
+  { hoursPerColumn: 6, label: "6h" },
+  { hoursPerColumn: 2, label: "2h" },
+  { hoursPerColumn: 1, label: "1h" },
+  { hoursPerColumn: 0.5, label: "30min" },
+  { hoursPerColumn: 1/6, label: "10min" },  // 0.166... hours = 10 minutes
 ];
+
+// Zoom levels: control pixel width of columns
+export const ZOOM_LEVELS: ZoomLevel[] = [
+  { columnWidth: 200, label: "200%" },
+  { columnWidth: 150, label: "150%" },
+  { columnWidth: 120, label: "120%" },
+  { columnWidth: 100, label: "100%" },
+  { columnWidth: 80, label: "80%" },
+  { columnWidth: 60, label: "60%" },
+  { columnWidth: 40, label: "40%" },
+  { columnWidth: 30, label: "30%" },
+  { columnWidth: 20, label: "20%" },
+];
+
+// Default indices
+export const DEFAULT_GRANULARITY_INDEX = 4; // 1h
+export const DEFAULT_ZOOM_INDEX = 3; // 100%
+
+// Helper function to create combined ZoomConfig
+export function createZoomConfig(granularityIndex: number, zoomIndex: number): ZoomConfig {
+  const granularity = GRANULARITY_LEVELS[granularityIndex];
+  const zoom = ZOOM_LEVELS[zoomIndex];
+
+  return {
+    hoursPerColumn: granularity.hoursPerColumn,
+    columnWidth: zoom.columnWidth,
+    granularityLabel: granularity.label,
+    zoomLabel: zoom.label,
+  };
+}

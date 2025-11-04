@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Image, Flag, Eye, EyeOff, RotateCcw, ChevronDown, HelpCircle } from "lucide-react";
+import { ZoomIn, ZoomOut, Plus, Download, Upload, Trash2, Maximize2, Undo, Redo, Image, Flag, Eye, EyeOff, RotateCcw, ChevronDown, HelpCircle, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,6 +12,11 @@ import { useRef } from "react";
 
 interface GanttToolbarProps {
   zoom: ZoomConfig;
+  granularityIndex: number;
+  onGranularityDecrease: () => void;
+  onGranularityIncrease: () => void;
+  canGranularityDecrease: boolean;
+  canGranularityIncrease: boolean;
   onZoomIn: () => void;
   onZoomOut: () => void;
   canZoomIn: boolean;
@@ -40,6 +45,11 @@ interface GanttToolbarProps {
 
 export const GanttToolbar = ({
   zoom,
+  granularityIndex,
+  onGranularityDecrease,
+  onGranularityIncrease,
+  canGranularityDecrease,
+  canGranularityIncrease,
   onZoomIn,
   onZoomOut,
   canZoomIn,
@@ -84,7 +94,11 @@ export const GanttToolbar = ({
   };
 
   const getZoomLabel = () => {
-    return zoom.label;
+    return zoom.zoomLabel;
+  };
+
+  const getGranularityLabel = () => {
+    return zoom.granularityLabel;
   };
 
   return (
@@ -205,6 +219,30 @@ export const GanttToolbar = ({
 
       <div className="h-6 w-px bg-border mx-1" />
 
+      {/* Granularity Controls */}
+      <span className="text-sm text-muted-foreground">Granularity: {getGranularityLabel()}</span>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onGranularityDecrease}
+        disabled={!canGranularityDecrease}
+        title="Decrease granularity (finer)"
+      >
+        <ChevronDown className="w-4 h-4" />
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onGranularityIncrease}
+        disabled={!canGranularityIncrease}
+        title="Increase granularity (coarser)"
+      >
+        <ChevronUp className="w-4 h-4" />
+      </Button>
+
+      <div className="h-6 w-px bg-border mx-1" />
+
+      {/* Zoom Controls */}
       <span className="text-sm text-muted-foreground">Zoom: {getZoomLabel()}</span>
       <Button
         variant="outline"
@@ -219,6 +257,7 @@ export const GanttToolbar = ({
         size="sm"
         onClick={onZoomOut}
         disabled={!canZoomOut}
+        title="Zoom out"
       >
         <ZoomOut className="w-4 h-4" />
       </Button>
@@ -227,6 +266,7 @@ export const GanttToolbar = ({
         size="sm"
         onClick={onZoomIn}
         disabled={!canZoomIn}
+        title="Zoom in"
       >
         <ZoomIn className="w-4 h-4" />
       </Button>

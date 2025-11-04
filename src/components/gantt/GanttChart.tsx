@@ -27,13 +27,15 @@ import { useGanttLinkCreation } from "@/hooks/useGanttLinkCreation";
 import { useGanttCopyPaste } from "@/hooks/useGanttCopyPaste";
 import { useGanttKeyboard } from "@/hooks/useGanttKeyboard";
 import { LAYOUT, ARIA_LABELS } from "@/lib/ganttConstants";
-import { ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
+import { ZoomConfig, ZOOM_LEVELS, GRANULARITY_LEVELS } from "@/types/gantt";
 import { toast } from "sonner";
 
 export const GanttChart = () => {
   const {
     data,
     zoom,
+    granularityIndex,
+    setGranularityIndex,
     zoomIndex,
     setZoomIndex,
     addSwimlane,
@@ -193,6 +195,20 @@ export const GanttChart = () => {
   const resizeStartXRef = React.useRef(0);
   const resizeStartWidthRef = React.useRef(0);
 
+  // Granularity controls (hoursPerColumn)
+  const handleGranularityDecrease = () => {
+    if (granularityIndex > 0) {
+      setGranularityIndex(granularityIndex - 1);
+    }
+  };
+
+  const handleGranularityIncrease = () => {
+    if (granularityIndex < GRANULARITY_LEVELS.length - 1) {
+      setGranularityIndex(granularityIndex + 1);
+    }
+  };
+
+  // Zoom controls (columnWidth)
   const handleZoomIn = () => {
     if (zoomIndex > 0) {
       setZoomIndex(zoomIndex - 1);
@@ -210,11 +226,11 @@ export const GanttChart = () => {
     if (!scrollContainer) return;
 
     const viewportWidth = scrollContainer.clientWidth - swimlaneColumnWidth;
-    
+
     // Calculate actual timeline extent from all content
     let minStart = Infinity;
     let maxEnd = 0;
-    
+
     Object.values(data.swimlanes).forEach((swimlane) => {
       swimlane.tasks?.forEach((task) => {
         if (task.start < minStart) minStart = task.start;
@@ -227,41 +243,43 @@ export const GanttChart = () => {
         if (end > maxEnd) maxEnd = end;
       });
     });
-    
+
     // If no content, use default
     if (minStart === Infinity) {
-      setZoomIndex(24); // 24 hours zoom level
+      setZoomIndex(ZOOM_LEVELS.length - 1);
       toast.info("Timeline zoomed to fit");
       return;
     }
-    
+
     const actualContentDuration = maxEnd - minStart;
-    
-    // Find best zoom level to fit the content
+
+    // Find best zoom level (columnWidth) to fit the content at current granularity
+    const currentGranularity = GRANULARITY_LEVELS[granularityIndex];
+    const columns = Math.ceil(actualContentDuration / currentGranularity.hoursPerColumn);
+
     let bestZoomIndex = ZOOM_LEVELS.length - 1;
-    
+
     for (let i = 0; i < ZOOM_LEVELS.length; i++) {
       const level = ZOOM_LEVELS[i];
-      const columns = Math.ceil(actualContentDuration / level.hoursPerColumn);
       const requiredWidth = columns * level.columnWidth;
-      
+
       if (requiredWidth <= viewportWidth) {
         bestZoomIndex = i;
         break;
       }
     }
-    
+
     setZoomIndex(bestZoomIndex);
-    
+
     // Scroll to the start of content
     setTimeout(() => {
       if (scrollContainer && minStart > 0) {
-        const bestZoomConfig = ZOOM_LEVELS[bestZoomIndex];
-        const scrollTo = (minStart / bestZoomConfig.hoursPerColumn) * bestZoomConfig.columnWidth;
+        const bestZoom = ZOOM_LEVELS[bestZoomIndex];
+        const scrollTo = (minStart / currentGranularity.hoursPerColumn) * bestZoom.columnWidth;
         scrollContainer.scrollLeft = scrollTo;
       }
     }, 0);
-    
+
     toast.info("Timeline zoomed to fit content");
   };
 
@@ -634,6 +652,11 @@ export const GanttChart = () => {
     <div className="flex flex-col h-screen bg-background">
       <GanttToolbar
         zoom={zoom}
+        granularityIndex={granularityIndex}
+        onGranularityDecrease={handleGranularityDecrease}
+        onGranularityIncrease={handleGranularityIncrease}
+        canGranularityDecrease={granularityIndex > 0}
+        canGranularityIncrease={granularityIndex < GRANULARITY_LEVELS.length - 1}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         canZoomIn={zoomIndex > 0}
