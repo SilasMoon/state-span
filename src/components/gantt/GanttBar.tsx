@@ -140,7 +140,7 @@ export const GanttBar = React.memo(({
     
     if (isDragging === 'move') {
       const deltaX = e.clientX - dragStart.x;
-      const hoursDelta = Math.round((deltaX / columnWidth) * zoom.hoursPerColumn);
+      const hoursDelta = (deltaX / columnWidth) * zoom.hoursPerColumn;
       const newStart = snapToGrid(Math.max(0, item.start + hoursDelta));
       
       // Detect swimlane change by finding element under cursor
@@ -162,7 +162,7 @@ export const GanttBar = React.memo(({
       }
     } else if (isDragging === 'start') {
       const delta = e.clientX - dragStart.x;
-      const hoursDelta = Math.round((delta / columnWidth) * zoom.hoursPerColumn);
+      const hoursDelta = (delta / columnWidth) * zoom.hoursPerColumn;
       const newStart = snapToGrid(Math.max(0, item.start + hoursDelta));
       const newDuration = snapToGrid(Math.max(zoom.hoursPerColumn, item.duration - hoursDelta));
       
@@ -172,7 +172,7 @@ export const GanttBar = React.memo(({
       }
     } else if (isDragging === 'end') {
       const delta = e.clientX - dragStart.x;
-      const hoursDelta = Math.round((delta / columnWidth) * zoom.hoursPerColumn);
+      const hoursDelta = (delta / columnWidth) * zoom.hoursPerColumn;
       const newDuration = snapToGrid(Math.max(zoom.hoursPerColumn, item.duration + hoursDelta));
       
       if (!checkOverlap(swimlaneId, item.id, tempStart, newDuration)) {
