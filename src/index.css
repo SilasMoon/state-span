@@ -116,16 +116,49 @@ All colors MUST be HSL.
   }
 }
 
-/* React Flow edges should be interactive while allowing clicks to pass through to elements below */
-.react-flow__edge {
-  pointer-events: auto;
+/* React Flow: Disable pointer events on all container elements to allow clicks to pass through */
+/* Only edges should be interactive, everything else should be transparent to clicks */
+
+/* Main React Flow container - transparent to clicks */
+.react-flow {
+  pointer-events: none !important;
 }
 
-.react-flow__edge-path {
-  pointer-events: stroke;
-  stroke-width: 12px; /* Invisible wider stroke area for easier clicking */
+/* All nested container elements - transparent to clicks */
+.react-flow__viewport {
+  pointer-events: none !important;
+}
+
+.react-flow__renderer {
+  pointer-events: none !important;
 }
 
 .react-flow__pane {
   pointer-events: none !important;
+}
+
+.react-flow__edges {
+  pointer-events: none !important;
+}
+
+.react-flow__nodes {
+  pointer-events: none !important;
+}
+
+.react-flow__node {
+  pointer-events: none !important;
+}
+
+/* ONLY edges and edge labels should capture pointer events */
+.react-flow__edge {
+  pointer-events: auto !important;
+}
+
+.react-flow__edge-path {
+  pointer-events: stroke !important;
+  stroke-width: 12px; /* Invisible wider stroke area for easier clicking */
+}
+
+.react-flow__edgelabel {
+  pointer-events: auto !important;
 }
