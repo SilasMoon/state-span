@@ -52,6 +52,7 @@ All colors MUST be HSL.
     /* Gantt configuration */
     --gantt-grid-opacity: 1;
     --gantt-timescale-contrast: 1;
+    --gantt-flag-line-contrast: 1;
 
     /* Transitions */
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -101,6 +102,7 @@ All colors MUST be HSL.
     /* Gantt configuration (same as light mode) */
     --gantt-grid-opacity: 1;
     --gantt-timescale-contrast: 1;
+    --gantt-flag-line-contrast: 1;
   }
 }
 
