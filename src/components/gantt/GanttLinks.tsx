@@ -148,47 +148,6 @@ export const GanttLinks = React.memo(({
     });
   };
 
-  // Clean path by removing degenerate segments and merging collinear segments
-  const cleanPath = (path: { x: number; y: number }[]): { x: number; y: number }[] => {
-    if (path.length < 2) return path;
-
-    const cleaned: { x: number; y: number }[] = [path[0]];
-
-    for (let i = 1; i < path.length; i++) {
-      const prev = cleaned[cleaned.length - 1];
-      const curr = path[i];
-
-      // Skip if this point is identical to the previous one
-      if (Math.abs(curr.x - prev.x) < 1 && Math.abs(curr.y - prev.y) < 1) {
-        continue;
-      }
-
-      // Check if we can merge with the previous segment (collinear points)
-      if (cleaned.length >= 2) {
-        const prevPrev = cleaned[cleaned.length - 2];
-
-        // Check if prevPrev -> prev -> curr are collinear
-        const dx1 = prev.x - prevPrev.x;
-        const dy1 = prev.y - prevPrev.y;
-        const dx2 = curr.x - prev.x;
-        const dy2 = curr.y - prev.y;
-
-        // Both horizontal or both vertical?
-        const bothHorizontal = Math.abs(dy1) < 1 && Math.abs(dy2) < 1;
-        const bothVertical = Math.abs(dx1) < 1 && Math.abs(dx2) < 1;
-
-        if (bothHorizontal || bothVertical) {
-          // Merge: remove the middle point (prev)
-          cleaned.pop();
-        }
-      }
-
-      cleaned.push(curr);
-    }
-
-    return cleaned;
-  };
-
   const handleSegmentMouseMove = React.useCallback((e: MouseEvent) => {
     if (!draggingSegment || !onLinkUpdate) return;
 
@@ -206,39 +165,31 @@ export const GanttLinks = React.memo(({
     // Determine if segment is vertical or horizontal
     const dx = Math.abs(p2.x - p1.x);
     const dy = Math.abs(p2.y - p1.y);
-    const isVertical = dy > dx;
+    const isVertical = dx < dy;
 
-    // Create new path by updating coordinates
-    // We copy all points and then update only the relevant coordinates
-    const newPath = initialPath.map((point) => ({ ...point }));
+    // Create new path by translating the segment
+    const newPath = [...initialPath];
 
     if (isVertical) {
-      // Vertical segment: drag horizontally
-      // Move both endpoints horizontally, but keep their Y coordinates
-      // Don't move the first or last point (they're connected to bars)
-      if (segmentIndex > 0) {
-        newPath[segmentIndex].x = p1.x + deltaX;
-      }
-      if (segmentIndex + 1 < newPath.length - 1) {
-        newPath[segmentIndex + 1].x = p2.x + deltaX;
-      }
+      // Vertical segment: translate horizontally
+      // Replace the segment with a detour that moves it horizontally
+      const newPoints = [
+        { x: p1.x + deltaX, y: p1.y },
+        { x: p1.x + deltaX, y: p2.y },
+      ];
+      newPath.splice(segmentIndex, 2, ...newPoints);
     } else {
-      // Horizontal segment: drag vertically
-      // Move both endpoints vertically, but keep their X coordinates
-      // Don't move the first or last point (they're connected to bars)
-      if (segmentIndex > 0) {
-        newPath[segmentIndex].y = p1.y + deltaY;
-      }
-      if (segmentIndex + 1 < newPath.length - 1) {
-        newPath[segmentIndex + 1].y = p2.y + deltaY;
-      }
+      // Horizontal segment: translate vertically
+      // Replace the segment with a detour that moves it vertically
+      const newPoints = [
+        { x: p1.x, y: p1.y + deltaY },
+        { x: p2.x, y: p2.y + deltaY },
+      ];
+      newPath.splice(segmentIndex, 2, ...newPoints);
     }
 
-    // Clean up the path to remove degenerate segments and merge collinear segments
-    const cleanedPath = cleanPath(newPath);
-
     // Update the link with the new custom path
-    onLinkUpdate(draggingSegment.linkId, { customPath: cleanedPath });
+    onLinkUpdate(draggingSegment.linkId, { customPath: newPath });
   }, [draggingSegment, onLinkUpdate]);
 
   const handleSegmentMouseUp = React.useCallback(() => {
