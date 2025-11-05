@@ -115,3 +115,17 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* React Flow edges should be interactive while allowing clicks to pass through to elements below */
+.react-flow__edge {
+  pointer-events: auto;
+}
+
+.react-flow__edge-path {
+  pointer-events: stroke;
+  stroke-width: 12px; /* Invisible wider stroke area for easier clicking */
+}
+
+.react-flow__pane {
+  pointer-events: none !important;
+}
