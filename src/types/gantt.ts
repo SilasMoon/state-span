@@ -85,14 +85,14 @@ export interface GanttConfig {
 // 13-level zoom system with 40px columns
 // L1: Only days, L2-L3: Only days (multi-day), L4-L8: Days + hours, L9-L13: Days + hours + minutes
 export const ZOOM_LEVELS: ZoomConfig[] = [
-  // L1: 1 day per column - show only days
-  { level: 1, hoursPerColumn: 24, columnWidth: 40, label: "L1: 1 day", showDays: true, showHours: false, showMinutes: false },
+  // L1: 4 days per column - show only days
+  { level: 1, hoursPerColumn: 96, columnWidth: 40, label: "L1: 4 days", showDays: true, showHours: false, showMinutes: false },
 
   // L2: 2 days per column - show only days
   { level: 2, hoursPerColumn: 48, columnWidth: 40, label: "L2: 2 days", showDays: true, showHours: false, showMinutes: false },
 
-  // L3: 4 days per column - show only days
-  { level: 3, hoursPerColumn: 96, columnWidth: 40, label: "L3: 4 days", showDays: true, showHours: false, showMinutes: false },
+  // L3: 1 day per column - show only days
+  { level: 3, hoursPerColumn: 24, columnWidth: 40, label: "L3: 1 day", showDays: true, showHours: false, showMinutes: false },
 
   // L4: 12 hours per column - show days + hours
   { level: 4, hoursPerColumn: 12, columnWidth: 40, label: "L4: 12 hours", showDays: true, showHours: true, showMinutes: false },
