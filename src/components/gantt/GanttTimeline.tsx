@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { ZoomConfig } from "@/types/gantt";
 
 interface GanttTimelineProps {
@@ -10,14 +10,14 @@ export const GanttTimeline = React.memo(({ zoom, totalHours }: GanttTimelineProp
   const columnWidth = zoom.columnWidth;
   const columns = Math.ceil(totalHours / zoom.hoursPerColumn);
 
-  // Determine which rows to populate based on zoom level
-  const shouldPopulateDays = zoom.level <= 6;
-  const shouldPopulateHours = zoom.level >= 2 && zoom.level <= 11;
-  const shouldPopulateMinutes = zoom.level >= 7;
+  // Use zoom config flags directly for what to show
+  const shouldShowDays = zoom.showDays;
+  const shouldShowHours = zoom.showHours;
+  const shouldShowMinutes = zoom.showMinutes;
 
-  // Render Row 1: Days (top row)
-  const renderDaysRow = () => {
-    if (!shouldPopulateDays) return [];
+  // Memoize the rendering to avoid recalculation
+  const daysRow = useMemo(() => {
+    if (!shouldShowDays) return [];
 
     const elements = [];
     let currentDay = -1;
@@ -56,11 +56,10 @@ export const GanttTimeline = React.memo(({ zoom, totalHours }: GanttTimelineProp
     }
 
     return elements;
-  };
+  }, [shouldShowDays, columns, zoom.hoursPerColumn, columnWidth]);
 
-  // Render Row 2: Hours (middle row)
-  const renderHoursRow = () => {
-    if (!shouldPopulateHours) return [];
+  const hoursRow = useMemo(() => {
+    if (!shouldShowHours) return [];
 
     const elements = [];
     let currentHour = -1;
@@ -100,11 +99,10 @@ export const GanttTimeline = React.memo(({ zoom, totalHours }: GanttTimelineProp
     }
 
     return elements;
-  };
+  }, [shouldShowHours, columns, zoom.hoursPerColumn, columnWidth]);
 
-  // Render Row 3: Minutes (bottom row)
-  const renderMinutesRow = () => {
-    if (!shouldPopulateMinutes) return [];
+  const minutesRow = useMemo(() => {
+    if (!shouldShowMinutes) return [];
 
     const elements = [];
     let currentMinute = -1;
@@ -120,7 +118,7 @@ export const GanttTimeline = React.memo(({ zoom, totalHours }: GanttTimelineProp
           const minuteWidth = columnsInMinute * columnWidth;
           const minuteInHour = currentMinute % 60;
           // Alternate background based on minute value
-          const isEven = Math.floor(currentMinute / 1) % 2 === 0;
+          const isEven = currentMinute % 2 === 0;
 
           elements.push(
             <div
@@ -144,11 +142,7 @@ export const GanttTimeline = React.memo(({ zoom, totalHours }: GanttTimelineProp
     }
 
     return elements;
-  };
-
-  const daysRow = renderDaysRow();
-  const hoursRow = renderHoursRow();
-  const minutesRow = renderMinutesRow();
+  }, [shouldShowMinutes, columns, zoom.hoursPerColumn, columnWidth]);
 
   return (
     <div className="sticky top-0 z-20 border-b border-border">
@@ -167,3 +161,5 @@ export const GanttTimeline = React.memo(({ zoom, totalHours }: GanttTimelineProp
     </div>
   );
 });
+
+GanttTimeline.displayName = "GanttTimeline";

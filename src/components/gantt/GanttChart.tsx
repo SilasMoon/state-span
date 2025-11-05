@@ -1100,3 +1100,5 @@ export const GanttChart = React.memo(() => {
     </div>
   );
 });
+
+GanttChart.displayName = "GanttChart";
