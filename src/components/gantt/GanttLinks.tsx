@@ -558,20 +558,19 @@ export const GanttLinks = React.memo(({
 
     // Calculate anchor points based on the handle types stored in the link
     // Add swimlaneColumnWidth offset because SVG coordinate system starts at chart origin (0,0)
-    // Subtract half the stroke width (1px for 2px stroke) to align with bar edge
-    const STROKE_OFFSET = 1; // Half of the 2px stroke width
+    // Links now connect exactly at the bar edges to align with visual handles
 
     // Determine startX based on fromHandle (default to 'finish' for backward compatibility)
     const fromHandle = link.fromHandle || 'finish';
     const startX = fromHandle === 'start'
-      ? swimlaneColumnWidth + fromPos.x - STROKE_OFFSET  // Start handle (left edge)
-      : swimlaneColumnWidth + fromPos.x + fromPos.width - STROKE_OFFSET; // Finish handle (right edge)
+      ? swimlaneColumnWidth + fromPos.x  // Start handle (left edge)
+      : swimlaneColumnWidth + fromPos.x + fromPos.width; // Finish handle (right edge)
 
     // Determine endX based on toHandle (default to 'start' for backward compatibility)
     const toHandle = link.toHandle || 'start';
     const endX = toHandle === 'start'
-      ? swimlaneColumnWidth + toPos.x - STROKE_OFFSET  // Start handle (left edge)
-      : swimlaneColumnWidth + toPos.x + toPos.width - STROKE_OFFSET; // Finish handle (right edge)
+      ? swimlaneColumnWidth + toPos.x  // Start handle (left edge)
+      : swimlaneColumnWidth + toPos.x + toPos.width; // Finish handle (right edge)
 
     // Use barCenterY for exact vertical center attachment
     const start = { x: startX, y: fromPos.barCenterY };

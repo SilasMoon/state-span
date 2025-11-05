@@ -87,9 +87,9 @@ export const GanttBar = React.memo(({
     }
   }, [isSelected]);
 
-  // Adjust positioning to overlap with grid lines (1px on each end)
-  const left = (tempStart / zoom.hoursPerColumn) * columnWidth - 1;
-  const width = (tempDuration / zoom.hoursPerColumn) * columnWidth + 2;
+  // Position bars to align exactly with grid lines
+  const left = (tempStart / zoom.hoursPerColumn) * columnWidth;
+  const width = (tempDuration / zoom.hoursPerColumn) * columnWidth;
 
   const snapToGrid = (value: number) => {
     return Math.round(value / zoom.hoursPerColumn) * zoom.hoursPerColumn;
@@ -381,7 +381,7 @@ export const GanttBar = React.memo(({
           <div
             className="absolute w-5 h-5 rounded-full bg-blue-500 border-2 border-white transition-all cursor-crosshair z-[100] hover:scale-125 pointer-events-auto"
             style={{
-              left: `${left + 1 - 12}px`, // Adjust for 1px visual overlap
+              left: `${left - 10}px`, // Center handle on left edge of bar
               ...(isState ? { top: '50%' } : { top: '50%' }),
               transform: 'translateY(-50%)',
             }}
@@ -406,7 +406,7 @@ export const GanttBar = React.memo(({
           <div
             className="absolute w-5 h-5 rounded-full bg-green-500 border-2 border-white transition-all cursor-crosshair z-[100] hover:scale-125 pointer-events-auto"
             style={{
-              left: `${left + width - 2 - 12}px`, // Adjust for 2px visual overlap
+              left: `${left + width - 10}px`, // Center handle on right edge of bar
               ...(isState ? { top: '50%' } : { top: '50%' }),
               transform: 'translateY(-50%)',
             }}
