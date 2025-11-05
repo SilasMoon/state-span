@@ -316,7 +316,6 @@ export const GanttLinksReactFlow = React.memo(({
         left: 0,
         width: `${calculateTotalWidth()}px`,
         height: `${calculateTotalHeight()}px`,
-        pointerEvents: 'none',
         zIndex: Z_INDEX.LINK,
       }}
     >
