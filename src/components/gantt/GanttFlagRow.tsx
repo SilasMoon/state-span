@@ -208,10 +208,16 @@ export const GanttFlagRow = ({
                   <IconComponent className="w-4 h-4 text-white" />
                 </div>
                 <div
-                  className="text-xs font-semibold px-2 py-0.5 rounded whitespace-nowrap shadow-md"
+                  className="text-xs font-semibold px-2 py-0.5 rounded shadow-md text-center break-words"
                   style={{
                     backgroundColor: flag.color,
                     color: "white",
+                    maxWidth: "160px",
+                    lineHeight: "1.2",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
                   }}
                 >
                   {flag.label}
