@@ -848,6 +848,7 @@ export const GanttChart = () => {
               setLinkEditDialog({ linkId });
             }
           }}
+          onLinkUpdate={updateLink}
           itemTempPositions={itemTempPositions}
         />
 

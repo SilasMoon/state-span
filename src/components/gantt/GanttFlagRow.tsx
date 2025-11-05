@@ -205,13 +205,16 @@ export const GanttFlagRow = ({
                     transform: isSelected ? "scale(1.2)" : "scale(1)",
                   }}
                 >
-                  <IconComponent className="w-4 h-4 text-white" />
+                  <IconComponent
+                    className="w-4 h-4"
+                    style={{ color: flag.iconColor || "white" }}
+                  />
                 </div>
                 <div
                   className="text-xs font-semibold px-2 py-0.5 rounded shadow-md text-center break-words"
                   style={{
                     backgroundColor: flag.color,
-                    color: "white",
+                    color: flag.textColor || "white",
                     maxWidth: "160px",
                     lineHeight: "1.2",
                     display: "-webkit-box",

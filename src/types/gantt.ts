@@ -42,6 +42,8 @@ export interface GanttLink {
   toHandle?: 'start' | 'finish'; // Which side of the target bar
   color?: string;
   label?: string;
+  labelOffset?: { x: number; y: number }; // Manual offset for label position relative to default center
+  customPath?: { x: number; y: number }[]; // Custom path points for manual routing
 }
 
 export interface GanttFlag {
@@ -49,6 +51,8 @@ export interface GanttFlag {
   position: number; // hours from 0
   label: string;
   color: string;
+  textColor?: string; // Color for the label text (defaults to white)
+  iconColor?: string; // Color for the icon (defaults to white)
   icon?: string; // Lucide icon name
   swimlane?: "top" | "bottom"; // Which flag row (defaults to "top" for backward compatibility)
   description?: string;

@@ -68,12 +68,14 @@ export const FlagEditDialog = ({
   const [label, setLabel] = useState(flag?.label || "");
   const [description, setDescription] = useState(flag?.description || "");
   const [color, setColor] = useState(flag?.color || "#4363d8"); // Blue from palette
+  const [textColor, setTextColor] = useState(flag?.textColor || "#ffffff"); // White default
+  const [iconColor, setIconColor] = useState(flag?.iconColor || "#ffffff"); // White default
   const [icon, setIcon] = useState(flag?.icon || "Flag");
   const [swimlane, setSwimlane] = useState<"top" | "bottom">(flag?.swimlane || "top");
 
   const handleSave = () => {
     if (!flag || !label.trim()) return;
-    onSave(flag.id, { label: label.trim(), description: description.trim(), color, icon, swimlane });
+    onSave(flag.id, { label: label.trim(), description: description.trim(), color, textColor, iconColor, icon, swimlane });
     onClose();
   };
 
@@ -153,7 +155,7 @@ export const FlagEditDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label>Color</Label>
+            <Label>Background Color</Label>
             <div className="flex gap-2 flex-wrap">
               {colorPresets.map((preset) => (
                 <button
@@ -176,6 +178,34 @@ export const FlagEditDialog = ({
               onChange={(e) => setColor(e.target.value)}
               className="w-full h-10 cursor-pointer"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="textColor">Text Color</Label>
+            <div className="flex gap-2 items-center">
+              <Input
+                id="textColor"
+                type="color"
+                value={textColor}
+                onChange={(e) => setTextColor(e.target.value)}
+                className="w-20 h-10 cursor-pointer"
+              />
+              <span className="text-sm text-muted-foreground">{textColor}</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="iconColor">Icon Color</Label>
+            <div className="flex gap-2 items-center">
+              <Input
+                id="iconColor"
+                type="color"
+                value={iconColor}
+                onChange={(e) => setIconColor(e.target.value)}
+                className="w-20 h-10 cursor-pointer"
+              />
+              <span className="text-sm text-muted-foreground">{iconColor}</span>
+            </div>
           </div>
         </div>
 
