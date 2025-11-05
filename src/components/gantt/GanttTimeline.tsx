@@ -1,3 +1,4 @@
+import React from "react";
 import { ZoomConfig } from "@/types/gantt";
 
 interface GanttTimelineProps {
@@ -5,13 +6,18 @@ interface GanttTimelineProps {
   totalHours: number;
 }
 
-export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
+export const GanttTimeline = React.memo(({ zoom, totalHours }: GanttTimelineProps) => {
   const columnWidth = zoom.columnWidth;
   const columns = Math.ceil(totalHours / zoom.hoursPerColumn);
 
+  // Determine which rows to populate based on zoom level
+  const shouldPopulateDays = zoom.level <= 6;
+  const shouldPopulateHours = zoom.level >= 2 && zoom.level <= 11;
+  const shouldPopulateMinutes = zoom.level >= 7;
+
   // Render Row 1: Days (top row)
   const renderDaysRow = () => {
-    if (!zoom.showDays) return null;
+    if (!shouldPopulateDays) return [];
 
     const elements = [];
     let currentDay = -1;
@@ -54,7 +60,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
 
   // Render Row 2: Hours (middle row)
   const renderHoursRow = () => {
-    if (!zoom.showHours) return null;
+    if (!shouldPopulateHours) return [];
 
     const elements = [];
     let currentHour = -1;
@@ -98,7 +104,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
 
   // Render Row 3: Minutes (bottom row)
   const renderMinutesRow = () => {
-    if (!zoom.showMinutes) return null;
+    if (!shouldPopulateMinutes) return [];
 
     const elements = [];
     let currentMinute = -1;
@@ -146,12 +152,18 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
 
   return (
     <div className="sticky top-0 z-20 border-b border-border">
-      {/* Row 1: Days */}
-      {daysRow && <div className="flex h-6 border-b border-gantt-grid">{daysRow}</div>}
-      {/* Row 2: Hours */}
-      {hoursRow && <div className="flex h-6 border-b border-gantt-grid">{hoursRow}</div>}
-      {/* Row 3: Minutes */}
-      {minutesRow && <div className="flex h-6">{minutesRow}</div>}
+      {/* Row 1: Days - Always displayed */}
+      <div className="flex h-6 border-b border-gantt-grid">
+        {daysRow.length > 0 ? daysRow : <div className="flex-1 bg-gantt-header" />}
+      </div>
+      {/* Row 2: Hours - Always displayed */}
+      <div className="flex h-6 border-b border-gantt-grid">
+        {hoursRow.length > 0 ? hoursRow : <div className="flex-1 bg-background" />}
+      </div>
+      {/* Row 3: Minutes - Always displayed */}
+      <div className="flex h-6">
+        {minutesRow.length > 0 ? minutesRow : <div className="flex-1 bg-gantt-bg" />}
+      </div>
     </div>
   );
-};
+});

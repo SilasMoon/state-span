@@ -35,7 +35,8 @@ export const GanttLinks = React.memo(({
   const SWIMLANE_ROW_HEIGHT = 32;
   const HEADER_HEIGHT = 32;
   const TIMELINE_ROW1_HEIGHT = 24;
-  const TIMELINE_ROW2_HEIGHT = zoom.row2Increment !== null ? 24 : 0;
+  const TIMELINE_ROW2_HEIGHT = 24; // Always 3 rows now
+  const TIMELINE_ROW3_HEIGHT = 24; // Always 3 rows now
   const FLAG_ROW_HEIGHT = showTopFlags ? 64 : 0;
   const BAR_HEIGHT = 24;
   const GRID_SIZE = 12; // Grid cell size for pathfinding
@@ -98,7 +99,7 @@ export const GanttLinks = React.memo(({
   };
 
   const findYPosition = (swimlaneId: string): number | null => {
-    let currentY = HEADER_HEIGHT + TIMELINE_ROW1_HEIGHT + TIMELINE_ROW2_HEIGHT + FLAG_ROW_HEIGHT; // Start after all headers
+    let currentY = HEADER_HEIGHT + TIMELINE_ROW1_HEIGHT + TIMELINE_ROW2_HEIGHT + TIMELINE_ROW3_HEIGHT + FLAG_ROW_HEIGHT; // Start after all headers
     
     for (const rootId of data.rootIds) {
       const result = traverseSwimlane(rootId, swimlaneId, currentY);
@@ -141,7 +142,7 @@ export const GanttLinks = React.memo(({
   };
 
   const calculateTotalHeight = () => {
-    let height = HEADER_HEIGHT + TIMELINE_ROW1_HEIGHT + TIMELINE_ROW2_HEIGHT + FLAG_ROW_HEIGHT; // All header rows
+    let height = HEADER_HEIGHT + TIMELINE_ROW1_HEIGHT + TIMELINE_ROW2_HEIGHT + TIMELINE_ROW3_HEIGHT + FLAG_ROW_HEIGHT; // All header rows
     data.rootIds.forEach(id => {
       height += getVisibleHeight(id);
     });

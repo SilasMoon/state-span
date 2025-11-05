@@ -9,8 +9,8 @@ export interface GanttConfig {
 
 const DEFAULT_CONFIG: GanttConfig = {
   columnWidths: ZOOM_LEVELS.map(z => z.columnWidth),
-  gridOpacity: 1.0,
-  timescaleContrast: 1.0,
+  gridOpacity: 2.0,
+  timescaleContrast: 2.0,
 };
 
 const STORAGE_KEY = 'gantt-config';
