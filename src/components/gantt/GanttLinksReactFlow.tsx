@@ -337,7 +337,6 @@ export const GanttLinksReactFlow = React.memo(({
         zoomOnDoubleClick={false}
         preventScrolling={false}
         proOptions={{ hideAttribution: true }}
-        style={{ pointerEvents: 'auto' }}
         fitView={false}
       >
         <Background style={{ display: 'none' }} />
