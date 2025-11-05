@@ -86,7 +86,7 @@ export const ConfigDialog = ({
         <DialogHeader>
           <DialogTitle>Chart Configuration</DialogTitle>
           <DialogDescription>
-            Customize zoom column widths, grid contrast, and timescale appearance
+            Customize zoom column widths, grid contrast, timescale appearance, and flag line visibility
           </DialogDescription>
         </DialogHeader>
 
@@ -113,10 +113,11 @@ export const ConfigDialog = ({
         </div>
 
         <Tabs defaultValue="zoom" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="zoom">Zoom Levels</TabsTrigger>
             <TabsTrigger value="grid">Grid Contrast</TabsTrigger>
             <TabsTrigger value="timescale">Timescale Contrast</TabsTrigger>
+            <TabsTrigger value="flaglines">Flag Lines</TabsTrigger>
           </TabsList>
 
           <TabsContent value="zoom" className="space-y-4 mt-4">
@@ -160,13 +161,13 @@ export const ConfigDialog = ({
                   Grid Line Opacity
                 </Label>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Adjust the visibility of grid lines (100% = normal, 200% = double intensity)
+                  Adjust the visibility of grid lines (0% = invisible, 100% = normal, 400% = maximum intensity)
                 </p>
                 <div className="flex items-center gap-4">
                   <Slider
                     id="grid-opacity"
-                    min={1}
-                    max={2}
+                    min={0}
+                    max={4}
                     step={0.1}
                     value={[config.gridOpacity]}
                     onValueChange={([value]) => onConfigChange({ gridOpacity: value })}
@@ -196,14 +197,13 @@ export const ConfigDialog = ({
                   Timescale Background Contrast
                 </Label>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Adjust the contrast between alternating background colors (100% = normal, 200% = double
-                  contrast)
+                  Adjust the contrast between alternating background colors (0% = invisible, 100% = normal, 400% = maximum contrast)
                 </p>
                 <div className="flex items-center gap-4">
                   <Slider
                     id="timescale-contrast"
-                    min={1}
-                    max={2}
+                    min={0}
+                    max={4}
                     step={0.1}
                     value={[config.timescaleContrast]}
                     onValueChange={([value]) => onConfigChange({ timescaleContrast: value })}
@@ -231,6 +231,50 @@ export const ConfigDialog = ({
                     >
                       {i}
                     </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="flaglines" className="space-y-4 mt-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="flag-line-contrast" className="text-sm">
+                  Flag Line Contrast
+                </Label>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Adjust the visibility of flag vertical lines (0% = invisible, 100% = normal, 400% = maximum intensity)
+                </p>
+                <div className="flex items-center gap-4">
+                  <Slider
+                    id="flag-line-contrast"
+                    min={0}
+                    max={4}
+                    step={0.1}
+                    value={[config.flagLineContrast]}
+                    onValueChange={([value]) => onConfigChange({ flagLineContrast: value })}
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-muted-foreground min-w-[3rem] text-right">
+                    {(config.flagLineContrast * 100).toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 border rounded-lg bg-muted/20">
+                <p className="text-sm font-medium mb-2">Preview</p>
+                <div className="relative h-24 bg-background/50">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div
+                      key={i}
+                      className="absolute top-0 bottom-0 w-0.5"
+                      style={{
+                        left: `${i * 20}%`,
+                        backgroundColor: `hsl(${i * 60}, 70%, 50%)`,
+                        opacity: 0.25 * config.flagLineContrast,
+                      }}
+                    />
                   ))}
                 </div>
               </div>

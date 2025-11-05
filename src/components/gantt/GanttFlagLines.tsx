@@ -49,7 +49,7 @@ export const GanttFlagLines = ({
               className="absolute top-0 bottom-0 transition-all"
               style={{
                 backgroundColor: flag.color,
-                opacity: isDragging ? 0.5 : (isSelected ? 0.4 : 0.25),
+                opacity: `calc(${isDragging ? 0.5 : (isSelected ? 0.4 : 0.25)} * var(--gantt-flag-line-contrast))`,
                 width: isDragging ? "3px" : (isSelected ? "3px" : "2px"),
                 boxShadow: isDragging || isSelected ? `0 0 8px ${flag.color}` : "none",
               }}

@@ -3,14 +3,16 @@ import { ZOOM_LEVELS } from "@/types/gantt";
 
 export interface GanttConfig {
   columnWidths: number[]; // 11 values for each zoom level
-  gridOpacity: number; // 1.0 - 2.0 (100% - 200%)
-  timescaleContrast: number; // 1.0 - 2.0 (100% - 200%)
+  gridOpacity: number; // 0.0 - 4.0 (0% - 400%)
+  timescaleContrast: number; // 0.0 - 4.0 (0% - 400%)
+  flagLineContrast: number; // 0.0 - 4.0 (0% - 400%)
 }
 
 const DEFAULT_CONFIG: GanttConfig = {
   columnWidths: ZOOM_LEVELS.map(z => z.columnWidth),
   gridOpacity: 2.0,
   timescaleContrast: 2.0,
+  flagLineContrast: 1.0,
 };
 
 const STORAGE_KEY = 'gantt-config';
@@ -32,10 +34,11 @@ export const useGanttConfig = () => {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-      
+
       // Apply CSS variables for dynamic styling
       document.documentElement.style.setProperty('--gantt-grid-opacity', config.gridOpacity.toString());
       document.documentElement.style.setProperty('--gantt-timescale-contrast', config.timescaleContrast.toString());
+      document.documentElement.style.setProperty('--gantt-flag-line-contrast', config.flagLineContrast.toString());
     } catch (error) {
       console.error('Failed to save config:', error);
     }
