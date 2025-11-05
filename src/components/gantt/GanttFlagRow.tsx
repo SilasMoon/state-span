@@ -148,15 +148,19 @@ export const GanttFlagRow = ({
       </div>
 
       {/* Grid and flags area */}
-      <div className="relative flex" style={{ height: '64px' }}>
-        {/* Grid columns */}
-        {Array.from({ length: columns }).map((_, i) => (
-          <div
-            key={i}
-            className="border-r border-gantt-grid bg-gantt-bg"
-            style={{ width: `${zoom.columnWidth}px`, minWidth: `${zoom.columnWidth}px` }}
-          />
-        ))}
+      <div className="relative flex" style={{ height: '64px', minWidth: `${columns * zoom.columnWidth}px` }}>
+        {/* Grid background */}
+        <div
+          className="absolute inset-0 bg-gantt-bg"
+          style={{
+            backgroundImage: `repeating-linear-gradient(to right,
+              hsl(var(--gantt-grid)) 0px,
+              hsl(var(--gantt-grid)) 1px,
+              transparent 1px,
+              transparent ${zoom.columnWidth}px)`,
+            opacity: `var(--gantt-grid-opacity)`,
+          }}
+        />
 
         {/* Flags (icons and labels only, no vertical lines here) */}
         {flags.map((flag) => {
