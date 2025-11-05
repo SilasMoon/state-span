@@ -230,21 +230,6 @@ export const GanttRow = React.memo(({
       return;
     }
 
-    // Check type compatibility for 'inside' drop
-    if (dragOver === 'inside' && draggedType !== swimlane.type) {
-      toast.error(`Cannot move ${draggedType} swimlane into ${swimlane.type} swimlane`);
-      setDragOver(null);
-      return;
-    }
-
-    // Check type compatibility for 'top' and 'bottom' drops when target has a parent
-    // Siblings must be of the same type as their parent
-    if ((dragOver === 'top' || dragOver === 'bottom') && swimlane.parentId && draggedType !== swimlane.type) {
-      toast.error(`Cannot move ${draggedType} swimlane next to ${swimlane.type} swimlane with same parent`);
-      setDragOver(null);
-      return;
-    }
-
     if (dragOver === 'top') {
       // Insert before this swimlane
       onSwimlaneDrop(draggedId, swimlane.parentId || null, swimlane.id);

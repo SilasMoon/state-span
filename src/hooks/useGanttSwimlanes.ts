@@ -121,13 +121,6 @@ export const useGanttSwimlanes = ({ updateData, generateId }: UseGanttSwimlanesP
         return prev;
       }
 
-      if (targetParentId) {
-        const targetParent = prev.swimlanes[targetParentId];
-        if (targetParent && targetParent.type !== swimlane.type) {
-          return prev;
-        }
-      }
-
       const newData = { ...prev };
       newData.swimlanes = { ...prev.swimlanes };
 
