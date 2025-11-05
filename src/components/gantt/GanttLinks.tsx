@@ -226,11 +226,12 @@ export const GanttLinks = React.memo(({
     // Calculate vertical position
     const rowTop = findYPosition(effectiveSwimlaneId);
     if (rowTop === null) return null;
-    
+
     // Calculate position from data using zoom and columnWidth
     // This ensures arrows update immediately when zoom changes
+    // Width includes 1px extension to overlap with right grid line (matching GanttBar.tsx)
     const x = (itemStart / zoom.hoursPerColumn) * columnWidth;
-    const width = (itemDuration / zoom.hoursPerColumn) * columnWidth;
+    const width = (itemDuration / zoom.hoursPerColumn) * columnWidth + 1;
     
     // Calculate barCenterY from row position
     const barCenterY = rowTop + (SWIMLANE_ROW_HEIGHT / 2);
