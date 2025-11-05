@@ -32,7 +32,7 @@ import { LAYOUT, ARIA_LABELS } from "@/lib/ganttConstants";
 import { ZoomConfig, ZOOM_LEVELS } from "@/types/gantt";
 import { toast } from "sonner";
 
-export const GanttChart = React.memo(() => {
+export const GanttChart = () => {
   const {
     data,
     zoom,
@@ -1099,6 +1099,4 @@ export const GanttChart = React.memo(() => {
       </AlertDialog>
     </div>
   );
-});
-
-GanttChart.displayName = "GanttChart";
+};

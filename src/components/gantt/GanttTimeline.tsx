@@ -6,7 +6,7 @@ interface GanttTimelineProps {
   totalHours: number;
 }
 
-export const GanttTimeline = React.memo(({ zoom, totalHours }: GanttTimelineProps) => {
+export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
   const columnWidth = zoom.columnWidth;
   const columns = Math.ceil(totalHours / zoom.hoursPerColumn);
 
@@ -160,6 +160,4 @@ export const GanttTimeline = React.memo(({ zoom, totalHours }: GanttTimelineProp
       </div>
     </div>
   );
-});
-
-GanttTimeline.displayName = "GanttTimeline";
+};
