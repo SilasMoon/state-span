@@ -303,7 +303,7 @@ export const useGanttData = () => {
 
   // Initialize focused hooks
   const swimlaneOps = useGanttSwimlanes({ updateData, generateId });
-  const itemOps = useGanttItems({ updateData, generateId });
+  const itemOps = useGanttItems({ data, updateData, generateId });
   const linkOps = useGanttLinks({ updateData, generateId });
   const flagOps = useGanttFlags({ updateData, generateId });
 

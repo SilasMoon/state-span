@@ -18,13 +18,45 @@ export const LAYOUT = {
   INDENT_SIZE: 20,
 } as const;
 
+// Color Palette with Names
+export const COLOR_PALETTE = [
+  { name: 'Maroon', hex: '#800000' },
+  { name: 'Brown', hex: '#9A6324' },
+  { name: 'Olive', hex: '#808000' },
+  { name: 'Teal', hex: '#469990' },
+  { name: 'Navy', hex: '#000075' },
+  { name: 'Black', hex: '#000000' },
+  { name: 'Red', hex: '#e6194B' },
+  { name: 'Orange', hex: '#f58231' },
+  { name: 'Yellow', hex: '#ffe119' },
+  { name: 'Lime', hex: '#bfef45' },
+  { name: 'Green', hex: '#3cb44b' },
+  { name: 'Cyan', hex: '#42d4f4' },
+  { name: 'Blue', hex: '#4363d8' },
+  { name: 'Purple', hex: '#911eb4' },
+  { name: 'Magenta', hex: '#f032e6' },
+  { name: 'Grey', hex: '#a9a9a9' },
+  { name: 'Pink', hex: '#fabed4' },
+  { name: 'Apricot', hex: '#ffd8b1' },
+  { name: 'Beige', hex: '#fffac8' },
+  { name: 'Mint', hex: '#aaffc3' },
+  { name: 'Lavender', hex: '#dcbeff' },
+  { name: 'White', hex: '#ffffff' },
+] as const;
+
+// Helper to get color name from hex
+export function getColorName(hex: string): string | undefined {
+  const normalized = hex.toLowerCase();
+  return COLOR_PALETTE.find(c => c.hex.toLowerCase() === normalized)?.name;
+}
+
 // Default Colors
 export const DEFAULT_COLORS = {
-  TASK: '#2196f3',
-  STATE: '#4caf50',
-  LINK: '#757575',
-  FLAG: '#2196f3',
-  LABEL: '#ffffff',
+  TASK: '#4363d8', // Blue from palette
+  STATE: '#3cb44b', // Green from palette
+  LINK: '#a9a9a9', // Grey from palette
+  FLAG: '#4363d8', // Blue from palette
+  LABEL: '#ffffff', // White from palette
 } as const;
 
 // Timing Constants

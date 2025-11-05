@@ -3,11 +3,44 @@ import { GanttData, GanttTask, GanttState } from "@/types/gantt";
 import { DEFAULT_COLORS } from "@/lib/ganttConstants";
 
 interface UseGanttItemsProps {
+  data: GanttData;
   updateData: (updater: (prev: GanttData) => GanttData) => void;
   generateId: () => string;
 }
 
-export const useGanttItems = ({ updateData, generateId }: UseGanttItemsProps) => {
+// Helper to find the last created task across all swimlanes
+const getLastTaskColor = (data: GanttData): string => {
+  let lastTask: GanttTask | null = null;
+
+  Object.values(data.swimlanes).forEach((swimlane) => {
+    if (swimlane.tasks && swimlane.tasks.length > 0) {
+      const lastInSwimlane = swimlane.tasks[swimlane.tasks.length - 1];
+      if (!lastTask || lastInSwimlane.id > lastTask.id) {
+        lastTask = lastInSwimlane;
+      }
+    }
+  });
+
+  return lastTask?.color || DEFAULT_COLORS.TASK;
+};
+
+// Helper to find the last created state across all swimlanes
+const getLastStateColor = (data: GanttData): string => {
+  let lastState: GanttState | null = null;
+
+  Object.values(data.swimlanes).forEach((swimlane) => {
+    if (swimlane.states && swimlane.states.length > 0) {
+      const lastInSwimlane = swimlane.states[swimlane.states.length - 1];
+      if (!lastState || lastInSwimlane.id > lastState.id) {
+        lastState = lastInSwimlane;
+      }
+    }
+  });
+
+  return lastState?.color || DEFAULT_COLORS.STATE;
+};
+
+export const useGanttItems = ({ data, updateData, generateId }: UseGanttItemsProps) => {
   // Task operations
   const addTask = useCallback((swimlaneId: string, start: number, duration: number) => {
     const id = generateId();
@@ -15,7 +48,7 @@ export const useGanttItems = ({ updateData, generateId }: UseGanttItemsProps) =>
       id,
       start,
       duration,
-      color: DEFAULT_COLORS.TASK,
+      color: getLastTaskColor(data),
       labelColor: DEFAULT_COLORS.LABEL,
     };
 
@@ -31,7 +64,7 @@ export const useGanttItems = ({ updateData, generateId }: UseGanttItemsProps) =>
     }));
 
     return id;
-  }, [updateData, generateId]);
+  }, [data, updateData, generateId]);
 
   const updateTask = useCallback((swimlaneId: string, taskId: string, updates: Partial<GanttTask>) => {
     updateData((prev) => ({
@@ -137,7 +170,7 @@ export const useGanttItems = ({ updateData, generateId }: UseGanttItemsProps) =>
       id,
       start,
       duration,
-      color: DEFAULT_COLORS.STATE,
+      color: getLastStateColor(data),
       labelColor: DEFAULT_COLORS.LABEL,
     };
 
@@ -153,7 +186,7 @@ export const useGanttItems = ({ updateData, generateId }: UseGanttItemsProps) =>
     }));
 
     return id;
-  }, [updateData, generateId]);
+  }, [data, updateData, generateId]);
 
   const updateState = useCallback((swimlaneId: string, stateId: string, updates: Partial<GanttState>) => {
     updateData((prev) => ({
