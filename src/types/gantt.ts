@@ -38,6 +38,8 @@ export interface GanttLink {
   toId: string;
   fromSwimlaneId: string;
   toSwimlaneId: string;
+  fromHandle?: 'start' | 'finish'; // Which side of the source bar
+  toHandle?: 'start' | 'finish'; // Which side of the target bar
   color?: string;
   label?: string;
 }

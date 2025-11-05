@@ -11,12 +11,16 @@ interface UseGanttItemsProps {
 // Helper to find the last created task across all swimlanes
 const getLastTaskColor = (data: GanttData): string => {
   let lastTask: GanttTask | null = null;
+  let lastTaskIdNum = -1;
 
   Object.values(data.swimlanes).forEach((swimlane) => {
     if (swimlane.tasks && swimlane.tasks.length > 0) {
       const lastInSwimlane = swimlane.tasks[swimlane.tasks.length - 1];
-      if (!lastTask || lastInSwimlane.id > lastTask.id) {
+      // Extract numeric part of ID (e.g., "item-10" -> 10) for proper comparison
+      const idNum = parseInt(lastInSwimlane.id.split('-').pop() || '0', 10);
+      if (idNum > lastTaskIdNum) {
         lastTask = lastInSwimlane;
+        lastTaskIdNum = idNum;
       }
     }
   });
@@ -27,12 +31,16 @@ const getLastTaskColor = (data: GanttData): string => {
 // Helper to find the last created state across all swimlanes
 const getLastStateColor = (data: GanttData): string => {
   let lastState: GanttState | null = null;
+  let lastStateIdNum = -1;
 
   Object.values(data.swimlanes).forEach((swimlane) => {
     if (swimlane.states && swimlane.states.length > 0) {
       const lastInSwimlane = swimlane.states[swimlane.states.length - 1];
-      if (!lastState || lastInSwimlane.id > lastState.id) {
+      // Extract numeric part of ID (e.g., "item-10" -> 10) for proper comparison
+      const idNum = parseInt(lastInSwimlane.id.split('-').pop() || '0', 10);
+      if (idNum > lastStateIdNum) {
         lastState = lastInSwimlane;
+        lastStateIdNum = idNum;
       }
     }
   });

@@ -12,7 +12,7 @@ interface LinkDragCurrent {
   y: number;
 }
 
-export const useGanttLinkCreation = (addLink: (fromSwimlaneId: string, fromId: string, toSwimlaneId: string, toId: string) => void) => {
+export const useGanttLinkCreation = (addLink: (fromSwimlaneId: string, fromId: string, toSwimlaneId: string, toId: string, fromHandle?: 'start' | 'finish', toHandle?: 'start' | 'finish') => void) => {
   const [linkDragStart, setLinkDragStart] = useState<LinkDragStart | null>(null);
   const [linkDragCurrent, setLinkDragCurrent] = useState<LinkDragCurrent | null>(null);
 
@@ -35,19 +35,38 @@ export const useGanttLinkCreation = (addLink: (fromSwimlaneId: string, fromId: s
     const handleMouseUp = (e: MouseEvent) => {
       if (linkDragStart) {
         const target = document.elementFromPoint(e.clientX, e.clientY);
+
+        // First, check if dropped on a handle
+        let toHandle: 'start' | 'finish' | undefined;
+        const handleElement = target?.closest('[data-handle-type]');
+        if (handleElement) {
+          const handleType = handleElement.getAttribute('data-handle-type');
+          toHandle = handleType === 'start' || handleType === 'finish' ? handleType : undefined;
+        }
+
         const barElement = target?.closest('[data-item-id]');
-        
+
         if (barElement) {
           const toSwimlaneId = barElement.getAttribute('data-swimlane-id');
           const toItemId = barElement.getAttribute('data-item-id');
-          
-          if (toSwimlaneId && toItemId && 
+
+          if (toSwimlaneId && toItemId &&
               (linkDragStart.swimlaneId !== toSwimlaneId || linkDragStart.itemId !== toItemId)) {
-            addLink(linkDragStart.swimlaneId, linkDragStart.itemId, toSwimlaneId, toItemId);
+
+            // If toHandle wasn't determined by clicking a handle, determine by position
+            if (!toHandle) {
+              const rect = barElement.getBoundingClientRect();
+              const relativeX = e.clientX - rect.left;
+              const barWidth = rect.width;
+              // If closer to left side, use start handle; otherwise use finish handle
+              toHandle = relativeX < barWidth / 2 ? 'start' : 'finish';
+            }
+
+            addLink(linkDragStart.swimlaneId, linkDragStart.itemId, toSwimlaneId, toItemId, linkDragStart.handleType, toHandle);
             toast.success("Link created");
           }
         }
-        
+
         setLinkDragStart(null);
         setLinkDragCurrent(null);
       }

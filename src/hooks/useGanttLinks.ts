@@ -7,8 +7,15 @@ interface UseGanttLinksProps {
 }
 
 export const useGanttLinks = ({ updateData, generateId }: UseGanttLinksProps) => {
-  const addLink = useCallback((fromSwimlaneId: string, fromId: string, toSwimlaneId: string, toId: string) => {
-    const existingLink = (prev: GanttData) => 
+  const addLink = useCallback((
+    fromSwimlaneId: string,
+    fromId: string,
+    toSwimlaneId: string,
+    toId: string,
+    fromHandle?: 'start' | 'finish',
+    toHandle?: 'start' | 'finish'
+  ) => {
+    const existingLink = (prev: GanttData) =>
       prev.links.find(
         (l) =>
           l.fromSwimlaneId === fromSwimlaneId &&
@@ -25,9 +32,9 @@ export const useGanttLinks = ({ updateData, generateId }: UseGanttLinksProps) =>
       // Get color from source item
       const fromSwimlane = prev.swimlanes[fromSwimlaneId];
       let sourceColor: string | undefined;
-      
+
       if (fromSwimlane) {
-        const sourceItem = fromSwimlane.tasks?.find(t => t.id === fromId) || 
+        const sourceItem = fromSwimlane.tasks?.find(t => t.id === fromId) ||
                           fromSwimlane.states?.find(s => s.id === fromId);
         sourceColor = sourceItem?.color;
       }
@@ -38,6 +45,8 @@ export const useGanttLinks = ({ updateData, generateId }: UseGanttLinksProps) =>
         fromId,
         toSwimlaneId,
         toId,
+        fromHandle: fromHandle || 'finish', // Default to finish (right side)
+        toHandle: toHandle || 'start', // Default to start (left side)
         color: sourceColor,
       };
 
