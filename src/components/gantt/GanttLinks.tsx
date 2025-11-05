@@ -99,8 +99,10 @@ export const GanttLinks = React.memo(({
   };
 
   const findYPosition = (swimlaneId: string): number | null => {
-    let currentY = HEADER_HEIGHT + TIMELINE_ROW1_HEIGHT + TIMELINE_ROW2_HEIGHT + TIMELINE_ROW3_HEIGHT + FLAG_ROW_HEIGHT; // Start after all headers
-    
+    // Timeline rows are the header (not HEADER_HEIGHT + timeline rows)
+    // The "Swimlanes" label is in a flex row with the timeline, so it doesn't add vertical height
+    let currentY = TIMELINE_ROW1_HEIGHT + TIMELINE_ROW2_HEIGHT + TIMELINE_ROW3_HEIGHT + FLAG_ROW_HEIGHT; // Start after all headers
+
     for (const rootId of data.rootIds) {
       const result = traverseSwimlane(rootId, swimlaneId, currentY);
       if (result !== null) return result;
@@ -142,7 +144,8 @@ export const GanttLinks = React.memo(({
   };
 
   const calculateTotalHeight = () => {
-    let height = HEADER_HEIGHT + TIMELINE_ROW1_HEIGHT + TIMELINE_ROW2_HEIGHT + TIMELINE_ROW3_HEIGHT + FLAG_ROW_HEIGHT; // All header rows
+    // Timeline rows are the header (not HEADER_HEIGHT + timeline rows)
+    let height = TIMELINE_ROW1_HEIGHT + TIMELINE_ROW2_HEIGHT + TIMELINE_ROW3_HEIGHT + FLAG_ROW_HEIGHT; // All header rows
     data.rootIds.forEach(id => {
       height += getVisibleHeight(id);
     });
