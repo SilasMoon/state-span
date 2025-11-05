@@ -263,7 +263,7 @@ export const GanttRow = React.memo(({
     >
       <div
         className={`sticky left-0 z-40 bg-card border-r border-border flex items-center gap-2 px-3 py-1 group transition-colors relative ${
-          isRowSelected ? 'bg-primary/20 ring-2 ring-primary' : 'hover:bg-muted/50'
+          isRowSelected ? 'bg-primary/20' : 'hover:bg-muted/50'
         }`}
         style={{ width: `${swimlaneColumnWidth}px`, minWidth: `${swimlaneColumnWidth}px`, paddingLeft: `${level * 20 + 12}px` }}
         draggable
