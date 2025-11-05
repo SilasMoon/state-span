@@ -182,29 +182,79 @@ export const FlagEditDialog = ({
 
           <div className="space-y-2">
             <Label htmlFor="textColor">Text Color</Label>
-            <div className="flex gap-2 items-center">
-              <Input
-                id="textColor"
-                type="color"
-                value={textColor}
-                onChange={(e) => setTextColor(e.target.value)}
-                className="w-20 h-10 cursor-pointer"
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setTextColor("#ffffff")}
+                className="w-10 h-10 rounded border-2 transition-all hover:scale-110"
+                style={{
+                  backgroundColor: "#ffffff",
+                  borderColor: textColor === "#ffffff" ? "#000" : "transparent",
+                  boxShadow: textColor === "#ffffff" ? "0 0 0 2px #ffffff" : "none",
+                }}
+                title="White"
               />
-              <span className="text-sm text-muted-foreground">{textColor}</span>
+              <button
+                type="button"
+                onClick={() => setTextColor("#000000")}
+                className="w-10 h-10 rounded border-2 transition-all hover:scale-110"
+                style={{
+                  backgroundColor: "#000000",
+                  borderColor: textColor === "#000000" ? "#fff" : "transparent",
+                  boxShadow: textColor === "#000000" ? "0 0 0 2px #000000" : "none",
+                }}
+                title="Black"
+              />
+              <button
+                type="button"
+                onClick={() => setTextColor("#e6194B")}
+                className="w-10 h-10 rounded border-2 transition-all hover:scale-110"
+                style={{
+                  backgroundColor: "#e6194B",
+                  borderColor: textColor === "#e6194B" ? "#fff" : "transparent",
+                  boxShadow: textColor === "#e6194B" ? "0 0 0 2px #e6194B" : "none",
+                }}
+                title="Red"
+              />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="iconColor">Icon Color</Label>
-            <div className="flex gap-2 items-center">
-              <Input
-                id="iconColor"
-                type="color"
-                value={iconColor}
-                onChange={(e) => setIconColor(e.target.value)}
-                className="w-20 h-10 cursor-pointer"
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setIconColor("#ffffff")}
+                className="w-10 h-10 rounded border-2 transition-all hover:scale-110"
+                style={{
+                  backgroundColor: "#ffffff",
+                  borderColor: iconColor === "#ffffff" ? "#000" : "transparent",
+                  boxShadow: iconColor === "#ffffff" ? "0 0 0 2px #ffffff" : "none",
+                }}
+                title="White"
               />
-              <span className="text-sm text-muted-foreground">{iconColor}</span>
+              <button
+                type="button"
+                onClick={() => setIconColor("#000000")}
+                className="w-10 h-10 rounded border-2 transition-all hover:scale-110"
+                style={{
+                  backgroundColor: "#000000",
+                  borderColor: iconColor === "#000000" ? "#fff" : "transparent",
+                  boxShadow: iconColor === "#000000" ? "0 0 0 2px #000000" : "none",
+                }}
+                title="Black"
+              />
+              <button
+                type="button"
+                onClick={() => setIconColor("#e6194B")}
+                className="w-10 h-10 rounded border-2 transition-all hover:scale-110"
+                style={{
+                  backgroundColor: "#e6194B",
+                  borderColor: iconColor === "#e6194B" ? "#fff" : "transparent",
+                  boxShadow: iconColor === "#e6194B" ? "0 0 0 2px #e6194B" : "none",
+                }}
+                title="Red"
+              />
             </div>
           </div>
         </div>

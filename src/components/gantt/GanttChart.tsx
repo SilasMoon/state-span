@@ -214,16 +214,16 @@ export const GanttChart = () => {
   const resizeStartXRef = React.useRef(0);
   const resizeStartWidthRef = React.useRef(0);
 
-  // Zoom controls (11 levels)
+  // Zoom controls (13 levels)
   const handleZoomIn = () => {
-    // Zoom in = increase level (L1 -> L2 -> ... -> L11)
-    if (zoomLevel < 11) {
+    // Zoom in = increase level (L1 -> L2 -> ... -> L13)
+    if (zoomLevel < 13) {
       setZoomLevel(zoomLevel + 1);
     }
   };
 
   const handleZoomOut = () => {
-    // Zoom out = decrease level (L11 -> L10 -> ... -> L1)
+    // Zoom out = decrease level (L13 -> L12 -> ... -> L1)
     if (zoomLevel > 1) {
       setZoomLevel(zoomLevel - 1);
     }
@@ -579,7 +579,7 @@ export const GanttChart = () => {
         // Wheel up (deltaY < 0) = zoom in (increase level)
         if (e.deltaY < 0) {
           // Zoom in
-          if (zoomLevel < 11) {
+          if (zoomLevel < 13) {
             setZoomLevel(zoomLevel + 1);
           }
         } else if (e.deltaY > 0) {
@@ -665,7 +665,7 @@ export const GanttChart = () => {
         zoomLevel={zoomLevel}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
-        canZoomIn={zoomLevel < 11}
+        canZoomIn={zoomLevel < 13}
         canZoomOut={zoomLevel > 1}
         onZoomToFit={handleZoomToFit}
         onAddTaskLane={handleAddTaskLane}

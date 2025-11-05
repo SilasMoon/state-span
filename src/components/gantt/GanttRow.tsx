@@ -175,7 +175,7 @@ export const GanttRow = React.memo(({
     };
   }, [dragCreation, zoom, swimlane.id, onCreateByDrag, checkOverlap]);
 
-  const isRowSelected = selected?.type === 'swimlane' && selected.swimlaneId === swimlane.id;
+  const isRowSelected = selected?.swimlaneId === swimlane.id;
 
   // Drag and drop handlers for swimlane reordering
   const handleDragStart = (e: React.DragEvent) => {
@@ -233,6 +233,14 @@ export const GanttRow = React.memo(({
     // Check type compatibility for 'inside' drop
     if (dragOver === 'inside' && draggedType !== swimlane.type) {
       toast.error(`Cannot move ${draggedType} swimlane into ${swimlane.type} swimlane`);
+      setDragOver(null);
+      return;
+    }
+
+    // Check type compatibility for 'top' and 'bottom' drops when target has a parent
+    // Siblings must be of the same type as their parent
+    if ((dragOver === 'top' || dragOver === 'bottom') && swimlane.parentId && draggedType !== swimlane.type) {
+      toast.error(`Cannot move ${draggedType} swimlane next to ${swimlane.type} swimlane with same parent`);
       setDragOver(null);
       return;
     }

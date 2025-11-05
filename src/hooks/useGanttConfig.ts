@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ZOOM_LEVELS } from "@/types/gantt";
 
 export interface GanttConfig {
-  columnWidths: number[]; // 11 values for each zoom level
+  columnWidths: number[]; // 13 values for each zoom level
   gridOpacity: number; // 0.0 - 4.0 (0% - 400%)
   timescaleContrast: number; // 0.0 - 4.0 (0% - 400%)
   flagLineContrast: number; // 0.0 - 4.0 (0% - 400%)
