@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Flag, CheckCircle, AlertCircle, Star, Target, Zap, Trophy, Rocket, Play, CircleDot, Moon, Sun, Beaker } from "lucide-react";
 import { GanttFlag } from "@/types/gantt";
+import { COLOR_PALETTE } from "@/lib/ganttConstants";
 
 interface FlagEditDialogProps {
   open: boolean;
@@ -54,16 +55,8 @@ const iconOptions = [
   { value: "Rocket", label: "Rocket", Icon: Rocket },
 ];
 
-const colorPresets = [
-  { value: "#2196f3", label: "Blue" },
-  { value: "#4caf50", label: "Green" },
-  { value: "#ff9800", label: "Orange" },
-  { value: "#f44336", label: "Red" },
-  { value: "#9c27b0", label: "Purple" },
-  { value: "#00bcd4", label: "Cyan" },
-  { value: "#ffeb3b", label: "Yellow" },
-  { value: "#607d8b", label: "Grey" },
-];
+// Use centralized color palette for flags
+const colorPresets = COLOR_PALETTE.map(c => ({ value: c.hex, label: c.name }));
 
 export const FlagEditDialog = ({
   open,
@@ -74,7 +67,7 @@ export const FlagEditDialog = ({
 }: FlagEditDialogProps) => {
   const [label, setLabel] = useState(flag?.label || "");
   const [description, setDescription] = useState(flag?.description || "");
-  const [color, setColor] = useState(flag?.color || "#2196f3");
+  const [color, setColor] = useState(flag?.color || "#4363d8"); // Blue from palette
   const [icon, setIcon] = useState(flag?.icon || "Flag");
   const [swimlane, setSwimlane] = useState<"top" | "bottom">(flag?.swimlane || "top");
 
