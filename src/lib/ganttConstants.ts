@@ -75,9 +75,9 @@ export const LIMITS = {
 
 // Z-Index Layers
 export const Z_INDEX = {
-  LINK: 5,         // Links below all bars
-  BAR: 10,         // Task bars above links
+  BAR: 10,         // Task bars
   STATE: 30,       // State bars above task bars
+  LINK: 35,        // Links above bars for visibility and editing
   SELECTED: 50,    // Selected items above all
   DRAG_PREVIEW: 100,
   COPY_GHOST: 110,

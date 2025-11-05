@@ -1,5 +1,6 @@
 import React from "react";
 import { GanttData, GanttLink, ZoomConfig } from "@/types/gantt";
+import { Z_INDEX } from "@/lib/ganttConstants";
 
 interface GanttLinksProps {
   data: GanttData;
@@ -10,6 +11,7 @@ interface GanttLinksProps {
   showTopFlags: boolean;
   onLinkSelect: (linkId: string) => void;
   onLinkDoubleClick: (linkId: string) => void;
+  onLinkUpdate?: (linkId: string, updates: Partial<GanttLink>) => void;
   itemTempPositions?: Record<string, { start: number; duration: number; swimlaneId: string }>;
 }
 
@@ -21,15 +23,16 @@ interface ItemPosition {
   barCenterY: number; // Vertical center of BAR itself (for proper attachment)
 }
 
-export const GanttLinks = React.memo(({ 
-  data, 
-  zoom, 
-  columnWidth, 
-  swimlaneColumnWidth, 
+export const GanttLinks = React.memo(({
+  data,
+  zoom,
+  columnWidth,
+  swimlaneColumnWidth,
   selectedLink,
   showTopFlags,
-  onLinkSelect, 
+  onLinkSelect,
   onLinkDoubleClick,
+  onLinkUpdate,
   itemTempPositions = {},
 }: GanttLinksProps) => {
   const SWIMLANE_ROW_HEIGHT = 32;
@@ -43,24 +46,152 @@ export const GanttLinks = React.memo(({
 
   // Ref to SVG element to get its position for coordinate transformation
   const svgRef = React.useRef<SVGSVGElement>(null);
-  
+
   // Force re-render when positions change (for scroll/resize)
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
-  
+
+  // State for dragging labels
+  const [draggingLabel, setDraggingLabel] = React.useState<{
+    linkId: string;
+    startX: number;
+    startY: number;
+    initialOffset: { x: number; y: number };
+  } | null>(null);
+
+  // State for dragging link segments
+  const [draggingSegment, setDraggingSegment] = React.useState<{
+    linkId: string;
+    segmentIndex: number;
+    startX: number;
+    startY: number;
+    initialPath: { x: number; y: number }[];
+  } | null>(null);
+
   // Update positions when chart scrolls or resizes
   React.useEffect(() => {
     const container = document.querySelector('.overflow-auto');
     if (!container) return;
-    
+
     const handleUpdate = () => forceUpdate();
     container.addEventListener('scroll', handleUpdate);
     window.addEventListener('resize', handleUpdate);
-    
+
     return () => {
       container.removeEventListener('scroll', handleUpdate);
       window.removeEventListener('resize', handleUpdate);
     };
   }, []);
+
+  // Handle label drag
+  const handleLabelMouseDown = (e: React.MouseEvent, linkId: string, currentOffset: { x: number; y: number }) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const svgRect = svgRef.current?.getBoundingClientRect();
+    if (!svgRect) return;
+
+    setDraggingLabel({
+      linkId,
+      startX: e.clientX,
+      startY: e.clientY,
+      initialOffset: currentOffset,
+    });
+  };
+
+  const handleLabelMouseMove = React.useCallback((e: MouseEvent) => {
+    if (!draggingLabel || !onLinkUpdate) return;
+
+    const deltaX = e.clientX - draggingLabel.startX;
+    const deltaY = e.clientY - draggingLabel.startY;
+
+    const newOffset = {
+      x: draggingLabel.initialOffset.x + deltaX,
+      y: draggingLabel.initialOffset.y + deltaY,
+    };
+
+    // Update the link with the new offset
+    onLinkUpdate(draggingLabel.linkId, { labelOffset: newOffset });
+  }, [draggingLabel, onLinkUpdate]);
+
+  const handleLabelMouseUp = React.useCallback(() => {
+    setDraggingLabel(null);
+  }, []);
+
+  // Attach label drag listeners
+  React.useEffect(() => {
+    if (draggingLabel) {
+      document.addEventListener('mousemove', handleLabelMouseMove);
+      document.addEventListener('mouseup', handleLabelMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleLabelMouseMove);
+        document.removeEventListener('mouseup', handleLabelMouseUp);
+      };
+    }
+  }, [draggingLabel, handleLabelMouseMove, handleLabelMouseUp]);
+
+  // Handle segment drag
+  const handleSegmentMouseDown = (
+    e: React.MouseEvent,
+    linkId: string,
+    segmentIndex: number,
+    currentPath: { x: number; y: number }[]
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    setDraggingSegment({
+      linkId,
+      segmentIndex,
+      startX: e.clientX,
+      startY: e.clientY,
+      initialPath: currentPath,
+    });
+  };
+
+  const handleSegmentMouseMove = React.useCallback((e: MouseEvent) => {
+    if (!draggingSegment || !onLinkUpdate) return;
+
+    const deltaX = e.clientX - draggingSegment.startX;
+    const deltaY = e.clientY - draggingSegment.startY;
+
+    // Create new path with updated segment midpoint
+    const newPath = [...draggingSegment.initialPath];
+    const segmentIndex = draggingSegment.segmentIndex;
+
+    // Insert a new control point if this is a straight segment
+    // Or move the existing control point
+    if (segmentIndex < newPath.length - 1) {
+      const p1 = newPath[segmentIndex];
+      const p2 = newPath[segmentIndex + 1];
+
+      // Insert a new point at the dragged position
+      const newPoint = {
+        x: (p1.x + p2.x) / 2 + deltaX,
+        y: (p1.y + p2.y) / 2 + deltaY,
+      };
+
+      newPath.splice(segmentIndex + 1, 0, newPoint);
+    }
+
+    // Update the link with the new custom path
+    onLinkUpdate(draggingSegment.linkId, { customPath: newPath });
+  }, [draggingSegment, onLinkUpdate]);
+
+  const handleSegmentMouseUp = React.useCallback(() => {
+    setDraggingSegment(null);
+  }, []);
+
+  // Attach segment drag listeners
+  React.useEffect(() => {
+    if (draggingSegment) {
+      document.addEventListener('mousemove', handleSegmentMouseMove);
+      document.addEventListener('mouseup', handleSegmentMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleSegmentMouseMove);
+        document.removeEventListener('mouseup', handleSegmentMouseUp);
+      };
+    }
+  }, [draggingSegment, handleSegmentMouseMove, handleSegmentMouseUp]);
 
   // Get item position with support for temp positions during drag
   const getItemPosition = (swimlaneId: string, itemId: string): ItemPosition | null => {
@@ -436,10 +567,10 @@ export const GanttLinks = React.memo(({
       return null;
     }
 
-    // Generate elbowed path following functional requirements
-    const pathPoints = generateElbowedPath(start, end, link.fromId, link.toId);
+    // Use custom path if available, otherwise generate elbowed path
+    const pathPoints = link.customPath || generateElbowedPath(start, end, link.fromId, link.toId);
     const path = createSVGPath(pathPoints, 8);
-    
+
     const isSelected = selectedLink === link.id;
     const linkColor = link.color || "#00bcd4";
     const markerId = `arrowhead-${link.id}`;
@@ -498,17 +629,42 @@ export const GanttLinks = React.memo(({
             />
           </marker>
         </defs>
-        
+
+        {/* Draggable segment handles - only show when selected */}
+        {isSelected && pathPoints.length > 2 && pathPoints.slice(0, -1).map((point, i) => {
+          const nextPoint = pathPoints[i + 1];
+          const midX = (point.x + nextPoint.x) / 2;
+          const midY = (point.y + nextPoint.y) / 2;
+
+          return (
+            <circle
+              key={`segment-${i}`}
+              cx={midX}
+              cy={midY}
+              r="6"
+              fill="hsl(var(--primary))"
+              stroke="hsl(var(--background))"
+              strokeWidth="2"
+              className="cursor-move pointer-events-auto"
+              style={{ opacity: 0.8 }}
+              onMouseDown={(e) => handleSegmentMouseDown(e, link.id, i, pathPoints)}
+            />
+          );
+        })}
+
         {/* Link label */}
         {link.label && (
           <foreignObject
-            x={start.x + (end.x - start.x) / 2 - 40}
-            y={start.y + (end.y - start.y) / 2 - 12}
+            x={start.x + (end.x - start.x) / 2 - 40 + (link.labelOffset?.x || 0)}
+            y={start.y + (end.y - start.y) / 2 - 12 + (link.labelOffset?.y || 0)}
             width="80"
             height="24"
-            className="pointer-events-none"
+            className="pointer-events-auto"
           >
-            <div className="flex items-center justify-center">
+            <div
+              className="flex items-center justify-center cursor-move"
+              onMouseDown={(e) => handleLabelMouseDown(e, link.id, link.labelOffset || { x: 0, y: 0 })}
+            >
               <span className="text-xs font-medium px-2 py-1 bg-background border border-border rounded shadow-sm">
                 {link.label}
               </span>
@@ -534,7 +690,7 @@ export const GanttLinks = React.memo(({
         top: 0,
         width: `${swimlaneColumnWidth + totalWidth}px`,
         height: `${totalHeight}px`,
-        zIndex: 5, // Below task bars (z-10) and state bars (z-30)
+        zIndex: Z_INDEX.LINK, // Above bars for visibility and editing
       }}
     >
       {data.links.map(renderLink)}
