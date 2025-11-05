@@ -77,52 +77,58 @@ export interface GanttData {
 }
 
 export interface GanttConfig {
-  columnWidths: number[]; // 11 values for each zoom level
+  columnWidths: number[]; // 13 values for each zoom level
   gridOpacity: number; // 1.0 - 2.0 (100% - 200%)
   timescaleContrast: number; // 1.0 - 2.0 (100% - 200%)
 }
 
-// 11-level zoom system with 40px columns
-// L1: Only days, L2-L6: Days + hours, L7-L11: Days + hours + minutes
+// 13-level zoom system with 40px columns
+// L1: Only days, L2-L3: Only days (multi-day), L4-L8: Days + hours, L9-L13: Days + hours + minutes
 export const ZOOM_LEVELS: ZoomConfig[] = [
   // L1: 1 day per column - show only days
   { level: 1, hoursPerColumn: 24, columnWidth: 40, label: "L1: 1 day", showDays: true, showHours: false, showMinutes: false },
 
-  // L2: 12 hours per column - show days + hours
-  { level: 2, hoursPerColumn: 12, columnWidth: 40, label: "L2: 12 hours", showDays: true, showHours: true, showMinutes: false },
+  // L2: 2 days per column - show only days
+  { level: 2, hoursPerColumn: 48, columnWidth: 40, label: "L2: 2 days", showDays: true, showHours: false, showMinutes: false },
 
-  // L3: 6 hours per column - show days + hours
-  { level: 3, hoursPerColumn: 6, columnWidth: 40, label: "L3: 6 hours", showDays: true, showHours: true, showMinutes: false },
+  // L3: 4 days per column - show only days
+  { level: 3, hoursPerColumn: 96, columnWidth: 40, label: "L3: 4 days", showDays: true, showHours: false, showMinutes: false },
 
-  // L4: 4 hours per column - show days + hours
-  { level: 4, hoursPerColumn: 4, columnWidth: 40, label: "L4: 4 hours", showDays: true, showHours: true, showMinutes: false },
+  // L4: 12 hours per column - show days + hours
+  { level: 4, hoursPerColumn: 12, columnWidth: 40, label: "L4: 12 hours", showDays: true, showHours: true, showMinutes: false },
 
-  // L5: 2 hours per column - show days + hours
-  { level: 5, hoursPerColumn: 2, columnWidth: 40, label: "L5: 2 hours", showDays: true, showHours: true, showMinutes: false },
+  // L5: 6 hours per column - show days + hours
+  { level: 5, hoursPerColumn: 6, columnWidth: 40, label: "L5: 6 hours", showDays: true, showHours: true, showMinutes: false },
 
-  // L6: 1 hour per column - show days + hours
-  { level: 6, hoursPerColumn: 1, columnWidth: 40, label: "L6: 1 hour", showDays: true, showHours: true, showMinutes: false },
+  // L6: 4 hours per column - show days + hours
+  { level: 6, hoursPerColumn: 4, columnWidth: 40, label: "L6: 4 hours", showDays: true, showHours: true, showMinutes: false },
 
-  // L7: 30 minutes per column - show days + hours + minutes
-  { level: 7, hoursPerColumn: 0.5, columnWidth: 40, label: "L7: 30 minutes", showDays: true, showHours: true, showMinutes: true },
+  // L7: 2 hours per column - show days + hours
+  { level: 7, hoursPerColumn: 2, columnWidth: 40, label: "L7: 2 hours", showDays: true, showHours: true, showMinutes: false },
 
-  // L8: 15 minutes per column - show days + hours + minutes
-  { level: 8, hoursPerColumn: 0.25, columnWidth: 40, label: "L8: 15 minutes", showDays: true, showHours: true, showMinutes: true },
+  // L8: 1 hour per column - show days + hours
+  { level: 8, hoursPerColumn: 1, columnWidth: 40, label: "L8: 1 hour", showDays: true, showHours: true, showMinutes: false },
 
-  // L9: 10 minutes per column - show days + hours + minutes
-  { level: 9, hoursPerColumn: 10/60, columnWidth: 40, label: "L9: 10 minutes", showDays: true, showHours: true, showMinutes: true },
+  // L9: 30 minutes per column - show days + hours + minutes
+  { level: 9, hoursPerColumn: 0.5, columnWidth: 40, label: "L9: 30 minutes", showDays: true, showHours: true, showMinutes: true },
 
-  // L10: 5 minutes per column - show days + hours + minutes
-  { level: 10, hoursPerColumn: 5/60, columnWidth: 40, label: "L10: 5 minutes", showDays: true, showHours: true, showMinutes: true },
+  // L10: 15 minutes per column - show days + hours + minutes
+  { level: 10, hoursPerColumn: 0.25, columnWidth: 40, label: "L10: 15 minutes", showDays: true, showHours: true, showMinutes: true },
 
-  // L11: 1 minute per column - show days + hours + minutes
-  { level: 11, hoursPerColumn: 1/60, columnWidth: 40, label: "L11: 1 minute", showDays: true, showHours: true, showMinutes: true },
+  // L11: 10 minutes per column - show days + hours + minutes
+  { level: 11, hoursPerColumn: 10/60, columnWidth: 40, label: "L11: 10 minutes", showDays: true, showHours: true, showMinutes: true },
+
+  // L12: 5 minutes per column - show days + hours + minutes
+  { level: 12, hoursPerColumn: 5/60, columnWidth: 40, label: "L12: 5 minutes", showDays: true, showHours: true, showMinutes: true },
+
+  // L13: 1 minute per column - show days + hours + minutes
+  { level: 13, hoursPerColumn: 1/60, columnWidth: 40, label: "L13: 1 minute", showDays: true, showHours: true, showMinutes: true },
 ];
 
-// Default zoom level (L6: 1 hour at 40px)
-export const DEFAULT_ZOOM_LEVEL = 6;
+// Default zoom level (L8: 1 hour at 40px)
+export const DEFAULT_ZOOM_LEVEL = 8;
 
-// Helper function to get zoom config by level (1-11)
+// Helper function to get zoom config by level (1-13)
 export function getZoomConfig(level: number): ZoomConfig {
   const index = level - 1; // Convert 1-based to 0-based index
   if (index < 0 || index >= ZOOM_LEVELS.length) {

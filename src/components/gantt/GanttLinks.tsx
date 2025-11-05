@@ -154,23 +154,38 @@ export const GanttLinks = React.memo(({
     const deltaX = e.clientX - draggingSegment.startX;
     const deltaY = e.clientY - draggingSegment.startY;
 
-    // Create new path with updated segment midpoint
-    const newPath = [...draggingSegment.initialPath];
     const segmentIndex = draggingSegment.segmentIndex;
+    const initialPath = draggingSegment.initialPath;
 
-    // Insert a new control point if this is a straight segment
-    // Or move the existing control point
-    if (segmentIndex < newPath.length - 1) {
-      const p1 = newPath[segmentIndex];
-      const p2 = newPath[segmentIndex + 1];
+    if (segmentIndex >= initialPath.length - 1) return;
 
-      // Insert a new point at the dragged position
-      const newPoint = {
-        x: (p1.x + p2.x) / 2 + deltaX,
-        y: (p1.y + p2.y) / 2 + deltaY,
-      };
+    const p1 = initialPath[segmentIndex];
+    const p2 = initialPath[segmentIndex + 1];
 
-      newPath.splice(segmentIndex + 1, 0, newPoint);
+    // Determine if segment is vertical or horizontal
+    const dx = Math.abs(p2.x - p1.x);
+    const dy = Math.abs(p2.y - p1.y);
+    const isVertical = dx < dy;
+
+    // Create new path by translating the segment
+    const newPath = [...initialPath];
+
+    if (isVertical) {
+      // Vertical segment: translate horizontally
+      // Replace the segment with a detour that moves it horizontally
+      const newPoints = [
+        { x: p1.x + deltaX, y: p1.y },
+        { x: p1.x + deltaX, y: p2.y },
+      ];
+      newPath.splice(segmentIndex, 2, ...newPoints);
+    } else {
+      // Horizontal segment: translate vertically
+      // Replace the segment with a detour that moves it vertically
+      const newPoints = [
+        { x: p1.x, y: p1.y + deltaY },
+        { x: p2.x, y: p2.y + deltaY },
+      ];
+      newPath.splice(segmentIndex, 2, ...newPoints);
     }
 
     // Update the link with the new custom path
@@ -665,7 +680,7 @@ export const GanttLinks = React.memo(({
               className="flex items-center justify-center cursor-move"
               onMouseDown={(e) => handleLabelMouseDown(e, link.id, link.labelOffset || { x: 0, y: 0 })}
             >
-              <span className="text-xs font-medium px-2 py-1 bg-background border border-border rounded shadow-sm">
+              <span className="text-xs font-medium px-2 py-1 bg-transparent">
                 {link.label}
               </span>
             </div>
