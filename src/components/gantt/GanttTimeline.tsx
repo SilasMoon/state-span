@@ -22,6 +22,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
     const elements = [];
     let currentDay = -1;
     let dayStartColumn = 0;
+    let dayIndex = 0; // Track index for alternating
 
     for (let i = 0; i <= columns; i++) {
       const hour = i * zoom.hoursPerColumn;
@@ -31,8 +32,8 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
         if (currentDay >= 0) {
           const columnsInDay = i - dayStartColumn;
           const dayWidth = columnsInDay * columnWidth;
-          // Alternate background based on day number
-          const isEven = currentDay % 2 === 0;
+          // Alternate background based on index, not day number
+          const isEven = dayIndex % 2 === 0;
 
           elements.push(
             <div
@@ -49,6 +50,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
               {currentDay}d
             </div>
           );
+          dayIndex++; // Increment after each day
         }
         currentDay = day;
         dayStartColumn = i;
@@ -64,6 +66,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
     const elements = [];
     let currentHour = -1;
     let hourStartColumn = 0;
+    let hourIndex = 0; // Track index for alternating
 
     for (let i = 0; i <= columns; i++) {
       const totalHour = i * zoom.hoursPerColumn;
@@ -74,8 +77,8 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
           const columnsInHour = i - hourStartColumn;
           const hourWidth = columnsInHour * columnWidth;
           const hourInDay = currentHour % 24;
-          // Alternate background based on hour within day (not global hour)
-          const isEven = hourInDay % 2 === 0;
+          // Alternate background based on index, not hour value
+          const isEven = hourIndex % 2 === 0;
 
           elements.push(
             <div
@@ -92,6 +95,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
               <div className="text-gantt-text-muted">{hourInDay}h</div>
             </div>
           );
+          hourIndex++; // Increment after each hour
         }
         currentHour = hour;
         hourStartColumn = i;
@@ -107,6 +111,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
     const elements = [];
     let currentMinute = -1;
     let minuteStartColumn = 0;
+    let minuteIndex = 0; // Track index for alternating
 
     // Calculate minutes per column more precisely to avoid floating-point errors
     const minutesPerColumn = Math.round(zoom.hoursPerColumn * 60);
@@ -120,8 +125,8 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
           const columnsInMinute = i - minuteStartColumn;
           const minuteWidth = columnsInMinute * columnWidth;
           const minuteInHour = currentMinute % 60;
-          // Alternate background based on minute within hour (not global minute)
-          const isEven = minuteInHour % 2 === 0;
+          // Alternate background based on index, not minute value
+          const isEven = minuteIndex % 2 === 0;
 
           elements.push(
             <div
@@ -138,6 +143,7 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
               <div className="text-gantt-text-muted">{minuteInHour.toString().padStart(2, '0')}</div>
             </div>
           );
+          minuteIndex++; // Increment after each minute
         }
         currentMinute = minute;
         minuteStartColumn = i;
