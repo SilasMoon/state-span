@@ -74,8 +74,8 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
           const columnsInHour = i - hourStartColumn;
           const hourWidth = columnsInHour * columnWidth;
           const hourInDay = currentHour % 24;
-          // Alternate background based on hour value
-          const isEven = currentHour % 2 === 0;
+          // Alternate background based on hour within day (not global hour)
+          const isEven = hourInDay % 2 === 0;
 
           elements.push(
             <div
@@ -108,17 +108,20 @@ export const GanttTimeline = ({ zoom, totalHours }: GanttTimelineProps) => {
     let currentMinute = -1;
     let minuteStartColumn = 0;
 
+    // Calculate minutes per column more precisely to avoid floating-point errors
+    const minutesPerColumn = Math.round(zoom.hoursPerColumn * 60);
+
     for (let i = 0; i <= columns; i++) {
-      const totalHour = i * zoom.hoursPerColumn;
-      const minute = Math.floor(totalHour * 60);
+      // Calculate total minutes directly to avoid floating-point precision issues
+      const minute = Math.floor(i * minutesPerColumn);
 
       if (minute !== currentMinute || i === columns) {
         if (currentMinute >= 0) {
           const columnsInMinute = i - minuteStartColumn;
           const minuteWidth = columnsInMinute * columnWidth;
           const minuteInHour = currentMinute % 60;
-          // Alternate background based on minute value
-          const isEven = currentMinute % 2 === 0;
+          // Alternate background based on minute within hour (not global minute)
+          const isEven = minuteInHour % 2 === 0;
 
           elements.push(
             <div

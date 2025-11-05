@@ -72,46 +72,50 @@ export const GanttRow = React.memo(({
   const [dragOver, setDragOver] = useState<'top' | 'bottom' | 'inside' | null>(null);
 
   const renderGrid = () => {
-    const cells = [];
-    for (let i = 0; i < columns; i++) {
-      cells.push(
-        <div
-          key={i}
-          data-cell-index={i}
-          className="border-r h-full cursor-crosshair"
-          style={{ 
-            width: `${columnWidth}px`, 
-            minWidth: `${columnWidth}px`,
-            borderColor: `hsl(var(--gantt-grid))`,
-            opacity: `var(--gantt-grid-opacity)`
-          }}
-          onMouseDown={(e) => {
-            if (e.button !== 0) return; // Only left click
-            
-            // Disable drag creation for parent swimlanes
-            if (hasChildren) {
-              return;
-            }
-            
-            // Check if there's a bar or handle at the click position
-            const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
-            const clickedOnBar = elementsAtPoint.some(el => el.hasAttribute('data-item-id'));
-            const clickedOnHandle = elementsAtPoint.some(el => el.hasAttribute('data-handle-type'));
-            
-            if (clickedOnBar || clickedOnHandle) {
-              // Let the bar handle its own events
-              return;
-            }
-            
-            e.preventDefault();
-            e.stopPropagation();
-            const hour = i * zoom.hoursPerColumn;
-            setDragCreation({ startHour: hour, currentHour: hour, hasMoved: false });
-          }}
-        />
-      );
-    }
-    return cells;
+    // Optimize: Use CSS grid background instead of individual div elements for performance
+    // This is especially important for high zoom levels (L7-L11) where columns can number in thousands
+    return (
+      <div
+        className="gantt-grid-background absolute inset-0 cursor-crosshair"
+        style={{
+          backgroundImage: `repeating-linear-gradient(to right,
+            hsl(var(--gantt-grid)) 0px,
+            hsl(var(--gantt-grid)) 1px,
+            transparent 1px,
+            transparent ${columnWidth}px)`,
+          opacity: `var(--gantt-grid-opacity)`,
+        }}
+        onMouseDown={(e) => {
+          if (e.button !== 0) return; // Only left click
+
+          // Disable drag creation for parent swimlanes
+          if (hasChildren) {
+            return;
+          }
+
+          // Check if there's a bar or handle at the click position
+          const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+          const clickedOnBar = elementsAtPoint.some(el => el.hasAttribute('data-item-id'));
+          const clickedOnHandle = elementsAtPoint.some(el => el.hasAttribute('data-handle-type'));
+
+          if (clickedOnBar || clickedOnHandle) {
+            // Let the bar handle its own events
+            return;
+          }
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          // Calculate hour based on mouse position
+          const rect = e.currentTarget.getBoundingClientRect();
+          const offsetX = e.clientX - rect.left;
+          const columnIndex = Math.floor(offsetX / columnWidth);
+          const hour = columnIndex * zoom.hoursPerColumn;
+
+          setDragCreation({ startHour: hour, currentHour: hour, hasMoved: false });
+        }}
+      />
+    );
   };
 
   // Handle drag creation
@@ -119,14 +123,24 @@ export const GanttRow = React.memo(({
     if (!dragCreation) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const target = document.elementFromPoint(e.clientX, e.clientY);
-      const cell = target?.closest('[data-cell-index]');
-      if (cell) {
-        const cellIndex = parseInt(cell.getAttribute('data-cell-index') || '0');
-        const currentHour = cellIndex * zoom.hoursPerColumn;
+      // Find the grid element for this swimlane
+      const swimlaneElement = document.querySelector(`[data-swimlane-id="${swimlane.id}"]`);
+      if (!swimlaneElement) return;
+
+      const gridElement = swimlaneElement.querySelector('.gantt-grid-background');
+      if (!gridElement) return;
+
+      const rect = gridElement.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+
+      // Calculate current hour based on mouse position
+      if (offsetX >= 0) {
+        const columnIndex = Math.floor(offsetX / columnWidth);
+        const currentHour = columnIndex * zoom.hoursPerColumn;
+
         setDragCreation(prev => {
           if (!prev) return null;
-          const hasMoved = prev.startHour !== currentHour;
+          const hasMoved = Math.abs(prev.startHour - currentHour) >= zoom.hoursPerColumn;
           return { ...prev, currentHour, hasMoved };
         });
       }
@@ -342,7 +356,7 @@ export const GanttRow = React.memo(({
       </div>
 
       <div className="relative flex h-8" style={{ minWidth: `${columns * columnWidth}px` }}>
-        <div className="absolute inset-0 flex">{renderGrid()}</div>
+        {renderGrid()}
         
         {/* Drag creation preview */}
         {dragCreation && (() => {
