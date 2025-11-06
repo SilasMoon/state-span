@@ -233,8 +233,8 @@ export const GanttLinks = React.memo(({
 
     // Calculate position from data using zoom and columnWidth
     // This ensures arrows update immediately when zoom changes
-    // Width includes 2px extension to fully overlap with grid lines (matching GanttBar.tsx)
-    const x = (itemStart / zoom.hoursPerColumn) * columnWidth - 1;
+    // Width includes 2px extension to better overlap with grid lines (matching GanttBar.tsx)
+    const x = (itemStart / zoom.hoursPerColumn) * columnWidth;
     const width = (itemDuration / zoom.hoursPerColumn) * columnWidth + 2;
     
     // Calculate barCenterY from row position

@@ -87,9 +87,8 @@ export const GanttBar = React.memo(({
     }
   }, [isSelected]);
 
-  // Position bars to completely overlap with grid lines on both sides
-  // Grid lines are 2px wide, so bars start 1px left and extend 2px right to fully cover them
-  const left = (tempStart / zoom.hoursPerColumn) * columnWidth - 1;
+  // Bar width extends 2px to better overlap with 2px-wide grid lines
+  const left = (tempStart / zoom.hoursPerColumn) * columnWidth;
   const width = (tempDuration / zoom.hoursPerColumn) * columnWidth + 2;
 
   const snapToGrid = (value: number) => {
