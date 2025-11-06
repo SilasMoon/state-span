@@ -80,8 +80,8 @@ export const GanttRow = React.memo(({
         style={{
           backgroundImage: `repeating-linear-gradient(to right,
             hsl(var(--gantt-grid)) 0px,
-            hsl(var(--gantt-grid)) 1px,
-            transparent 1px,
+            hsl(var(--gantt-grid)) 2px,
+            transparent 2px,
             transparent ${columnWidth}px)`,
           opacity: `var(--gantt-grid-opacity)`,
         }}
