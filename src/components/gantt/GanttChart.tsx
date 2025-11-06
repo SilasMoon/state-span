@@ -10,7 +10,7 @@ import { LinkEditDialog } from "./LinkEditDialog";
 import { FlagEditDialog } from "./FlagEditDialog";
 import { KeyboardShortcutsDialog } from "./KeyboardShortcutsDialog";
 import { ConfigDialog } from "./ConfigDialog";
-import { GanttLinksReactFlow } from "./GanttLinksReactFlow";
+import { GanttLinks } from "./GanttLinks";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -831,7 +831,7 @@ export const GanttChart = () => {
         </div>
 
 
-        <GanttLinksReactFlow
+        <GanttLinks
           data={data}
           zoom={customZoom}
           columnWidth={customZoom.columnWidth}
