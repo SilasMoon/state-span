@@ -298,12 +298,16 @@ export const GanttBar = React.memo(({
               clearTimeout(tooltipTimerRef.current);
             }
 
+            // Capture rect position before setTimeout
+            const rect = e.currentTarget.getBoundingClientRect();
+            const tooltipX = rect.left + rect.width / 2 - 150;
+            const tooltipY = rect.bottom + 10;
+
             // Start a new timer to show tooltip when cursor becomes static
             tooltipTimerRef.current = setTimeout(() => {
-              const rect = e.currentTarget.getBoundingClientRect();
               setTooltipPos({
-                x: rect.left + rect.width / 2 - 150,
-                y: rect.bottom + 10
+                x: tooltipX,
+                y: tooltipY
               });
             }, 500); // Show tooltip after 500ms of no movement
           }
