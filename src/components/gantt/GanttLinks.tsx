@@ -411,95 +411,25 @@ export const GanttLinks = React.memo(({
     }
   };
 
-  // Generate elbowed path following the functional requirements
+  // Generate elbowed path with vertical-first routing
   const generateElbowedPath = (
     start: { x: number; y: number },
     end: { x: number; y: number },
     fromId: string,
     toId: string
   ): { x: number; y: number }[] => {
-    const excludeIds = [fromId, toId];
-    const EXIT_CLEARANCE = 20; // Distance to exit task before going vertical
-    
-    // FR-3.1: Special case - vertically aligned
+    // Special case - vertically aligned (same x position)
     if (Math.abs(start.x - end.x) < 5) {
       return [start, end];
     }
-    
-    const goingRight = end.x > start.x;
-    
-    // Try simple horizontal path at start Y level
-    if (!horizontalSegmentCrossesTasks(start.x, end.x, start.y, excludeIds)) {
-      return [
-        start,
-        { x: end.x, y: start.y },
-        end
-      ];
-    }
-    
-    // Try simple horizontal path at end Y level  
-    if (!horizontalSegmentCrossesTasks(start.x, end.x, end.y, excludeIds)) {
-      return [
-        start,
-        { x: start.x, y: end.y },
-        end
-      ];
-    }
-    
-    // Need to route through gutters to avoid horizontal crossing
-    const gutters = findGutterPositions();
-    
-    // Exit point: move away from start task horizontally
-    const exitX = start.x + (goingRight ? EXIT_CLEARANCE : -EXIT_CLEARANCE);
-    
-    // Entry point: approach end task horizontally
-    const entryX = end.x - (goingRight ? EXIT_CLEARANCE : -EXIT_CLEARANCE);
-    
-    // Try each gutter to find one that's clear for the entire horizontal span
-    for (const gutterY of gutters) {
-      // Check if we can route the full horizontal span through this gutter
-      const fullHorizontalClear = !horizontalSegmentCrossesTasks(exitX, entryX, gutterY, excludeIds);
-      
-      // Also check the exit and entry segments
-      const exitSegmentClear = !horizontalSegmentCrossesTasks(start.x, exitX, start.y, excludeIds);
-      const entrySegmentClear = !horizontalSegmentCrossesTasks(entryX, end.x, end.y, excludeIds);
-      
-      if (fullHorizontalClear && exitSegmentClear && entrySegmentClear) {
-        // This gutter works - use it
-        return [
-          start,
-          { x: exitX, y: start.y },
-          { x: exitX, y: gutterY },
-          { x: entryX, y: gutterY },
-          { x: entryX, y: end.y },
-          end
-        ];
-      }
-    }
-    
-    // Fallback: Route way out to the side to avoid all tasks
-    // Go further out horizontally to ensure we clear all obstacles
-    const bars = collectTaskBars();
-    const maxX = Math.max(...bars.map(b => b.x + b.width), end.x);
-    const minX = Math.min(...bars.map(b => b.x), start.x);
-    const farX = goingRight ? maxX + 100 : minX - 100;
-    
-    // Find a gutter that's relatively clear
-    const midGutterY = gutters.length > 0 
-      ? gutters.sort((a, b) => {
-          // Sort gutters by distance from midpoint between start and end
-          const mid = (start.y + end.y) / 2;
-          return Math.abs(a - mid) - Math.abs(b - mid);
-        })[0]
-      : (start.y + end.y) / 2;
-    
+
+    // Vertical-first routing: start vertically, then move horizontally
+    // 1. Start at the start point
+    // 2. Move vertically to the same Y level as the end point
+    // 3. Move horizontally to the end point
     return [
       start,
-      { x: start.x + (goingRight ? EXIT_CLEARANCE : -EXIT_CLEARANCE), y: start.y },
-      { x: farX, y: start.y },
-      { x: farX, y: midGutterY },
-      { x: farX, y: end.y },
-      { x: end.x - (goingRight ? EXIT_CLEARANCE : -EXIT_CLEARANCE), y: end.y },
+      { x: start.x, y: end.y },
       end
     ];
   };

@@ -15,8 +15,8 @@ const DEFAULT_CONFIG: GanttConfig = {
   gridOpacity: 2.0,
   timescaleContrast: 4.0,
   flagLineContrast: 1.4,
-  linkOffsetLeft: 0,
-  linkOffsetRight: 0,
+  linkOffsetLeft: 1,
+  linkOffsetRight: -1,
 };
 
 const STORAGE_KEY = 'gantt-config';
