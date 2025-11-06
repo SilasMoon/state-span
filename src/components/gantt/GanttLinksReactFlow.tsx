@@ -194,7 +194,7 @@ export const GanttLinksReactFlow = React.memo(({
         const rowTop = findYPosition(effectiveSwimlaneId);
         if (rowTop === null) return;
 
-        const x = swimlaneColumnWidth + (itemStart / zoom.hoursPerColumn) * columnWidth - 1;
+        const x = swimlaneColumnWidth + (itemStart / zoom.hoursPerColumn) * columnWidth;
         const width = (itemDuration / zoom.hoursPerColumn) * columnWidth + 2;
         const y = rowTop + (SWIMLANE_ROW_HEIGHT / 2);
 
