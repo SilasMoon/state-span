@@ -1,5 +1,5 @@
 import { GanttTask, GanttState, ZoomConfig } from "@/types/gantt";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 
 interface GanttBarProps {
@@ -53,6 +53,7 @@ export const GanttBar = React.memo(({
   const [isTooltipDragging, setIsTooltipDragging] = useState(false);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const [tooltipDragOffset, setTooltipDragOffset] = useState({ x: 0, y: 0 });
+  const tooltipTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Track modifier key state globally to force re-render
   React.useEffect(() => {
@@ -83,9 +84,23 @@ export const GanttBar = React.memo(({
   // Reset tooltip position when selection changes
   React.useEffect(() => {
     if (!isSelected) {
+      // Clear timer and hide tooltip when bar is deselected
+      if (tooltipTimerRef.current) {
+        clearTimeout(tooltipTimerRef.current);
+        tooltipTimerRef.current = null;
+      }
       setTooltipPos(null);
     }
   }, [isSelected]);
+
+  // Cleanup timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (tooltipTimerRef.current) {
+        clearTimeout(tooltipTimerRef.current);
+      }
+    };
+  }, []);
 
   // Bar width extends 2px to better overlap with 2px-wide grid lines
   const left = (tempStart / zoom.hoursPerColumn) * columnWidth;
@@ -274,12 +289,33 @@ export const GanttBar = React.memo(({
           onSelect();
         }}
         onMouseMove={(e) => {
-          if (isSelected && !tooltipPos && !isTooltipDragging) {
-            const rect = e.currentTarget.getBoundingClientRect();
-            setTooltipPos({
-              x: rect.left + rect.width / 2 - 150,
-              y: rect.bottom + 10
-            });
+          if (isSelected && !isTooltipDragging) {
+            // Hide tooltip when cursor moves
+            setTooltipPos(null);
+
+            // Clear any existing timer
+            if (tooltipTimerRef.current) {
+              clearTimeout(tooltipTimerRef.current);
+            }
+
+            // Start a new timer to show tooltip when cursor becomes static
+            tooltipTimerRef.current = setTimeout(() => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setTooltipPos({
+                x: rect.left + rect.width / 2 - 150,
+                y: rect.bottom + 10
+              });
+            }, 500); // Show tooltip after 500ms of no movement
+          }
+        }}
+        onMouseLeave={() => {
+          // Clear timer and hide tooltip when mouse leaves the bar
+          if (tooltipTimerRef.current) {
+            clearTimeout(tooltipTimerRef.current);
+            tooltipTimerRef.current = null;
+          }
+          if (!isTooltipDragging) {
+            setTooltipPos(null);
           }
         }}
         data-swimlane-id={swimlaneId}
