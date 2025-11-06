@@ -850,6 +850,8 @@ export const GanttChart = () => {
           }}
           onLinkUpdate={updateLink}
           itemTempPositions={itemTempPositions}
+          linkOffsetLeft={config.linkOffsetLeft}
+          linkOffsetRight={config.linkOffsetRight}
         />
 
 

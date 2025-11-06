@@ -24,6 +24,8 @@ interface GanttLinksReactFlowProps {
   onLinkDoubleClick: (linkId: string) => void;
   onLinkUpdate?: (linkId: string, updates: Partial<GanttLink>) => void;
   itemTempPositions?: Record<string, { start: number; duration: number; swimlaneId: string }>;
+  linkOffsetLeft?: number;
+  linkOffsetRight?: number;
 }
 
 // Custom smart edge component with smooth step routing and labels
@@ -74,7 +76,7 @@ const SmartEdge = ({
             points="0 0, 10 4, 0 8"
             fill={selected ? "hsl(var(--destructive))" : linkColor}
             stroke="hsl(var(--background))"
-            strokeWidth="1.5"
+            strokeWidth="1"
             strokeLinejoin="round"
           />
         </marker>
@@ -117,6 +119,8 @@ export const GanttLinksReactFlow = React.memo(({
   onLinkDoubleClick,
   onLinkUpdate,
   itemTempPositions = {},
+  linkOffsetLeft = 0,
+  linkOffsetRight = 0,
 }: GanttLinksReactFlowProps) => {
   const SWIMLANE_ROW_HEIGHT = 32;
   const TIMELINE_ROW1_HEIGHT = 24;
@@ -190,15 +194,15 @@ export const GanttLinksReactFlow = React.memo(({
         const rowTop = findYPosition(effectiveSwimlaneId);
         if (rowTop === null) return;
 
-        const x = swimlaneColumnWidth + (itemStart / zoom.hoursPerColumn) * columnWidth;
-        const width = (itemDuration / zoom.hoursPerColumn) * columnWidth;
+        const x = swimlaneColumnWidth + (itemStart / zoom.hoursPerColumn) * columnWidth - 1;
+        const width = (itemDuration / zoom.hoursPerColumn) * columnWidth + 2;
         const y = rowTop + (SWIMLANE_ROW_HEIGHT / 2);
 
         // Create nodes for start and finish handles
         nodeList.push({
           id: `${item.id}-start`,
           type: 'default',
-          position: { x, y },
+          position: { x: x + linkOffsetLeft, y },
           data: { label: '' },
           style: {
             width: 1,
@@ -215,7 +219,7 @@ export const GanttLinksReactFlow = React.memo(({
         nodeList.push({
           id: `${item.id}-finish`,
           type: 'default',
-          position: { x: x + width, y },
+          position: { x: x + width + linkOffsetRight, y },
           data: { label: '' },
           style: {
             width: 1,
@@ -232,7 +236,7 @@ export const GanttLinksReactFlow = React.memo(({
     });
 
     return nodeList;
-  }, [data.swimlanes, itemTempPositions, zoom.hoursPerColumn, columnWidth, swimlaneColumnWidth, findYPosition, SWIMLANE_ROW_HEIGHT]);
+  }, [data.swimlanes, itemTempPositions, zoom.hoursPerColumn, columnWidth, swimlaneColumnWidth, findYPosition, SWIMLANE_ROW_HEIGHT, linkOffsetLeft, linkOffsetRight]);
 
   // Generate edges from links
   const edges = useMemo<Edge[]>(() => {
