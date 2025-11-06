@@ -86,7 +86,7 @@ export const ConfigDialog = ({
         <DialogHeader>
           <DialogTitle>Chart Configuration</DialogTitle>
           <DialogDescription>
-            Customize zoom column widths, grid contrast, timescale appearance, and flag line visibility
+            Customize zoom column widths, grid contrast, timescale appearance, flag line visibility, and link offsets
           </DialogDescription>
         </DialogHeader>
 
@@ -113,11 +113,12 @@ export const ConfigDialog = ({
         </div>
 
         <Tabs defaultValue="zoom" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="zoom">Zoom Levels</TabsTrigger>
             <TabsTrigger value="grid">Grid Contrast</TabsTrigger>
             <TabsTrigger value="timescale">Timescale Contrast</TabsTrigger>
             <TabsTrigger value="flaglines">Flag Lines</TabsTrigger>
+            <TabsTrigger value="linkoffsets">Link Offsets</TabsTrigger>
           </TabsList>
 
           <TabsContent value="zoom" className="space-y-4 mt-4">
@@ -276,6 +277,58 @@ export const ConfigDialog = ({
                       }}
                     />
                   ))}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="linkoffsets" className="space-y-4 mt-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="link-offset-left" className="text-sm">
+                  Left Side Link Offset
+                </Label>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Horizontal offset in pixels for links starting from the left side of a bar
+                </p>
+                <div className="flex items-center gap-4">
+                  <Input
+                    id="link-offset-left"
+                    type="number"
+                    min={-100}
+                    max={100}
+                    step={1}
+                    value={config.linkOffsetLeft}
+                    onChange={(e) =>
+                      onConfigChange({ linkOffsetLeft: parseInt(e.target.value) || 0 })
+                    }
+                    className="h-8 w-32"
+                  />
+                  <span className="text-sm text-muted-foreground">px</span>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="link-offset-right" className="text-sm">
+                  Right Side Link Offset
+                </Label>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Horizontal offset in pixels for links starting from the right side of a bar
+                </p>
+                <div className="flex items-center gap-4">
+                  <Input
+                    id="link-offset-right"
+                    type="number"
+                    min={-100}
+                    max={100}
+                    step={1}
+                    value={config.linkOffsetRight}
+                    onChange={(e) =>
+                      onConfigChange({ linkOffsetRight: parseInt(e.target.value) || 0 })
+                    }
+                    className="h-8 w-32"
+                  />
+                  <span className="text-sm text-muted-foreground">px</span>
                 </div>
               </div>
             </div>

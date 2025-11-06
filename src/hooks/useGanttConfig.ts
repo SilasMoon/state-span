@@ -6,6 +6,8 @@ export interface GanttConfig {
   gridOpacity: number; // 0.0 - 4.0 (0% - 400%)
   timescaleContrast: number; // 0.0 - 4.0 (0% - 400%)
   flagLineContrast: number; // 0.0 - 4.0 (0% - 400%)
+  linkOffsetLeft: number; // Horizontal offset for links starting from left side of bar (in pixels)
+  linkOffsetRight: number; // Horizontal offset for links starting from right side of bar (in pixels)
 }
 
 const DEFAULT_CONFIG: GanttConfig = {
@@ -13,6 +15,8 @@ const DEFAULT_CONFIG: GanttConfig = {
   gridOpacity: 2.0,
   timescaleContrast: 4.0,
   flagLineContrast: 1.4,
+  linkOffsetLeft: 0,
+  linkOffsetRight: 0,
 };
 
 const STORAGE_KEY = 'gantt-config';

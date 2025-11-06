@@ -13,6 +13,8 @@ interface GanttLinksProps {
   onLinkDoubleClick: (linkId: string) => void;
   onLinkUpdate?: (linkId: string, updates: Partial<GanttLink>) => void;
   itemTempPositions?: Record<string, { start: number; duration: number; swimlaneId: string }>;
+  linkOffsetLeft?: number;
+  linkOffsetRight?: number;
 }
 
 interface ItemPosition {
@@ -34,6 +36,8 @@ export const GanttLinks = React.memo(({
   onLinkDoubleClick,
   onLinkUpdate,
   itemTempPositions = {},
+  linkOffsetLeft = 0,
+  linkOffsetRight = 0,
 }: GanttLinksProps) => {
   const SWIMLANE_ROW_HEIGHT = 32;
   const HEADER_HEIGHT = 32;
@@ -229,9 +233,9 @@ export const GanttLinks = React.memo(({
 
     // Calculate position from data using zoom and columnWidth
     // This ensures arrows update immediately when zoom changes
-    // Width includes 1px extension to overlap with right grid line (matching GanttBar.tsx)
-    const x = (itemStart / zoom.hoursPerColumn) * columnWidth;
-    const width = (itemDuration / zoom.hoursPerColumn) * columnWidth + 1;
+    // Width includes 2px extension to fully overlap with grid lines (matching GanttBar.tsx)
+    const x = (itemStart / zoom.hoursPerColumn) * columnWidth - 1;
+    const width = (itemDuration / zoom.hoursPerColumn) * columnWidth + 2;
     
     // Calculate barCenterY from row position
     const barCenterY = rowTop + (SWIMLANE_ROW_HEIGHT / 2);
@@ -564,14 +568,14 @@ export const GanttLinks = React.memo(({
     // Determine startX based on fromHandle (default to 'finish' for backward compatibility)
     const fromHandle = link.fromHandle || 'finish';
     const startX = fromHandle === 'start'
-      ? swimlaneColumnWidth + fromPos.x  // Start handle (left edge)
-      : swimlaneColumnWidth + fromPos.x + fromPos.width; // Finish handle (right edge)
+      ? swimlaneColumnWidth + fromPos.x + linkOffsetLeft  // Start handle (left edge) + left offset
+      : swimlaneColumnWidth + fromPos.x + fromPos.width + linkOffsetRight; // Finish handle (right edge) + right offset
 
     // Determine endX based on toHandle (default to 'start' for backward compatibility)
     const toHandle = link.toHandle || 'start';
     const endX = toHandle === 'start'
-      ? swimlaneColumnWidth + toPos.x  // Start handle (left edge)
-      : swimlaneColumnWidth + toPos.x + toPos.width; // Finish handle (right edge)
+      ? swimlaneColumnWidth + toPos.x + linkOffsetLeft  // Start handle (left edge) + left offset
+      : swimlaneColumnWidth + toPos.x + toPos.width + linkOffsetRight; // Finish handle (right edge) + right offset
 
     // Use barCenterY for exact vertical center attachment (with 1px offset)
     const start = { x: startX, y: fromPos.barCenterY + 1 };
@@ -638,7 +642,7 @@ export const GanttLinks = React.memo(({
               points="0 0, 10 4, 0 8"
               fill={isSelected ? "hsl(var(--destructive))" : linkColor}
               stroke="hsl(var(--background))"
-              strokeWidth="1.5"
+              strokeWidth="1"
               strokeLinejoin="round"
               opacity="1"
             />
