@@ -573,9 +573,9 @@ export const GanttLinks = React.memo(({
       ? swimlaneColumnWidth + toPos.x  // Start handle (left edge)
       : swimlaneColumnWidth + toPos.x + toPos.width; // Finish handle (right edge)
 
-    // Use barCenterY for exact vertical center attachment
-    const start = { x: startX, y: fromPos.barCenterY };
-    const end = { x: endX, y: toPos.barCenterY };
+    // Use barCenterY for exact vertical center attachment (with 1px offset)
+    const start = { x: startX, y: fromPos.barCenterY + 1 };
+    const end = { x: endX, y: toPos.barCenterY + 1 };
 
     // Special case: same position
     if (Math.abs(start.x - end.x) < 5 && Math.abs(start.y - end.y) < 5) {
